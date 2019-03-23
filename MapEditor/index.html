@@ -1,0 +1,235 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/default/easyui.css" />
+    <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/icon.css" />
+    <style>
+        html,
+        body {
+            padding: 0;
+            border: 0;
+            margin: 0;
+            height: 100%;
+            font: 14px "Microsoft YaHei";
+            cursor: default;
+        }
+
+        div {
+            padding: 0;
+            margin: 0;
+        }
+
+        #ControlPanel {
+            float: left;
+            height: 100%;
+            width: 400px;
+        }
+
+        #GamePanel {
+            overflow: hidden;
+            height: 100%;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+        }
+
+        .slider,
+        .sliderLabel {
+            float: left;
+            padding-right: 10px;
+        }
+    </style>
+    <script type="text/javascript" src="../helpers/FsExtra.js"></script>
+    <script type="text/javascript" src="../helpers/Extend.js"></script>
+
+    <script src="libs/modules/egret/egret.js"></script>
+    <script src="libs/modules/egret/egret.web.js"></script>
+    <script src="h5core/bin/h5core/h5core.js"></script>
+    <script type="text/javascript" src="../helpers/cookie.js"></script>
+    <script>
+        var $g = id => document.getElementById(id);
+        var $q = selectors => document.querySelector(selectors);
+        // 先让node加载punycode，否则url调用punycode时，已经被requirejs加载了punycode
+        require("punycode");
+        if (typeof window.require === "function") {
+            // 重命名 Electron 提供的 require
+            window.nodeRequire = window.require;
+            delete window.require;
+            delete window.exports;
+            delete window.module;
+        }
+    </script>
+    <script type="text/javascript" src="../helpers/jquery.min.js"></script>
+    <script type="text/javascript" src="../helpers/easyui/jquery.easyui.min.js"></script>
+    <script data-main="dist/app" type="text/javascript" src="../helpers/require.js"></script>
+
+
+</head>
+
+<body>
+    <div id="StateSelectMapDir">
+        地图所在目录：
+        <input id="txtMapPath" type="input" value="" />
+        <input id="btnLoadMapList" type="button" value="加载地图列表" />
+        <ul id="dlMapList" class="easyui-datalist" title="地图列表" style="width:100%;height:500px">
+        </ul>
+        <input id="btnEdit" type="button" value="编辑选中" disabled="disabled" />
+    </div>
+    <div id="StateEditMapInfo">
+        <table>
+            <tr>
+                <td>地图路径：</td>
+                <td>
+                    <label id="lblPath"> </label>
+                    <input type="button" id="btnRefreshPath" value="刷新地图目录" />
+                </td>
+            </tr>
+            <tr>
+                <td>水平方向图片数量：</td>
+                <td>
+                    <label id="lblPicHCount"></label>
+                </td>
+            </tr>
+            <tr>
+                <td>垂直方向图片数量：</td>
+                <td>
+                    <label id="lblPicVCount"></label>
+                </td>
+            </tr>
+            <tr>
+                <td>图片尺寸：</td>
+                <td>
+                    <label id="lblPicSize"></label>
+                </td>
+            </tr>
+            <tr>
+                <td>地图宽度：</td>
+                <td>
+                    <label id="lblMapWidth"></label>
+                </td>
+            </tr>
+            <tr>
+                <td>地图高度：</td>
+                <td>
+                    <label id="lblMapHeight"></label>
+                </td>
+            </tr>
+            <tr>
+                <td>路径方式：</td>
+                <td id="tdPathType">
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" id="tdPathDetail">
+
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="2">
+                    <input type="button" id="btnDoEdit" value="编辑地图">
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div id="StateEdit" style="margin: auto;width: 100%;height: 100%;" class="egret-player" data-orientation="auto"
+        data-scale-mode="noScale" data-entry-class="EgretEntry" data-frame-rate="30" data-content-width="100%"
+        data-content-height="100%" data-show-paint-rect="false" data-multi-fingered="2" data-show-fps="false"
+        data-show-log="false" data-log-filter="" data-show-fps-style="x:0,y:0,size:30,textColor:0x00c200,bgAlpha:0.9">
+        <div id="divControl"
+            style="width:400px;position:absolute;z-Index:2000;background-color:#fff;right:50px;top:50px;">
+            <div title="控制面板" class="easyui-panel" data-options="collapsible:true">
+                <input id="btnSave" type="button" value="保存地图数据" />
+                <div id="accControl" class="easyui-accordion" style="width:100%;height:300px;">
+                    <div title="特效列表" data-options="selected:true" style="padding:10px;">
+                        要新加特效，请直接从特效文件夹拖到地图上
+                        <ul id="dlEffectList" class="easyui-datalist">
+                        </ul>
+                    </div>
+                    <div id="divMapPath" data-options="selected:true" title="地图处理路径" style="padding:10px;height:40px;">
+                    </div>
+                </div>
+                <div id="txtLog" style="width:99%;height:100px;"></div>
+            </div>
+        </div>
+        <div id="divEffectPro" style="width:500px;position:absolute;z-Index:1000;background-color:#fff;">
+            <table>
+                <tr>
+                    <td>uri：</td>
+                    <td>
+                        <label id="lblAniUri"></label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>坐标</td>
+                    <td>
+                        <label id="lblAniPos"></label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>所在层级</td>
+                    <td>
+                        <label>
+                            <input type="radio" name="layerID" value="1790" checked="checked" />顶部场景特效
+                        </label>
+                        <label>
+                            <input type="radio" name="layerID" value="1740" />底部场景特效
+                        </label>
+                    </td>
+                </tr>
+                <tr style="height:60px">
+                    <td>缩放:</td>
+                    <td>
+                        ScaleX:
+                        <input id="sldAniScaleX" value="1" />
+                        <br /> ScaleY:
+                        <input id="sldAniScaleY" value="1" />
+
+                    </td>
+                </tr>
+                <tr style="height:60px">
+                    <td>旋转:</td>
+                    <td>
+                        <input id="sldAniRotation" class="easyui-slider" style="width:250px;"
+                            data-options="min:0,max:360,step:1,showTip:true" value="0" />
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="border-top:solid 1px;">
+                        <input id="chkAniIsMovable" type="checkbox" /> 移动特效 </td>
+                </tr>
+                <tr>
+                    <td>持续时间(单位：毫秒)</td>
+                    <td>
+                        <input class="easyui-numberspinner" id="sldAniDuration" value="0" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>横向速度:</td>
+                    <td>
+                        <input id="sldAniSpeedX" class="easyui-numberspinner" value="0" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>纵向速度:</td>
+                    <td>
+                        <input id="sldAniSpeedY" class="easyui-numberspinner" value="0" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>时间种子:(用于同步客户端显示)</td>
+                    <td>
+                        <input id="txtAniSeed" />
+                        <input id="btnAniSeed" type="button" value="更新种子" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>

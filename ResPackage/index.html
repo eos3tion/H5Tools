@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script>
+        var $ = document.querySelector.bind(document);
+        var $$ = document.querySelectorAll.bind(document);
+        require("punycode");
+        if (typeof window.require === "function") {
+            // 重命名 Electron 提供的 require
+            window.nodeRequire = window.require;
+            delete window.require;
+            delete window.exports;
+            delete window.module;
+        }
+    </script>
+    <script defer="defer" data-main="dist/index" type="text/javascript"
+        src="../helpers/require.js"></script>
+    <script type="text/javascript" src="../helpers/cookie.js"></script>
+    <script type="text/javascript" src="../helpers/Extend.js"></script>
+    <style>
+        html,
+        body {
+            padding: 0;
+            border: 0;
+            margin: 0;
+            height: 100%;
+            font: 14px "Microsoft YaHei";
+        }
+    </style>
+
+<body>
+    <form id="frm">
+        资源输出根目录：<input id="txtOut" style="width:400px;" type="text" value="" /><br />图片缩放:<input id="scale"
+            type="number" value="1" min="0.5" max="1.5" step="0.05" /> <br />资源导出类型： <label><input type="radio"
+                name="mode" value="0" checked="checked" />PAK</label> <label><input type="radio" name="mode"
+                value="1" />ANI</label> <br />
+        <span id="pakSavePane">
+            Pak打包方式： <label><input type="radio" name="pakSaveType" value="0" />全部打包</label> <label><input type="radio"
+                    name="pakSaveType" value="4" checked="checked" />单动作单方向</label> <br />
+        </span>
+        <hr /> 装箱方式： <label style="display:none"><input type="radio" name="parkingType" value="0" />效果更好</label>
+        <label><input type="radio" name="parkingType" value="1" checked="checked" />快速较快</label> <br />
+        <label><input id="usePngquant" type="checkbox"
+                checked="checked">使用pngquant优化</label>&nbsp;&nbsp;&nbsp;&nbsp;参数列表：<input id="pngquantArgs"
+            style="width:400px;" type="text" /> <br />
+        <hr /> 图片命名规则：
+        <input id="txtName" style="width:400px;" type="text" value="{a}{d}" disabled="disabled" /> <input id="defName"
+            type="checkbox" checked="checked" />使用默认
+        <font color="#f00">{a}{d}</font> <br />可支持： <br />
+        <font color="#f00">{a}</font> 必填，会替换为动作；<br /> 动作序号会根据
+        <font color="#f0f">"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"</font><br />
+        <font color="#00f">动作0</font>会对应替换为
+        <font color="#f00">a</font>，
+        <font color="#00f">动作1</font>会对应替换为
+        <font color="#f00">b</font>...
+        <font color="#00f">动作51</font>会对应替换为
+        <font color="#f00">Z</font>
+        <br />
+        <font color="#f00">{d}</font> 必填，会替换为方向（方向0-方向5）；&nbsp;&nbsp;&nbsp;<br />
+        <font color="#f00">{f}</font> 会替换为资源标识
+        <hr /> 透明度阀值： 0 <input id="txtAlpha" type="range" step="1" value="192" max="255" min="0"
+            oninput="outAlpha.value=this.value" /> 255 当前值：
+        <output id="outAlpha">192</output>
+        <font color="#f00">透明度高于此值的不会被裁剪</font><br /> 每帧持续时间：
+        <input id="frameTime" style="width:50px" type="number" value="100" min="10" step="1" />
+    </form>
+    <hr />　总进度：
+    <progress style="width:500px" id="total" max="100" value="0"></progress><label id="lblTotal"></label><br />当前进度：
+    <progress style="width:500px" id="progress" max="100" value="0"></progress><label id="lblProgress"></label>
+    <div id="txtLog" style="width:100%;height:50%;margin-top:5px;border:#ccc solid 1px;overflow-y:auto; ">
+    </div>
+</body>
+
+</html>

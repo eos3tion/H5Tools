@@ -1,0 +1,126 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/default/easyui.css" />
+    <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/icon.css" />
+    <style>
+        html,
+        body {
+            padding: 0;
+            border: 0;
+            margin: 0;
+            height: 100%;
+            font: 14px "Microsoft YaHei";
+        }
+
+        div {
+            padding: 0;
+            margin: 0;
+        }
+
+        #ControlPanel {
+            float: left;
+            height: 100%;
+            width: 400px;
+        }
+
+        #GamePanel {
+            overflow: hidden;
+            height: 100%;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+    <script type="text/javascript" src="../helpers/FsExtra.js"></script>
+    <script type="text/javascript" src="../helpers/Extend.js"></script>
+    <script type="text/javascript" src="../helpers/cookie.js"></script>
+    <script>
+        var $g = id => document.getElementById(id);
+        // 先让node加载punycode，否则url调用punycode时，已经被requirejs加载了punycode
+        require("punycode");
+        if (typeof window.require === "function") {
+            // 重命名 Electron 提供的 require
+            window.nodeRequire = window.require;
+            delete window.require;
+            delete window.exports;
+            delete window.module;
+        }
+    </script>
+    <script type="text/javascript" src="../helpers/jquery.min.js"></script>
+    <script type="text/javascript" src="../helpers/easyui/jquery.easyui.min.js"></script>
+    <script data-main="dist/app" type="text/javascript" src="../helpers/require.js"></script>
+
+</head>
+
+<body>
+    <div id="ControlPanel" class="left">
+        游戏路径：
+        <input id="GameUrl" type="text" value="" />
+        <input id="btnLoad" type="button" value="加载" />
+        <div id="GuideList" style="display:none;">
+            <ul id="Guides" class="easyui-datalist" title="引导列表" style="width:100%;height:250px">
+            </ul>
+            <input id="txtGuideName" type="text" value="">
+            <input id="btnNewGuide" type="button" value="新建引导" />
+            <input id="btnRenameGuide" type="button" value="重命名引导" />
+            <br />
+            <hr />
+            <input id="btnSaveGuides" type="button" value="存储引导" />
+            <input id="btnDelGuide" type="button" value="删除引导" style="float:right;color:red" />
+            <hr />
+        </div>
+        <div id="GuideItem" style="width:100%;display:none;">
+            <table id="dg" class="easyui-datagrid" title="编辑步骤" style="width:100%;height:auto" data-options="iconCls: 'icon-edit',singleSelect: true,toolbar: '#tb',method: 'get'">
+                <thead>
+                    <tr>
+                        <th data-options="field:'step',width:80,align:'right'">步骤</th>
+                        <th data-options="field:'arrowName',width:80,align:'right'">步骤类型</th>
+                        <th data-options="field:'desc',width:80,align:'right'">描述</th>
+                        <th data-options="field:'dataJson',width:80,align:'right'">数据</th>
+                    </tr>
+                </thead>
+            </table>
+            <div id="tb" style="height:auto">
+                <a id="btnInsert" href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">插入一步</a>
+                <a id="btnAdd" href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">新增一步</a>
+                <a id="btnRemove" href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-remove',plain:true">移除选中</a>
+                <a id="btnApply" href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-save',plain:true">应用改动</a>
+                <a id="btnReject" href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-undo',plain:true">还原改动</a>
+            </div>
+            <div style="height:100px">
+                <div style="width:50%;height:100%;border-right:solid #ccc 1px">
+                    <img id="current" style="max-height:100px" />
+                </div>
+                <div style="width:50%;height:100%;">
+                    <img id="last" style="max-height:100px" />
+                </div>
+            </div>
+            <hr />
+            <div id="arrows">
+                <input name="arrow" type="radio" value="0" checked="checked" />自动判断
+                <input name="arrow" type="radio" value="1" />上箭头
+                <input name="arrow" type="radio" value="2" />下箭头
+                <input name="arrow" type="radio" value="3" />左箭头
+                <input name="arrow" type="radio" value="4" />右箭头<br />
+                <input name="arrow" type="radio" value="5" />派发事件
+            </div>
+            描述：
+            <br />
+            <textarea id="txtDesc" style="height:100px;width:90%"></textarea><br />
+            数据： <input id="txtData" style="width:60%" />
+            <input id="btnDoGuide" type="button" value="预览引导" />
+        </div>
+    </div>
+    <div id="GamePanel">
+        <iframe id="GameFrame" width="100%">
+
+        </iframe>
+    </div>
+</body>
+
+</html>

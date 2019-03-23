@@ -1,0 +1,6 @@
+[submodule "MapEditor/h5core"]
+	path = MapEditor/h5core
+	url = https://github.com/eos3tion/h5core.git
+[submodule "AvatarTools/h5core"]
+	path = AvatarTools/h5core
+	url = https://github.com/eos3tion/h5core.git

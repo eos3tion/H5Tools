@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "amd",
+    "target": "es2015",
+    "noImplicitAny": false,
+    "sourceMap": false,
+    "outDir": "dist"
+  },
+  "exclude": [
+    "node_modules",
+    "lib"
+  ]
+}
