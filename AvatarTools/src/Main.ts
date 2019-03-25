@@ -1,19 +1,7 @@
-import jgame = junyou.game;
-import Data = junyou.tools.Data;
+import "./Data";
 
-// import path = require("path");
-// import fs = require("fs");
-
-let path, fs, nativeImage;
-let require = window["nodeRequire"];
-if (typeof require === "function") { //是Electron环境
-    path = require("path");
-    fs = require("fs");
-    nativeImage = require('electron').nativeImage;
-}
-
-
-class Main extends egret.DisplayObjectContainer {
+const Data = jy.Data;
+export class Main extends egret.DisplayObjectContainer {
 
 
     /**
@@ -28,13 +16,14 @@ class Main extends egret.DisplayObjectContainer {
      * 渲染器
      * 
      * @private
-     * @type {jgame.UnitRender}
+     * @type {jy.UnitRender}
      */
-    private render: jgame.UnitRender;
+    private render: jy.UnitRender;
 
-    private model: egret.DisplayObjectContainer;
+    lastTime: number;
 
-    private bmp: jgame.ResourceBitmap;
+
+    private bmp: jy.ResourceBitmap;
 
     private headShape: egret.Shape;
 
@@ -95,10 +84,10 @@ class Main extends egret.DisplayObjectContainer {
         let data = Data.selectData;
         let pstInfo = data.value;
         let actions = this.actions;
-        this.render = new jgame.UnitRender;
-        let model = new egret.DisplayObjectContainer();
-        this.render.model = this.model = model;
-        this.bmp = new jgame.ResourceBitmap();
+        this.render = new jy.UnitRender(this as any);
+        let model = new jy.UModel();
+        this.render.model = model;
+        this.bmp = new jy.ResourceBitmap();
         model.addChild(this.bmp);
         this.addChild(model);
         this.addEventListener(egret.Event.ENTER_FRAME, this.doRender, this);
@@ -225,19 +214,19 @@ class Main extends egret.DisplayObjectContainer {
         if (this.playing) {
             btnPlay.linkbutton({ text: "暂停" });
             $("#btnNext").linkbutton("disable");
-            this.render.resetTime(Date.now());
+            this.render.reset(Date.now());
         } else {
             btnPlay.linkbutton({ text: "播放" });
             $("#btnNext").linkbutton("enable");
         }
     }
 
-    private playNext = (e) => {
+    private playNext = () => {
         this.render.playNextFrame();
         $("#cFrame").text(this.render.f);
     }
 
-    private playHandler = (e) => {
+    private playHandler = () => {
         this.playing = !this.playing;
         this.checkPlay();
     }
@@ -245,8 +234,8 @@ class Main extends egret.DisplayObjectContainer {
     private castPointDrag(e: egret.TouchEvent) {
         this.lcx = e.stageX;
         this.lcy = e.stageY;
-        this.stage.addEventListener(egret.TouchEvent.TOUCH_MOVE, this.tm, this);
-        this.stage.addEventListener(egret.TouchEvent.TOUCH_END, this.te, this);
+        this.stage.on(EgretEvent.TOUCH_MOVE, this.tm, this);
+        this.stage.on(EgretEvent.TOUCH_END, this.te, this);
     }
 
     private tm(e: egret.TouchEvent) {
@@ -257,23 +246,23 @@ class Main extends egret.DisplayObjectContainer {
         let dy = ny - this.lcy;
         this.lcx = nx;
         this.lcy = ny;
-        let direction = jgame.FACE_DIRECTION[this.currentDirection];
+        let direction = jy.FACE_DIRECTION[this.currentDirection];
         let pt = this.castPoints[this.currentAction][direction];
         nx = castDele.x + dx;
         ny = castDele.y + dy;
-        pt[0] = jgame.FACE_SCALE_X[this.currentDirection] * nx;
+        pt[0] = jy.FACE_SCALE_X[this.currentDirection] * nx;
         pt[1] = ny;
         castDele.x = nx;
         castDele.y = ny;
         this.refreshCastPoints();
     }
 
-    private te(e: egret.TouchEvent) {
+    private te() {
         this.stage.removeEventListener(egret.TouchEvent.TOUCH_MOVE, this.tm, this);
         this.stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.te, this);
     }
 
-    private castPointsClick = (e?: JQueryEventObject) => {
+    private castPointsClick = () => {
         let castPoints = this.castPoints;
         let flag = !!(castPoints && castPoints[this.currentAction])
         if (flag) {
@@ -302,16 +291,16 @@ class Main extends egret.DisplayObjectContainer {
             }
             let pts = this.castPoints[this.currentAction];
             for (var d = 0; d < 8; d++) {
-                let pt = pts[jgame.FACE_DIRECTION[d]];
-                ele.append(`方向${d}：(x:${pt[0] * jgame.FACE_SCALE_X[d]},y:${pt[1]})<br/>`)
+                let pt = pts[jy.FACE_DIRECTION[d]];
+                ele.append(`方向${d}：(x:${pt[0] * jy.FACE_SCALE_X[d]},y:${pt[1]})<br/>`)
             }
             d = this.currentDirection;
-            let pt = pts[jgame.FACE_DIRECTION[d]];
-            this.castDele.x = pt[0] * jgame.FACE_SCALE_X[d];
+            let pt = pts[jy.FACE_DIRECTION[d]];
+            this.castDele.x = pt[0] * jy.FACE_SCALE_X[d];
             this.castDele.y = pt[1];
         } else {
 
-            junyou.recycleDisplay(this.castDele);
+            jy.removeDisplay(this.castDele);
 
             $("#btnCastPoints").linkbutton({ text: "增加施法点" });
         }
@@ -322,11 +311,11 @@ class Main extends egret.DisplayObjectContainer {
      * 
      * @private
      */
-    private addActionHandler = (e?: JQueryEventObject) => {
-        let max: number = Math.max.apply(null, this.actions) + 1;
+    private addActionHandler = () => {
+        let max: number = Math.max.apply(null, this.actions as any) + 1;
         this.actions.push("" + max);
         let pstInfo = Data.selectData.value;
-        let aInfo = new jgame.ActionInfo();
+        let aInfo = {} as jy.ActionInfo;
         aInfo.key = max;
         aInfo.frames = [];
         pstInfo.frames[max] = aInfo;
@@ -341,7 +330,7 @@ class Main extends egret.DisplayObjectContainer {
      * 
      * @private
      */
-    private saveClickHandler = (e?: JQueryEventObject) => {
+    private saveClickHandler = () => {
         // extra [0] 头顶坐标Y number
         // extra [1] 受创点Y number
         // extra [2] 施法点 {[index:string]:Array<Array<number>(2)>(5)}
@@ -364,7 +353,7 @@ class Main extends egret.DisplayObjectContainer {
         Data.saveData();
     }
 
-    private directionChangeHandler = (e?: JQueryEventObject) => {
+    private directionChangeHandler = () => {
         var sel = $("#selDirection").find("option:selected").text();
         this.render.faceTo = +sel;
         this.currentDirection = +sel;
@@ -372,7 +361,7 @@ class Main extends egret.DisplayObjectContainer {
     }
 
 
-    private actionChangeHandler = (e?: JQueryEventObject) => {
+    private actionChangeHandler = () => {
         var sel = $("#selAction").find("option:selected").text();
         let pstInfo = Data.selectData.value;
         let aInfo = pstInfo.frames[+sel];
@@ -386,7 +375,7 @@ class Main extends egret.DisplayObjectContainer {
 
     private resetRender() {
         this.lastTime = Date.now();
-        this.render.resetTime(this.lastTime);
+        this.render.reset(this.lastTime);
         this.render.idx = 0;
         this.render.f = 0;
     }
@@ -403,10 +392,14 @@ class Main extends egret.DisplayObjectContainer {
         e.preventDefault();
         let goted = this.checkFile((<DragEvent>e.originalEvent).dataTransfer.files);
         if (goted) {
+            const fs = nodeRequire("fs") as typeof import("fs");
+            const path = nodeRequire("path") as typeof import("path");
+            const electron = nodeRequire("electron");
+            const nativeImage = electron.nativeImage;
             let str = fs.readFileSync(goted.data, "utf8");
             let data = JSON.parse(str);
             let imgs: string[] = goted.img;
-            let resManager = jgame.ResourceManager;
+            let resManager = jy.ResManager;
             let key = goted.key;
             imgs.forEach(imgPath => {
                 let nImg = nativeImage.createFromPath(imgPath);
@@ -415,16 +408,25 @@ class Main extends egret.DisplayObjectContainer {
                 img.src = nImg.toDataURL();
                 let bmd: egret.BitmapData = new egret.BitmapData(img);
                 let uri = key + "/" + result.base;
-                let res = new jgame.SplitUnitResource(uri);
+                let res = new jy.SplitUnitResource(uri, jy.ConfigUtils.getResUrl(uri));
                 res.bmd = bmd;
+                res.state = jy.RequestState.COMPLETE;
                 resManager.regResource(uri, res);
             });
-            let ures = new jgame.UnitResource(key, Data.selectData.value.splitInfo);
+            let ures = new jy.UnitResource(key, Data.selectData.value);
             ures.decodeData(data);
             this.bmp.res = ures;
             this.resetRender();
         }
     };
+
+    onRenderFrame(now: number) {
+
+    }
+
+    playComplete(now: number) {
+
+    }
 
     private doRender() {
         let now = Date.now();
@@ -441,6 +443,8 @@ class Main extends egret.DisplayObjectContainer {
         let img: string[] = [];
         let data = null;
         let p: string;
+        const fs = nodeRequire("fs") as typeof import("fs");
+        let path = nodeRequire("path") as typeof import("path");
         // 遍历文件，检查文件是否匹配
         for (let i = 0, len = files.length; i < len; i++) {
             let file = files[i];

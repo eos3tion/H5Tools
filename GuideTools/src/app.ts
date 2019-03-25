@@ -1,4 +1,3 @@
-import { RPC, CallbackInfo } from "./H5Core";
 import { tool } from "./Tool";
 import * as _fs from "fs";
 import * as _electron from "electron";

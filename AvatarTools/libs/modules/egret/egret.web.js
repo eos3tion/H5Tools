@@ -2337,8 +2337,8 @@ var egret;
                     inputElement = document.createElement("input");
                     self._simpleElement = inputElement;
                     inputElement.id = "egretInput";
+                    inputElement.type = "text";
                 }
-                inputElement.type = "text";
                 self._inputDIV.appendChild(inputElement);
                 inputElement.setAttribute("tabindex", "-1");
                 inputElement.style.width = "1px";
@@ -4018,7 +4018,7 @@ var egret;
                 container.appendChild(canvas);
                 style = container.style;
                 style.overflow = "hidden";
-                style.position = "absolute";
+                // style.position = "absolute";
             };
             /**
              * @private

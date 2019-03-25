@@ -2,6 +2,30 @@
 <html>
 
 <head>
+    <meta charset="utf-8">
+    <title>君游H5项目角色编辑器</title>
+    <meta name="viewport"
+        content="width=device-width,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="full-screen" content="true" />
+    <meta name="screen-orientation" content="portrait" />
+    <meta name="x5-fullscreen" content="true" />
+    <meta name="360-fullscreen" content="true" />
+    <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/default/easyui.css" />
+    <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/icon.css" />
+    <style>
+        html,
+        body {
+            padding: 0;
+            border: 0;
+            margin: 0;
+            height: 100%;
+            font: 12px "微软雅黑";
+        }
+    </style>
+    <script src="libs/modules/egret/egret.js"></script>
+    <script src="libs/modules/egret/egret.web.js"></script>
+    <script src="h5core/bin/h5core/h5core.js"></script>
     <script>
         if (typeof window.require === "function") {
             // 重命名 Electron 提供的 require
@@ -23,87 +47,9 @@
             }
         }
     </script>
-    <meta charset="utf-8">
-    <title>君游H5项目角色编辑器</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="full-screen" content="true" />
-    <meta name="screen-orientation" content="portrait" />
-    <meta name="x5-fullscreen" content="true" />
-    <meta name="360-fullscreen" content="true" />
-    <link rel="stylesheet" type="text/css" href="../helpers/libs/easyui/themes/default/easyui.css" />
-    <link rel="stylesheet" type="text/css" href="../helpers/libs/easyui/themes/icon.css" />
-    <style>
-        html,
-        body {
-            -ms-touch-action: none;
-            padding: 0;
-            border: 0;
-            margin: 0;
-            height: 100%;
-            font: 12px "微软雅黑";
-        }
-    </style>
-
-    <!--这个标签为通过egret提供的第三方库的方式生成的 javascript 文件。删除 modules_files 标签后，库文件加载列表将不会变化，请谨慎操作！-->
-    <!--modules_files_start-->
-	<script egret="lib" src="libs/modules/egret/egret.js" src-release="libs/modules/egret/egret.min.js"></script>
-	<script egret="lib" src="libs/modules/egret/egret.web.js" src-release="libs/modules/egret/egret.web.min.js"></script>
-	<!--modules_files_end-->
-
-    <!--这个标签为不通过egret提供的第三方库的方式使用的 javascript 文件，请将这些文件放在libs下，但不要放在modules下面。-->
-    <!--other_libs_files_start-->
-    <script src="../helpers/libs/jquery.min.js"></script>
-    <script src="../helpers/libs/easyui/jquery.easyui.min.js"></script>
-    <!--other_libs_files_end-->
-
-    <!--这个标签会被替换为项目中所有的 javascript 文件。删除 game_files 标签后，项目文件加载列表将不会变化，请谨慎操作！-->
-    <!--game_files_start-->
-	<script egret="game" src="bin-debug/Data.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/RecyclablePool.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/CallbackInfo.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/configs/ConfigUtils.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/configs/DataLocator.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/configs/DataParseUtil.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/configs/ICfg.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/constant/KeyStroke.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/constant/RequestState.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/Extend.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/Extension.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/Global.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/structure/ByteArray.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/structure/Int64.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/time/DateUtils.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/time/TimeVO.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/utils/ColorUtil.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/utils/LangUtil.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/utils/RequestLimit.js"></script>
-	<script egret="game" src="bin-debug/junyou/debug/ThrowError.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/utils/Temp.js"></script>
-	<script egret="game" src="bin-debug/junyou/common/utils/TimerUtil.js"></script>
-	<script egret="game" src="bin-debug/junyou/debug/ClientCheck.js"></script>
-	<script egret="game" src="bin-debug/junyou/debug/Logger.js"></script>
-	<script egret="game" src="bin-debug/junyou/debug/ThrowErrorHelper.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/ActionInfo.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/BaseRender.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/FrameInfo.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/IDrawInfo.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/IRenderAction.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/JTexture.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/PstInfo.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/ResourceBitmap.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/SplitUnitResource.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/animation/UnitResource.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/IDepth.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/resource/IResource.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/resource/Resource.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/resource/ResourceManager.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/unit/UnitRender.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/utils/FaceToUtils.js"></script>
-	<script egret="game" src="bin-debug/junyou/game/utils/GDataParseUtils.js"></script>
-	<script egret="game" src="bin-debug/Main.js"></script>
-	<script egret="game" src="bin-debug/Step1.js"></script>
-	<!--game_files_end-->
+    <script src="../helpers/jquery.min.js"></script>
+    <script src="../helpers/easyui/jquery.easyui.min.js"></script>
+    <script data-main="dist/app" type="text/javascript" src="../helpers/require.js"></script>
 </head>
 
 <body>
@@ -111,13 +57,18 @@
         请拖入pst.json文件
         <ul id="pstList" class="easyui-datalist" title="选择要调整的pst" lines="true" style="width:100%;height:250px;">
         </ul>
-        <a id="btnEdit" href="javascript:void(0)" data-options="iconCls:'icon-edit'" class="easyui-linkbutton" style="width:120px;">编辑选中配置</a>
-        <a id="btnDelete" href="javascript:void(0)" data-options="iconCls:'icon-remove'" class="easyui-linkbutton" style="width:120px;">删除选中配置</a>
-        <a id="btnSave" href="javascript:void(0)" data-options="iconCls:'icon-save'" class="easyui-linkbutton" style="width:120px;">保存配置</a>
+        <a id="btnEdit" href="javascript:void(0)" data-options="iconCls:'icon-edit'" class="easyui-linkbutton"
+            style="width:120px;">编辑选中配置</a>
+        <a id="btnDelete" href="javascript:void(0)" data-options="iconCls:'icon-remove'" class="easyui-linkbutton"
+            style="width:120px;">删除选中配置</a>
+        <a id="btnSave" href="javascript:void(0)" data-options="iconCls:'icon-save'" class="easyui-linkbutton"
+            style="width:120px;">保存配置</a>
     </div>
     <div id="step2" style="display:none;height:100%;width:100%;">
-        <div style="margin: auto;width: 50%;height: 100%;float:left;" class="egret-player" data-entry-class="Main" data-orientation="auto" data-scale-mode="showAll" data-frame-rate="30" data-content-width="480" data-content-height="800" data-show-paint-rect="false"
-            data-multi-fingered="2" data-show-fps="false" data-show-log="false" data-log-filter="" data-show-fps-style="x:0,y:0,size:30,textColor:0x00c200,bgAlpha:0.9">
+        <div style="margin: auto;width: 50%;height: 100%;float:left;position: relative;" class="egret-player"
+            data-entry-class="EgretEntry" data-orientation="auto" data-scale-mode="showAll" data-frame-rate="30"
+            data-content-width="480" data-content-height="800" data-show-paint-rect="false" data-multi-fingered="2"
+            data-show-log="false" data-log-filter="">
         </div>
         <div style="margin: auto;width: 50%;height: 100%;float:left;background:#fcfcfc">
             <table id="dg" class="easyui-datagrid" title="编辑特效" style="width:700px;height:auto" data-options="
@@ -134,13 +85,16 @@
                         <th data-options="field:'d',width:80,align:'right',editor:{type:'numberbox'}">方向</th>
                         <th data-options="field:'f',width:80,align:'right',editor:{type:'numberbox'}">帧</th>
                         <th data-options="field:'t',width:140,align:'right',editor:{type:'numberbox'}">执行时间(单位：毫秒)</th>
-                        <th data-options="field:'e',width:250,editor:{type:'combobox',options:{data:[{value:'1',text:'施法帧'},{value:'',text:'无'}]}}">事件</th>
+                        <th
+                            data-options="field:'e',width:250,editor:{type:'combobox',options:{data:[{value:'1',text:'施法帧'},{value:'',text:'无'}]}}">
+                            事件</th>
                     </tr>
                 </thead>
             </table>
 
             <div id="tb" style="height:auto">
-                动作序列：<select id="selAction"></select> <a href="javascript:void(0)" id="addAction" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">新增动作</a> 方向：
+                动作序列：<select id="selAction"></select> <a href="javascript:void(0)" id="addAction"
+                    class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">新增动作</a> 方向：
                 <select id="selDirection">
                     <option value="0">0</option>
                     <option value="1">1</option>
@@ -151,10 +105,14 @@
                     <option value="6">6</option>
                     <option value="7">7</option>
                 </select>
-                <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true" onclick="append()">添加帧</a>
-                <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-remove',plain:true" onclick="removeit()">移除帧</a>
-                <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-save',plain:true" onclick="accept()">应用改动</a>
-                <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-undo',plain:true" onclick="reject()">还原改动</a>
+                <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true"
+                    onclick="append()">添加帧</a>
+                <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-remove',plain:true"
+                    onclick="removeit()">移除帧</a>
+                <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-save',plain:true"
+                    onclick="accept()">应用改动</a>
+                <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-undo',plain:true"
+                    onclick="reject()">还原改动</a>
             </div>
 
             <script type="text/javascript">
@@ -188,7 +146,7 @@
                             }
                             editIndex = index;
                         } else {
-                            setTimeout(function() {
+                            setTimeout(function () {
                                 $('#dg').datagrid('selectRow', editIndex);
                             }, 0);
                         }
@@ -252,23 +210,29 @@
                 }
             </script>
             <div style="float:left;border:solid 1px #ccc;width:100%;background:#aee;">
-                当前播放帧数：<span id="cFrame"></span> <a id="btnPlay" href="#" class="easyui-linkbutton" style="width:150px;">暂停</a> <a id="btnNext" href="#" class="easyui-linkbutton" style="width:150px;">下一帧</a> <br/>
+                当前播放帧数：<span id="cFrame"></span> <a id="btnPlay" href="#" class="easyui-linkbutton"
+                    style="width:150px;">暂停</a> <a id="btnNext" href="#" class="easyui-linkbutton"
+                    style="width:150px;">下一帧</a> <br />
                 <input type="checkbox" id="chkCircle" disabled="disabled" /> 动作是否循环播放
-                <font color="#f00">(游戏中按勾选播放，工具中循环演示)</font> <br/> <br/>
+                <font color="#f00">(游戏中按勾选播放，工具中循环演示)</font> <br /> <br />
             </div>
             <div style="float:left;border:solid 1px #ccc;width:100%;background:#eea;">
                 头顶名称偏移：
-                <br/><br/><br/>
-                <input id="headY" class="easyui-slider" style="width:80%;" value="0" data-options="showTip:true,min:-300,max:300,step:1"><br/> <br/> 受创点偏移：
-                <br/><br/><br/>
-                <input id="hurtY" class="easyui-slider" style="width:80%;" value="0" data-options="showTip:true,min:-300,max:300,step:1"><br/>
+                <br /><br /><br />
+                <input id="headY" class="easyui-slider" style="width:80%;" value="0"
+                    data-options="showTip:true,min:-300,max:300,step:1"><br /> <br /> 受创点偏移：
+                <br /><br /><br />
+                <input id="hurtY" class="easyui-slider" style="width:80%;" value="0"
+                    data-options="showTip:true,min:-300,max:300,step:1"><br />
                 <div style="float:left;border:solid 1px #ccc;width:100%;background:#cca;">
-                    动作 <span id="cpAction" style="color:#f00">?</span> 的施法点：<a id="btnCastPoints" href="#" class="easyui-linkbutton" style="width:150px;">施法点</a>
+                    动作 <span id="cpAction" style="color:#f00">?</span> 的施法点：<a id="btnCastPoints" href="#"
+                        class="easyui-linkbutton" style="width:150px;">施法点</a>
                     <div id="castPoints"></div>
                 </div>
             </div>
             <div style="float:left;border:solid 1px #ccc;width:100%;background:#eae;">
-                PST标识：<input type="text" id="pstKey" class="easyui-textbox" style="width:80px;" /> <a id="btnSave" href="#" data-options="iconCls:'icon-save'" class="easyui-linkbutton">保存数据到文件</a>
+                PST标识：<input type="text" id="pstKey" class="easyui-textbox" style="width:80px;" /> <a id="btnSave"
+                    href="#" data-options="iconCls:'icon-save'" class="easyui-linkbutton">保存数据到文件</a>
             </div>
         </div>
     </div>

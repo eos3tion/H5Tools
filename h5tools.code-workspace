@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "ResPackage"
+		},
+		{
+			"path": "MapEditor"
+		},
+		{
+			"path": "GuideTools"
+		},
+		{
+			"path": "AvatarTools"
+		}
+	],
+	"settings": {}
+}

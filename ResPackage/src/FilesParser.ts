@@ -152,8 +152,8 @@ export class FilesParser {
             }
             arr[image.frame] = parser;
         }
-
-        if (isPak && Core.pakSaveType == PakSaveType.PAK_ALL) {
+        const pakSaveType = Core.pakSaveType;
+        if (isPak && pakSaveType == PakSaveType.PAK_ALL) {
             let arr = [] as Array<PngParser>;
             let j = 0;
             for (let key in dict) {
@@ -209,7 +209,7 @@ export class FilesParser {
                 texadata[i] = texadata[i] || 0;
             }
         }
-        let pst = [4, [], pstDict];
+        let pst = [pakSaveType, [], pstDict];
         // 存储数据
         if (isPak) {
             //pak，pst数据和 纹理数据分开存储

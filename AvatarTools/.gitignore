@@ -1,2 +1,2 @@
-bin-debug
-bin-release
+bin*
+dist
