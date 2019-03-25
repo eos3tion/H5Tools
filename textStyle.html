@@ -4,11 +4,20 @@
 <head>
 	<title>输出文本渐变数据</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<link rel="stylesheet" type="text/css" href="http://h5tools.build.jy/helpers/easyui/themes/default/easyui.css" />
-	<link rel="stylesheet" type="text/css" href="http://h5tools.build.jy/helpers/easyui/themes/icon.css" />
-	<script src="http://h5tools.build.jy/helpers/jscolor.min.js"></script>
-	<script src="http://h5tools.build.jy/helpers/jquery.min.js"></script>
-	<script src="http://h5tools.build.jy/helpers/easyui/jquery.easyui.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="helpers/easyui/themes/default/easyui.css" />
+	<link rel="stylesheet" type="text/css" href="helpers/easyui/themes/icon.css" />
+	<script>
+        if (typeof window.require === "function") {
+            // 重命名 Electron 提供的 require
+            window.nodeRequire = require;
+            delete window.require;
+            delete window.exports;
+            delete window.module;
+        }
+    </script>
+	<script src="helpers/jquery.min.js"></script>
+	<script src="helpers/jscolor.min.js"></script>
+	<script src="helpers/easyui/jquery.easyui.min.js"></script>
 	<script>
 		var $g = document.getElementById.bind(document);
 		var canvas;
