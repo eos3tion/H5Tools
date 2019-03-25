@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "AvatarTools"
+		},
+		{
+			"path": "LangUtil"
 		}
 	],
 	"settings": {}
