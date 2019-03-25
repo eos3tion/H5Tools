@@ -1,0 +1,7 @@
+{
+  "globalDependencies": {
+    "electron": "registry:dt/electron#1.4.8+20170316233216",
+    "node": "registry:dt/node#6.0.0+20160919063032",
+    "xlsx": "registry:dt/xlsx#0.0.0+20160811195152"
+  }
+}
