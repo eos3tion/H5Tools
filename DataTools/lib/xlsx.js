@@ -78,7 +78,7 @@ function new_raw_buf(len) {
 }
 
 function s2a(s) {
-	if(has_buf) return new Buffer(s, "binary");
+	if(has_buf) return Buffer.from(s, "binary");
 	return s.split("").map(function(x){ return x.charCodeAt(0) & 0xff; });
 }
 
@@ -1422,7 +1422,7 @@ var utf8read = function utf8reada(orig) {
 
 if(has_buf) {
 	var utf8readb = function utf8readb(data) {
-		var out = new Buffer(2*data.length), w, i, j = 1, k = 0, ww=0, c;
+		var out = Buffer.alloc(2*data.length), w, i, j = 1, k = 0, ww=0, c;
 		for(i = 0; i < data.length; i+=j) {
 			j = 1;
 			if((c=data.charCodeAt(i)) < 128) w = c;
@@ -1572,7 +1572,7 @@ var __readUInt32LE = function(b, idx) { return b[idx+3]*(1<<24)+(b[idx+2]<<16)+(
 var __readInt32LE = function(b, idx) { return (b[idx+3]<<24)|(b[idx+2]<<16)|(b[idx+1]<<8)|b[idx]; };
 
 var ___unhexlify = function(s) { return s.match(/../g).map(function(x) { return parseInt(x,16);}); };
-var __unhexlify = typeof Buffer !== "undefined" ? function(s) { return Buffer.isBuffer(s) ? new Buffer(s, 'hex') : ___unhexlify(s); } : ___unhexlify;
+var __unhexlify = typeof Buffer !== "undefined" ? function(s) { return Buffer.isBuffer(s) ? Buffer.from(s, 'hex') : ___unhexlify(s); } : ___unhexlify;
 
 function ReadShift(size, t) {
 	var o="", oI, oR, oo=[], w, vv, i, loc;
@@ -11497,10 +11497,17 @@ function safe_format_cell(cell, v) {
 }
 
 function format_cell(cell, v) {
-	if(cell == null || cell.t == null) return "";
-	if(cell.w !== undefined) return cell.w;
-	if(v === undefined) return safe_format_cell(cell, cell.v);
-	return safe_format_cell(cell, v);
+	var out;
+	if(cell == null || cell.t == null) {
+		out="";
+	}else	if(cell.w !== undefined) {
+		out= cell.w;
+	}else	if(v === undefined) {
+		out= safe_format_cell(cell, cell.v);
+	}else{
+		out=safe_format_cell(cell, v);
+	}	
+	return xlml_fixstr(out);
 }
 
 function sheet_to_json(sheet, opts){
