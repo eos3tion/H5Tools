@@ -315,7 +315,7 @@ export class ExcelDataSaver {
                     http.get(gcfg.endAction, res => {
                         let chunks: Buffer[] = [];
                         res.on("data", chunk => {
-                            chunks.push(chunk);
+                            chunks.push(chunk as Buffer);
                         });
                         res.on("end", () => {
                             let result = Buffer.concat(chunks).toString("utf8");
@@ -429,7 +429,7 @@ class XLSXDecoder {
         sPath = sPath || "";
         let fre = path.parse(file.name);
         let fname = fre.name;
-        let dirs: string[] = fre.dir.split(path.sep);
+        // let dirs: string[] = fre.dir.split(path.sep);
         let data = fs.readFileSync(file.path, "base64");
         let wb = XLSX.read(data);
         let list = XLSX.utils.sheet_to_json(wb.Sheets[SHEET_MAIN], { header: 1 });
@@ -1033,9 +1033,11 @@ class XLSXDecoder {
                 }
                 let checker = define.checker;
                 let proA = ["/**"];
-                let descs = define.desc.split(/\r\n/);
+                let descs = define.desc.trim().split(/\r\n|\r|\n/g);
                 descs.forEach(line => {
-                    proA.push(` * ${line}  `);
+                    if (line) {
+                        proA.push(` * ${line}  `);
+                    }
                 });
                 proA.push(` */`);
                 proA.push(`${define.name}: ${checker.type};`);
@@ -1064,7 +1066,7 @@ class XLSXDecoder {
                     sPros.push(`private ${checker.javaType} ${define.name};`);
                     sPros.push(`/**`);
                     descs.forEach(line => {
-                        sPros.push(` * ${line}<br/>`);
+                        sPros.push(` * ${line}  `);
                     });
                     sPros.push(` */`);
                     sPros.push(`public ${checker.javaType} get${getJavaName(define.name)}() {`);
