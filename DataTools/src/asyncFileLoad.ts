@@ -6,7 +6,7 @@ export default function asyncFileLoad(url: string, callback: { (err: Error, data
         http.get(url, res => {
             let chunks: Buffer[] = [];
             res.on("data", chunk => {
-                chunks.push(chunk);
+                chunks.push(chunk as Buffer);
             });
             res.on("end", () => {
                 callback(null, Buffer.concat(chunks));

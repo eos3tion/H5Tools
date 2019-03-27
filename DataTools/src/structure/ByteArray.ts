@@ -1,4 +1,4 @@
-import {Int64} from './Int64';
+import { Int64 } from './Int64';
 /**
  * 
  * ByteArray 类提供用于优化读取、写入以及处理二进制数据的方法和属性。
@@ -45,7 +45,7 @@ export class ByteArray {
             bufferExtSize = 256;
         }
         this.bufferExtSize = bufferExtSize;
-        this._setArrayBuffer(buffer || new Buffer(bufferExtSize));
+        this._setArrayBuffer(buffer || Buffer.alloc(bufferExtSize));
         this.endian = Endian.BIG_ENDIAN;
     }
 
@@ -114,12 +114,12 @@ export class ByteArray {
 
     public set length(value: number) {
         this.write_position = value;
-        var tmp: Buffer = new Buffer(value);
-        var byteLength: number = this.data.length;
+        let tmp: Buffer = Buffer.alloc(value);
+        let byteLength: number = this.data.length;
         if (byteLength > value) {
             this._position = value;
         }
-        var len: number = Math.min(byteLength, value);
+        let len: number = Math.min(byteLength, value);
         this.data.copy(tmp, 0, len);
         this.buffer = tmp;
     }
@@ -189,7 +189,7 @@ export class ByteArray {
             bytes.validateBuffer(offset + length);
         }
         else {
-            bytes = new ByteArray(new Buffer(offset + length));
+            bytes = new ByteArray(Buffer.alloc(offset + length));
         }
         //This method is expensive
         for (var i = 0; i < length; i++) {
@@ -570,7 +570,7 @@ export class ByteArray {
         this.write_position = len > this.write_position ? len : this.write_position;
         len += this._position;
         if (this.data.length < len || needReplace) {
-            var tmp: Buffer = new Buffer(len + this.bufferExtSize);
+            var tmp: Buffer = Buffer.alloc(len + this.bufferExtSize);
             var length = Math.min(this.data.length, len + this.bufferExtSize);
             this.data.copy(tmp, 0, 0, length);
             this.buffer = tmp;
