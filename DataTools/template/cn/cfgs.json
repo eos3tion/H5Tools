@@ -1,0 +1,6 @@
+{
+	"project":"ProjectName",
+    "origin":"../common/cfgsbase.json",
+    "lan":"cn",
+	"endAction":""
+}

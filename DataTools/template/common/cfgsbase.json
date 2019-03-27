@@ -1,0 +1,23 @@
+{
+	"clientModule":"jy",
+	"lan" : "cn",
+	"clientPath":"//OutputPath/${project}/cfgs/${lan}/raw/client",
+	"serverPath":"//OutputPath/${project}/cfgs/${lan}/output/server",
+	"clientRegClass":["GConfig",""],
+	"serverExtra" : "GongGongShuJu",
+	"serverCfgDownload" : "gongnengdown",
+	"clientDataType":1,
+	"serverExportAll":true,
+	"msgCode":[
+		{
+			"type":"json",
+			"path":"//OutputPath/${project}/cfgs/${lan}/lang.json"
+		}
+	],
+	"endAction":"",
+	"keywords":{
+		"JAVA" : ["public", "switch", "strictfp", "private", "protected", "final", "void", "static", "abstract", "transient", "synchronized", "volatile", "native", "Boolean", "int", "byte", "float", "long", "short", "double", "char", "interface", "if", "else", "do", "while", "for", "break", "continue", "return", "try", "catch", "finally", "package", "import", "throws", "throw", "extends", "implements", "this", "super", "instanceof", "new", "true", "false", "null", "goto", "const", "default", "case", "class"],
+		"TypeScript":["abstract", "switch", "await", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "delete", "do", "double", "else", "enum", "export", "extends", "false", "final", "finally", "float", "for", "function", "goto", "if", "implements", "import", "in", "instanceof", "int", "interface", "let", "long", "native", "new", "null", "package", "private", "protected", "public", "return", "short", "static", "super", "synchronized", "this", "throw", "transient", "true", "try", "typeof", "var", "void", "volatile", "while", "with", "yield"],
+		"工具本身":["decode"]
+	}
+}
