@@ -1,4 +1,4 @@
-const enum ByteArraySize {
+declare const enum ByteArraySize {
     /**
      * 1B
     */
@@ -45,7 +45,7 @@ const enum ByteArraySize {
 }
 
 //AMF3 常量集
-const enum AMF3_TYPE {
+declare const enum AMF3_TYPE {
     /**0x0 */
     UNDEFINED = 0,
     /**0x1 */
@@ -88,7 +88,7 @@ const enum AMF3_TYPE {
  * Endian 类中包含一些值，它们表示用于表示多字节数字的字节顺序。
  * 字节顺序为 bigEndian（最高有效字节位于最前）或 littleEndian（最低有效字节位于最前）。
  */
-const enum Endian {
+declare const enum Endian {
 
     /**
      * 表示多字节数字的最低有效字节位于字节序列的最前面。
