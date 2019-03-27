@@ -1,5 +1,5 @@
 /// <reference path="xlsx/xlsx.d.ts" />
-/// <reference path="node/node.d.ts" />
+/// <reference path="node/index.d.ts" />
 interface String {
     /**
      * 替换字符串中{0}{1}{2}{a} {b}这样的数据，用obj对应key替换，或者是数组中对应key的数据替换
