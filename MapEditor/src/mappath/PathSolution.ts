@@ -10,7 +10,7 @@ export interface DrawMapPathControl {
     onToggle(flag: boolean);
 }
 export interface OnSaveOption {
-    map: junyou.MapInfo,
+    map: jy.MapInfo,
 
     /**
      * 写日志
@@ -31,7 +31,7 @@ export interface PathSolution {
      */
     drawMapPathControl: DrawMapPathControl;
 
-    setMapData(map: junyou.MapInfo);
+    setMapData(map: jy.MapInfo);
 
     getDataB64(pathdata: Uint8Array);
 

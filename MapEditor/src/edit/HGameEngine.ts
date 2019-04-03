@@ -1,15 +1,15 @@
-import GameLayer = junyou.GameLayer;
+import BaseLayer = jy.BaseLayer;
 import { AniDele } from "./AniDele";
 
-class HGameEngine extends junyou.GameEngine {
+class HGameEngine extends jy.GameEngine {
     /**
      * 游戏场景层
      */
-    scene: GameLayer;
+    scene: BaseLayer;
     /**
      * 游戏层
      */
-    game: GameLayer;
+    game: BaseLayer;
 
     farH: number;
     farW: number;
@@ -35,8 +35,8 @@ class HGameEngine extends junyou.GameEngine {
     protected init() {
         this.initConfigs();
         this.initLayers();
-        junyou.Global.addInterval(junyou.CallbackInfo.get(this.render, this));
-        this.camera = new junyou.Camera();
+        jy.Global.addInterval(jy.CallbackInfo.get(this.render, this));
+        this.camera = new jy.Camera();
         this._stage.on(EgretEvent.RESIZE, this.onResize, this);
         this.scale = 1;
         window.$engine = this;
@@ -84,7 +84,7 @@ class HGameEngine extends junyou.GameEngine {
         if (this._scale != value) {
             this._scale = value;
             let gameScene = this.scene;
-            let _dprScale = this._sc = value * dpr;
+            let _dprScale = this._sc = value * window.devicePixelRatio;
             gameScene.scaleX = gameScene.scaleY = _dprScale;
             this.onResize();
         }
@@ -105,12 +105,12 @@ class HGameEngine extends junyou.GameEngine {
     /**
      * 当前地图
      */
-    currentMap: junyou.MapInfo;
+    currentMap: jy.MapInfo;
 
     /**
      * 地图渲染层
      */
-    _bg: junyou.TileMapLayer;
+    _bg: jy.TileMapLayer;
 
     /**
      * 远景
@@ -122,28 +122,28 @@ class HGameEngine extends junyou.GameEngine {
      * 初始化默认添加的层
      */
     protected initLayers() {
-        this.game = this.getLayer(junyou.GameLayerID.Game);
-        this.scene = this.getLayer(junyou.GameLayerID.GameScene);
-        this.getLayer(junyou.GameLayerID.CeilEffect);
-        this.getLayer(junyou.GameLayerID.Sorted);
-        this.getLayer(junyou.GameLayerID.BottomEffect);
-        let bg = this._bg = <junyou.TileMapLayer>this.getLayer(junyou.GameLayerID.Background);
+        this.game = this.getLayer(jy.GameLayerID.Game) as BaseLayer;
+        this.scene = this.getLayer(jy.GameLayerID.GameScene) as BaseLayer;
+        this.getLayer(jy.GameLayerID.CeilEffect);
+        this.getLayer(jy.GameLayerID.Sorted);
+        this.getLayer(jy.GameLayerID.BottomEffect);
+        let bg = this._bg = <jy.TileMapLayer>this.getLayer(jy.GameLayerID.Background);
         bg.touchEnabled = true;
         bg.preload = 2;
-        let far = this.far = new junyou.Image() as Mini;
+        let far = this.far = new jy.Image() as Mini;
         if (DEBUG) {
             far.noWebp = true;
         }
         far.id = 1600;
-        far.qid = junyou.Res.ResQueueID.Highway;
+        far.qid = jy.Res.ResQueueID.Highway;
     }
 
     /**
      * 用于做游戏场景特效 
      * 获取基于Game的Texture的点坐标
      */
-    getGamePoint(point: junyou.Point, out?: junyou.Point) {
-        out = out || {} as junyou.Point;
+    getGamePoint(point: jy.Point, out?: jy.Point) {
+        out = out || {} as jy.Point;
         let scale = this._scale;
         out.x = point.x * scale;
         out.y = this.game.height - point.y * scale;
@@ -153,24 +153,24 @@ class HGameEngine extends junyou.GameEngine {
     protected initConfigs() {
         let addLayerConfig = HGameEngine.addLayerConfig;
 
-        addLayerConfig(junyou.GameLayerID.Game);
+        addLayerConfig(jy.GameLayerID.Game);
 
-        addLayerConfig(junyou.GameLayerID.Mask, junyou.GameLayerID.Game);
-        addLayerConfig(junyou.GameLayerID.TopEffect, junyou.GameLayerID.Game);
-        addLayerConfig(junyou.GameLayerID.GameScene, junyou.GameLayerID.Game);
-        addLayerConfig(junyou.GameLayerID.CeilEffect, junyou.GameLayerID.GameScene);
-        addLayerConfig(junyou.GameLayerID.Sorted, junyou.GameLayerID.GameScene, junyou.SortedLayer);
-        addLayerConfig(junyou.GameLayerID.BottomEffect, junyou.GameLayerID.GameScene);
-        addLayerConfig(junyou.GameLayerID.Background, junyou.GameLayerID.GameScene, junyou.TileMapLayer);
+        addLayerConfig(jy.GameLayerID.Mask, jy.GameLayerID.Game);
+        addLayerConfig(jy.GameLayerID.TopEffect, jy.GameLayerID.Game);
+        addLayerConfig(jy.GameLayerID.GameScene, jy.GameLayerID.Game);
+        addLayerConfig(jy.GameLayerID.CeilEffect, jy.GameLayerID.GameScene);
+        addLayerConfig(jy.GameLayerID.Sorted, jy.GameLayerID.GameScene, jy.SortedLayer);
+        addLayerConfig(jy.GameLayerID.BottomEffect, jy.GameLayerID.GameScene);
+        addLayerConfig(jy.GameLayerID.Background, jy.GameLayerID.GameScene, jy.TileMapLayer);
     }
 
     getFarUri(far: string) {
-        return junyou.MapInfo.prefix + "lib/" + far + junyou.Ext.JPG;
+        return jy.MapInfo.prefix + "lib/" + far + jy.Ext.JPG;
     }
     /**
      * 进入新地图
      */
-    public enterMap(map: junyou.MapInfo) {
+    public enterMap(map: jy.MapInfo) {
         //先清理场景中的元素
         if (map != this.currentMap) {
             this.clearMap();
@@ -192,11 +192,11 @@ class HGameEngine extends junyou.GameEngine {
             let farUri = "";
             if (farUri) {
                 far.width = far.height = NaN;
-                far.once(junyou.EventConst.Texture_Complete, this.onFarCp, this);
+                far.once(jy.EventConst.Texture_Complete, this.onFarCp, this);
                 far.source = this.getFarUri(farUri);
                 this.game.addChildAt(far, 0);
             } else {
-                junyou.removeDisplay(far);
+                jy.removeDisplay(far);
             }
             this._bg.setMini(ConstString.Mini + map.ext);
             //初始化地图特效
@@ -214,7 +214,7 @@ class HGameEngine extends junyou.GameEngine {
             //检查图片大小
             let { stageWidth: width, stageHeight: height } = stage;
             //使用保持宽高比的情况下基于短边放大的方法
-            let { scale } = junyou.getFixedLayout(width, height, w, h, true);
+            let { scale } = jy.getFixedLayout(width, height, w, h, true);
             w *= scale;
             h *= scale;
             far.width = w;
@@ -274,7 +274,7 @@ class HGameEngine extends junyou.GameEngine {
         }
         let len = effs.length;
         if (len) {
-            let now = junyou.Global.now;
+            let now = jy.Global.now;
             for (let i = 0; i < len; i++) {
                 let eff = effs[i];
                 eff.onRender(now);
@@ -333,7 +333,7 @@ function checkPos(rect: egret.Rectangle, eff: AniDele) {
             eff.layer.addChild(eff);
         }
     } else {
-        junyou.removeDisplay(eff);
+        jy.removeDisplay(eff);
     }
 }
 

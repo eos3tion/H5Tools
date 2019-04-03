@@ -21,7 +21,7 @@ txtMapPath.value = cookie.getCookie(MapPathCookie) || "";
 function onEdit() {
     let row = dlMapList.datalist("getSelected");
     if (row) {
-        junyou.dispatch(AppEvent.StateChange, [AppState.EditMapInfo, row]);
+        jy.dispatch(AppEvent.StateChange, [AppState.EditMapInfo, row]);
     }
 }
 
@@ -72,7 +72,7 @@ function showMapList(basePath: string) {
         if (fs.statSync(fullDir).isDirectory() && dir != ConstString.LibPath) {
 
             //检查是否已经有文件内容
-            let map = new junyou.MapInfo();
+            let map = new jy.MapInfo();
             map.path = dir;
             maps.set(dir, map);
         }

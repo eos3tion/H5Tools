@@ -3,7 +3,7 @@ export const Core = {
     /**
      * 地图列表
      */
-    maps: new junyou.ArraySet<junyou.MapInfo>(),
+    maps: new jy.ArraySet<jy.MapInfo>(),
     /**
      * 基础路径
      */
@@ -23,11 +23,11 @@ export const Core = {
     /**
      * 选中的地图，得到的运行时数据
      */
-    selectMap: null as junyou.MapInfo,
+    selectMap: null as jy.MapInfo,
     /**
      * 选中地图文件夹加载的配置数据
      */
-    mapCfg: null as junyou.MapInfo,
+    mapCfg: null as jy.MapInfo,
     /**
      * 路径解决方案
      */

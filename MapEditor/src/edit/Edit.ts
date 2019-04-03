@@ -42,7 +42,7 @@ interface FileArray {
 }
 
 
-junyou.ConfigUtils.getResUrl = function (uri: string) {
+jy.ConfigUtils.getResUrl = function (uri: string) {
     return uri;
 }
 
@@ -55,9 +55,9 @@ class Entry extends egret.Sprite {
     onAdded() {
         stage = this.stage;
         //创建地图
-        junyou.GameEngine.init(this.stage, HGameEngine);
-        junyou.Global.initTick();
-        junyou.ResManager.init();
+        jy.GameEngine.init(this.stage, HGameEngine);
+        jy.Global.initTick();
+        jy.ResManager.init();
         showMap();
         mapPathCtrlInit();
     }
@@ -84,11 +84,11 @@ divEffectPro.hide();
 dlEffectList.datalist({ onSelect: selectEff, textField: "text" });
 
 const state = AppState.Edit;
-let currentMap: junyou.MapInfo;
+let currentMap: jy.MapInfo;
 
 view.addEventListener("dragover", e => e.preventDefault());
 view.addEventListener("drop", onDrop);
-const anis: { [index: string]: junyou.AniInfo } = $DD.ani = {};
+const anis: { [index: string]: jy.AniInfo } = $DD.ani = {};
 async function onDrop(e: DragEvent) {
     e.preventDefault();
     let goted = checkAniFile(e.dataTransfer.files);
@@ -99,7 +99,7 @@ async function onDrop(e: DragEvent) {
         //将坐标转换到game上
         let dpr = window.devicePixelRatio;
         let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-        let dele = new AniDele({ uri: key, layerID: junyou.GameLayerID.CeilEffect, sX: 1, sY: 1, rotation: 0 });
+        let dele = new AniDele({ uri: key, layerID: jy.GameLayerID.CeilEffect, sX: 1, sY: 1, rotation: 0 });
 
         dele.setStartPoint(pt.x, pt.y);
         $engine.effs.pushOnce(dele);
@@ -123,10 +123,10 @@ function checkAni(key: string, dataPath?: string, imgPath?: string) {
         } catch (e) {
             return alert(`特效配置文件[${dataPath}]有误`);
         }
-        ani = new junyou.AniInfo();
+        ani = new jy.AniInfo();
         let nImg = electron.nativeImage.createFromPath(imgPath);
         let filename = path.basename(imgPath);
-        addRes(`${junyou.ResPrefix.Ani}${key}/${filename}`, imgPath);
+        addRes(`${jy.ResPrefix.Ani}${key}/${filename}`, imgPath);
         ani.init(key, data);
         anis[key] = ani;
     }
@@ -172,7 +172,7 @@ function checkAniFile(files: FileArray, parent: string = "") {
     }
 }
 
-async function setData(map: junyou.MapInfo) {
+async function setData(map: jy.MapInfo) {
     currentMap = map;
     let effs = map.effs;
     if (effs) {
@@ -185,7 +185,7 @@ async function setData(map: junyou.MapInfo) {
 
 let lx: number, ly: number;
 function showMap() {
-    $engine.enterMap(currentMap as junyou.MapInfo);
+    $engine.enterMap(currentMap as jy.MapInfo);
     view.addEventListener("mousedown", checkDragStart);
     refreshEffectList();
     $engine.invalidate();
@@ -227,13 +227,13 @@ function refreshEffectList() {
     dlEffectList.datalist({ data: $engine.effs });
 }
 
-junyou.on(AppEvent.RemoveEffect, e => {
+jy.on(AppEvent.RemoveEffect, e => {
     let dele = e.data;
     $engine.effs.remove(dele);
     refreshEffectList();
 })
 
-junyou.on(AppEvent.CopyEffect, e => {
+jy.on(AppEvent.CopyEffect, e => {
     let data = e.data as MapEffData;
     data.x += 50;
     data.y += 50;
@@ -251,7 +251,7 @@ function saveMap() {
     const mapCfgFile = path.join(Core.basePath, currentMap.path, ConstString.MapCfgFileName);
 
     //将数据写入文件
-    let out = currentMap.getSpecObject("path", "columns", "rows", "ext", "type", "gridWidth", "gridHeight", "pWidth", "pHeight", "maxPicX", "maxPicY") as junyou.MapInfo;
+    let out = currentMap.getSpecObject("path", "columns", "rows", "ext", "type", "gridWidth", "gridHeight", "pWidth", "pHeight", "maxPicX", "maxPicY") as jy.MapInfo;
     let pathdata = currentMap.pathdata;
     if (pathdata) {
         let v = PathSolution.current.getDataB64(pathdata);

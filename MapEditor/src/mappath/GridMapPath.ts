@@ -26,7 +26,7 @@ let sizeNotMatch: boolean;
 /**
  * 加载到的地图配置
  */
-let cfg: junyou.MapInfo;
+let cfg: jy.MapInfo;
 
 function createInput(type: string) {
     const inp = document.createElement("input");
@@ -82,7 +82,7 @@ function calGrids() {
     }
 }
 
-function getWalk(this: junyou.MapInfo, x: number, y: number): number {
+function getWalk(this: jy.MapInfo, x: number, y: number): number {
     const { columns, pathdata } = this;
     if (!pathdata) {
         return 0;
@@ -93,7 +93,7 @@ function getWalk(this: junyou.MapInfo, x: number, y: number): number {
     return (pathdata[byteCount] >> 7 - bitCount) & 1;
 }
 
-function setWalk(x: number, y: number, flag: any, map: junyou.MapInfo) {
+function setWalk(x: number, y: number, flag: any, map: jy.MapInfo) {
     let { columns, pathdata } = map;
     if (!pathdata) {
         map.pathdata = pathdata = new Uint8Array(Math.ceil(columns * map.rows / 8));
@@ -128,7 +128,7 @@ function fillGrids(val: number) {
  * @param {Point} point
  * @param {Point} [out]
  */
-function screen2Map(point: junyou.Point, out?: junyou.Point) {
+function screen2Map(point: jy.Point, out?: jy.Point) {
     out = out || point;
     const map = Core.selectMap;
     out.x = Math.round(point.x / map.gridWidth);
@@ -142,7 +142,7 @@ function screen2Map(point: junyou.Point, out?: junyou.Point) {
  * @param {Point} point
  * @param {Point} [out]  
  */
-function map2Screen(point: junyou.Point, out?: junyou.Point) {
+function map2Screen(point: jy.Point, out?: jy.Point) {
     out = out || point;
     const map = Core.selectMap;
     out.x = point.x * map.gridWidth + map.gridWidth * .5;
@@ -203,7 +203,7 @@ function showCoord(e: MouseEvent) {
 class DrawMapPathControl {
 
 
-    @junyou.d_memoize
+    @jy.d_memoize
     get view() {
         const div = document.createElement("div");
         btnEmpty = document.createElement("input");
@@ -240,16 +240,31 @@ class DrawMapPathControl {
 
 
 export class GridMapPath implements PathSolution {
-    setMapData(map: junyou.MapInfo) {
+    map: jy.MapInfo;
+    setMapData(map: jy.MapInfo) {
+        this.map = map;
         map.getWalk = getWalk;
+        this.initView();
         calGrids();
+    }
+
+    initView() {
+        let gridWidth = 60;
+        let gridHeight = 30;
+        let map = this.map;
+        if (map) {
+            gridWidth = map.gridWidth || 60;
+            gridHeight = map.gridHeight || 30;
+        }
+        txtGridWidth.value = gridWidth + "";
+        txtGridHeight.value = gridHeight + "";
     }
 
     readonly drawMapPathControl = new DrawMapPathControl();
 
     readonly name = "格子路径";
 
-    @junyou.d_memoize
+    @jy.d_memoize
     get editMapInfoControl() {
         const doc = document;
         const table = doc.createElement("table");
@@ -296,7 +311,7 @@ export class GridMapPath implements PathSolution {
     }
 }
 
-function getDataForJava(map: junyou.MapInfo) {//为了避免服务端数据结构变更，减少
+function getDataForJava(map: jy.MapInfo) {//为了避免服务端数据结构变更，减少
     //生成列表文件
     let w = map.columns;
     let h = map.rows;

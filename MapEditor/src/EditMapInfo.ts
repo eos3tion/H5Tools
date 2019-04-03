@@ -32,7 +32,7 @@ const state = AppState.EditMapInfo;
 /**
  * 加载到的地图配置
  */
-let cfg: junyou.MapInfo;
+let cfg: jy.MapInfo;
 /**
  * 尺寸是否匹配
  */
@@ -44,12 +44,12 @@ btnRefreshPath.addEventListener("click", e => {
     setData(Core.selectMap);
 });
 btnDoEdit.addEventListener("click", e => {
-    junyou.dispatch(AppEvent.StateChange, [AppState.Edit, Core.selectMap]);
+    jy.dispatch(AppEvent.StateChange, [AppState.Edit, Core.selectMap]);
 });
 
 PathSolution.showGroups();
 
-function setData(map: junyou.MapInfo) {
+function setData(map: jy.MapInfo) {
     const solution = PathSolution.current;
     if (!solution) {
         return alert(`请先选择地图路径方案`);
@@ -77,7 +77,7 @@ function setData(map: junyou.MapInfo) {
     let reg1 = /^(\d{3})(\d{3}).(jpg|png)$/, reg2 = /(\d+)_(\d+).(jpg|png)$/;
     let reg1Count = 0, reg2Count = 0, jpgCount = 0, pngCount = 0;
     let hPicIdx = 0, vPicIdx = 0;
-    let sizes = new junyou.ArraySet<string[]>();
+    let sizes = new jy.ArraySet<string[]>();
     let pWidth: number, pHeight: number;
     list.forEach(file => {
         let flag = false;
@@ -141,11 +141,11 @@ function setData(map: junyou.MapInfo) {
     } else if (sizes.size == 0) {//没有任何图片
         hasPic = false;
     }
-    let ext: junyou.Ext;
+    let ext: jy.Ext;
     if (jpgCount && !pngCount) {
-        ext = junyou.Ext.JPG;
+        ext = jy.Ext.JPG;
     } else if (!jpgCount && pngCount) {
-        ext = junyou.Ext.PNG;
+        ext = jy.Ext.PNG;
     } else {
         return alert(`地图底图中，既有png又有jpg，请检查`)
     }
@@ -177,20 +177,22 @@ function setData(map: junyou.MapInfo) {
         }
         map.pathdataB64 = cfg.pathdataB64;
         map.effs = cfg.effs;
+        map.gridWidth = cfg.gridWidth;
+        map.gridHeight = cfg.gridHeight;
     }
-    let mpt = junyou.MapInfo.prototype;
+    let mpt = jy.MapInfo.prototype;
     if (type == 1) {
-        mpt.getImgUri = function (this: junyou.MapInfo, uri: string) {
+        mpt.getImgUri = function (this: jy.MapInfo, uri: string) {
             return `${this.path}/${uri}`;
         }
-        mpt.getMapUri = function (this: junyou.MapInfo, col: number, row: number): string {
+        mpt.getMapUri = function (this: jy.MapInfo, col: number, row: number): string {
             return `${this.path}/${row.zeroize(3)}${col.zeroize(3)}${this.ext}`;
         }
     } else {
-        mpt.getImgUri = function (this: junyou.MapInfo, uri: string) {
+        mpt.getImgUri = function (this: jy.MapInfo, uri: string) {
             return `${this.path}/${uri}`;
         }
-        mpt.getMapUri = function (this: junyou.MapInfo, col: number, row: number) {
+        mpt.getMapUri = function (this: jy.MapInfo, col: number, row: number) {
             return `${this.path}/${row}_${col}${this.ext}`;
         }
     }

@@ -135,7 +135,7 @@ interface ViewState {
     setData?(data);
 }
 
-module junyou {
+module jy {
     export interface MapInfo {
         effs: MapEffData[];
 
@@ -160,8 +160,8 @@ module junyou {
     }
 
     export interface GameEngine {
-        enterMap(map: junyou.MapInfo);
-        _bg: junyou.TileMapLayer;
+        enterMap(map: jy.MapInfo);
+        _bg: jy.TileMapLayer;
         effs: any[];
         invalidate();
     }
@@ -171,14 +171,14 @@ module junyou {
     }
 }
 
-interface Mini extends junyou.Image {
+interface Mini extends jy.Image {
     id: number;
 }
 
 interface Window {
-    $engine: junyou.GameEngine;
+    $engine: jy.GameEngine;
 }
 
 
-declare var $engine: junyou.GameEngine;
+declare var $engine: jy.GameEngine;
 declare var $gm: $gmType;

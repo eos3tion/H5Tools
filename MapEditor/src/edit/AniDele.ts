@@ -81,7 +81,7 @@ function showPro(dele: AniDele, x: number, y: number) {
         sldAniScaleY.val(data.sY || 1);
         txtAniSeed.val(data.seed || 0);
         lblAniUri.text(data.uri);
-        (document.querySelector(`input[name=layerID][value="${data.layerID || junyou.GameLayerID.CeilEffect}"]`) as HTMLInputElement).checked = true;
+        (document.querySelector(`input[name=layerID][value="${data.layerID || jy.GameLayerID.CeilEffect}"]`) as HTMLInputElement).checked = true;
         dele.checkPos();
         sldAniRotation.slider("setValue", ~~data.rotation);
         chkAniIsMovable.checked = dele.isMove;
@@ -95,7 +95,7 @@ function showPro(dele: AniDele, x: number, y: number) {
 }
 
 function genNewSeed() {
-    txtAniSeed.val(junyou.Global.now);
+    txtAniSeed.val(jy.Global.now);
     onChange();
 }
 
@@ -137,7 +137,7 @@ export class AniDele extends egret.Sprite {
     btnPro: egret.TextField;
     btnMove: egret.TextField;
     data: MapEffData;
-    render: junyou.Recyclable<junyou.AniRender>;
+    render: jy.Recyclable<jy.AniRender>;
 
     lx: number;
     ly: number;
@@ -148,7 +148,7 @@ export class AniDele extends egret.Sprite {
 
     isMove: boolean;
 
-    layer: junyou.GameLayer;
+    layer: jy.BaseLayer;
 
     disposed: boolean;
 
@@ -176,7 +176,7 @@ export class AniDele extends egret.Sprite {
         let uri = data.uri;
         this.uri = uri;
         this.data = data;
-        let render = junyou.AniRender.getAni(uri, { start: 100 * Math.random() });
+        let render = jy.AniRender.getAni(uri, { start: 100 * Math.random() });
         this.render = render;
         let display = render.display;
         this.addChild(display);
@@ -191,8 +191,8 @@ export class AniDele extends egret.Sprite {
 
 
     checkLayer() {
-        let layerID = this.data.layerID || junyou.GameLayerID.CeilEffect;
-        let layer = $engine.getLayer(layerID);
+        let layerID = this.data.layerID || jy.GameLayerID.CeilEffect;
+        let layer = $engine.getLayer(layerID) as jy.BaseLayer;
         this.layer = layer;
         layer.addChild(this);
     }
@@ -226,8 +226,8 @@ export class AniDele extends egret.Sprite {
         btn.off(EgretEvent.TOUCH_TAP, this.showPro, this);
         btn = this.btnDel;
         btn.off(EgretEvent.TOUCH_TAP, this.dispose, this);
-        junyou.removeDisplay(this);
-        junyou.dispatch(AppEvent.RemoveEffect, this);
+        jy.removeDisplay(this);
+        jy.dispatch(AppEvent.RemoveEffect, this);
     }
     private bindComponents() {
         let ox = 0;
@@ -266,7 +266,7 @@ export class AniDele extends egret.Sprite {
 
 
     copy() {
-        junyou.dispatch(AppEvent.CopyEffect, this.data.clone());
+        jy.dispatch(AppEvent.CopyEffect, this.data.clone());
     }
 
     showPro() {
@@ -327,8 +327,8 @@ export class AniDele extends egret.Sprite {
 
 }
 
-junyou.UnitResource.prototype.noRes = function (uri: string, r: string) {
-    let tmp = new junyou.SplitUnitResource(uri, this.getUrl(uri));
+jy.UnitResource.prototype.noRes = function (uri: string, r: string) {
+    let tmp = new jy.SplitUnitResource(uri, this.getUrl(uri));
     tmp.bmd = this.bmd;
     tmp.qid = this.qid;
     tmp.bindTextures(this._datas, this.sInfo.adDict[r]);

@@ -2,7 +2,7 @@ import * as SelectMapDir from "./SelectMapDir";
 import * as EditMapInfo from "./EditMapInfo";
 import * as Edit from "./edit/Edit";
 import { Core } from "./Core";
-Object.defineProperty(junyou.Global, "webp", {
+Object.defineProperty(jy.Global, "webp", {
     value: "",
     writable: true,
     configurable: true
@@ -39,7 +39,7 @@ for (let key in states) {
 
 setState(AppState.SelectMapDir);
 
-junyou.on(AppEvent.StateChange, e => {
+jy.on(AppEvent.StateChange, e => {
     let [state, data] = e.data;
     setState(state, data);
 })
