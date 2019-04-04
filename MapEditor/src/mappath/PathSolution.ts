@@ -1,4 +1,4 @@
-import { Core } from "../Core";
+import { Core, createRadio } from "../Core";
 export interface DrawMapPathControl {
     view: Element;
 
@@ -70,7 +70,9 @@ function setType(type: any) {
             }
         }
         currentMapEditCtrl = path.editMapInfoControl;
-        tdPathDetail.appendChild(currentMapEditCtrl);
+        if (currentMapEditCtrl) {
+            tdPathDetail.appendChild(currentMapEditCtrl);
+        }
     }
 }
 
@@ -80,7 +82,7 @@ function showGroups() {
     for (let type in dict) {
         const mp = dict[type];
         if (mp) {
-            Core.createRadio(mp.name, type, Const.idPathType, tdPathType, false, onChange);
+            createRadio(mp.name, type, Const.idPathType, tdPathType, false, onChange);
         }
     }
     //默认选中第一个

@@ -1,4 +1,4 @@
-declare const enum Const {
+declare const enum NavMeshConst {
     /**
      * 精度
      */
@@ -15,7 +15,7 @@ declare const enum TrangleSideIndex {
 /**
  * 点所在的位置
  */
-declare const enum PointClassfication {
+declare const enum PointClassification {
     /**
      * 点离在线上，或者离得非常非常近（低于精度）
      */

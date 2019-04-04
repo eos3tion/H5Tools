@@ -32,18 +32,20 @@ export const Core = {
      * 路径解决方案
      */
     pathSolution: null as PathSolution,
-    createRadio(title: string, value: any, name: string, parent: Node, checked: boolean, onChange?: { (ev: Event) }) {
-        const doc = document;
-        let label = doc.createElement("label");
-        parent.appendChild(label);
-        let radio = doc.createElement("input");
-        radio.value = value;
-        radio.name = name;
-        radio.checked = checked;
-        radio.type = "radio";
-        radio.addEventListener("change", onChange);
-        label.appendChild(radio);
-        let word = doc.createTextNode(title);
-        label.appendChild(word);
-    }
+
+}
+
+export function createRadio(title: string, value: any, name: string, parent: Node, checked: boolean, onChange?: { (ev: Event) }) {
+    const doc = document;
+    let label = doc.createElement("label");
+    parent.appendChild(label);
+    let radio = doc.createElement("input");
+    radio.value = value;
+    radio.name = name;
+    radio.checked = checked;
+    radio.type = "radio";
+    radio.addEventListener("change", onChange);
+    label.appendChild(radio);
+    let word = doc.createTextNode(title);
+    label.appendChild(word);
 }

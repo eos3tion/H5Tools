@@ -2,7 +2,10 @@ import Point = egret.Point;
 import { Line } from "./Line";
 export class Triangle {
 
-    points = [new Point, new Point, new Point] as Readonly<Point>[];
+    readonly pA = new Point;
+    readonly pB = new Point;
+    readonly pC = new Point;
+
 
     protected sides = [new Line, new Line, new Line];
 
@@ -14,16 +17,17 @@ export class Triangle {
 
 
     setPoints(p1: Point, p2: Point, p3: Point) {
-        const [pA, pB, pC] = this.points;
+        const { pA, pB, pC } = this;
         pA.copyFrom(p1);
         pB.copyFrom(p2);
         pC.copyFrom(p3);
         this._calced = false;
+        return this;
     }
 
     calculateData() {
         if (!this._calced) {
-            const { points: [pA, pB, pC], center } = this;
+            const { pA, pB, pC, center } = this;
             center.setTo(
                 (pA.x + pB.x + pC.x) / 3,
                 (pA.y + pB.y + pC.y) / 3
@@ -45,7 +49,11 @@ export class Triangle {
         // 点在所有边的右面或者线上
         return this.sides.every(
             side =>
-                side.classifyPoint(testPoint, Const.Epsilon) != PointClassfication.LeftSide
+                side.classifyPoint(testPoint, NavMeshConst.Epsilon) != PointClassification.LeftSide
         );
     }
+}
+
+export function getTriangle(p1: Point, p2: Point, p3: Point) {
+    return jy.recyclable(Triangle).setPoints(p1, p2, p3);
 }

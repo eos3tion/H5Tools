@@ -58,13 +58,13 @@ export class Line {
      * @param epsilon 精度
      */
     classifyPoint(point: Point, epsilon = 0.000001) {
-        let result = PointClassfication.OnLine;
+        let result = PointClassification.OnLine;
         let distance = this.signedDistance(point);
         if (distance > epsilon) {
-            result = PointClassfication.RightSide;
+            result = PointClassification.RightSide;
         }
         else if (distance < -epsilon) {
-            result = PointClassfication.LeftSide;
+            result = PointClassification.LeftSide;
         }
         return result;
     }

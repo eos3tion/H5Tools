@@ -1,5 +1,5 @@
 import { PathSolution, OnSaveOption } from "./PathSolution";
-import { Core } from "../Core";
+import { Core, createRadio } from "../Core";
 
 import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
@@ -224,8 +224,8 @@ class DrawMapPathControl {
         lblGridPoint = document.createElement("label");
         div.appendChild(lblGridPoint);
         div.appendChild(document.createElement("br"));
-        Core.createRadio("可走", 1, Const.radioName, div, true);
-        Core.createRadio("不可走", 0, Const.radioName, div, false);
+        createRadio("可走", 1, Const.radioName, div, true);
+        createRadio("不可走", 0, Const.radioName, div, false);
         return div;
     };
 

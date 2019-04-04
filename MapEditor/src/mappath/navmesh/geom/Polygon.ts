@@ -1,6 +1,5 @@
 import Point = egret.Point;
 import Rectangle = egret.Rectangle;
-import recyclable = jy.recyclable;
 import { Line } from "./Line";
 /**
  * r=multiply(sp,ep,op),得到(sp-op)*(ep-op)的叉积   
@@ -12,7 +11,8 @@ import { Line } from "./Line";
  * @param op 
  */
 function multiply(sp: Point, ep: Point, op: Point): Number {
-    return (sp.x - op.x) * (ep.y - op.y) - (ep.x - op.x) * (sp.y - op.y);
+    const { x, y } = op;
+    return (sp.x - x) * (ep.y - y) - (ep.x - x) * (sp.y - y);
 }
 
 /**
@@ -92,10 +92,8 @@ function intersectPoint(cv0: Node[], cv1: Node[]) {
                     insCnt++;
 
                     ///////// 插入交点
-                    let node0 = jy.recyclable(Node);
-                    node0.set(ins, true, true);
-                    var node1 = jy.recyclable(Node);
-                    node1.set(ins, true, false);
+                    let node0 = getNode(ins, true, true);
+                    var node1 = getNode(ins, true, false);
                     cv0.push(node0);
                     cv1.push(node1);
                     //双向引用
@@ -107,7 +105,7 @@ function intersectPoint(cv0: Node[], cv1: Node[]) {
                     node1.next = startNode1.next;
                     startNode1.next = node1;
                     //出点
-                    if (line0.classifyPoint(line1.pB) == PointClassfication.RightSide) {
+                    if (line0.classifyPoint(line1.pB) == PointClassification.RightSide) {
                         node0.o = true;
                         node1.o = true;
                     }
@@ -121,7 +119,7 @@ function intersectPoint(cv0: Node[], cv1: Node[]) {
             startNode1 = startNode1.next;
         }
         //如果没有交点继续处理下一个边，否则重新处理该点与插入的交点所形成的线段
-        if (hasIns == false) {
+        if (!hasIns) {
             startNode0 = startNode0.next;
         }
     }
@@ -205,6 +203,28 @@ export class Polygon {
         this.calcedCW = false;
         this.calcedBounds = false;
     }
+
+    remove(vertex: Point) {
+        this.vertexV.remove(vertex);
+        this.calcedCW = false;
+        this.calcedBounds = false;
+    }
+
+    /**
+     * 查找和指定的坐标相差距离低于 `epsilon` 的点
+     * @param x 
+     * @param y 
+     * @param epsilon 
+     */
+    find(x: number, y: number, epsilon = 10) {
+        const sqEpsilon = epsilon ** 2;
+        return this.vertexV.find(pt => {
+            let dx = pt.x - x;
+            let dy = pt.y = y;
+            return dx * dx + dy * dy < sqEpsilon
+        })
+    }
+
 
     /**
      * 获取包围盒
@@ -335,4 +355,8 @@ class Node {
         return this.v.toString() + "-->交点：" + this.i + "出点：" + this.o + "主：" + this.isMain + "处理：" + this.p;
     }
 
+}
+
+function getNode(pt: Point, isInters: boolean, isMain: boolean) {
+    return jy.recyclable(Node).set(pt, isInters, isMain)
 }
