@@ -36,6 +36,8 @@ export interface PathSolution {
     getDataB64(pathdata: Uint8Array);
 
     onSave(opt: OnSaveOption);
+
+    onEnterMap();
 }
 
 const enum Const {

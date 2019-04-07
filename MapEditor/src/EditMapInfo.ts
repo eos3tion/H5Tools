@@ -8,9 +8,11 @@ const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
 import * as $electron from "electron";
+import { NavMeshPath } from "./mappath/navmesh/solution/NavMeshPath";
 const electron: typeof $electron = nodeRequire("electron");
 
-PathSolution.regMapPath(0, new GridMapPath());
+PathSolution.regMapPath(0, new GridMapPath);
+PathSolution.regMapPath(1, new NavMeshPath);
 
 
 const view = $g("StateEditMapInfo");

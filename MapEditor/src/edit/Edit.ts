@@ -189,6 +189,7 @@ function showMap() {
     view.addEventListener("mousedown", checkDragStart);
     refreshEffectList();
     $engine.invalidate();
+    PathSolution.current.onEnterMap();
 }
 
 function checkDragStart(e: MouseEvent) {

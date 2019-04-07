@@ -176,9 +176,9 @@ interface Mini extends jy.Image {
 }
 
 interface Window {
-    $engine: jy.GameEngine;
+    $engine: import("./edit/HGameEngine").HGameEngine;
 }
 
 
-declare var $engine: jy.GameEngine;
+declare var $engine: import("./edit/HGameEngine").HGameEngine;
 declare var $gm: $gmType;

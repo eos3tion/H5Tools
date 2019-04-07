@@ -198,6 +198,11 @@ export class Polygon {
 
     private _isCW: boolean;
 
+    /**
+     * 是否已经封闭
+     */
+    isEnd: boolean;
+
     add(vertex: Point) {
         this.vertexV.push(vertex);
         this.calcedCW = false;
@@ -220,7 +225,7 @@ export class Polygon {
         const sqEpsilon = epsilon ** 2;
         return this.vertexV.find(pt => {
             let dx = pt.x - x;
-            let dy = pt.y = y;
+            let dy = pt.y - y;
             return dx * dx + dy * dy < sqEpsilon
         })
     }

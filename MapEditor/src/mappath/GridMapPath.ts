@@ -309,6 +309,8 @@ export class GridMapPath implements PathSolution {
         fs.writeFileSync(file, bytes);
         log(`存储至${file}`);
     }
+
+    onEnterMap() { }
 }
 
 function getDataForJava(map: jy.MapInfo) {//为了避免服务端数据结构变更，减少
