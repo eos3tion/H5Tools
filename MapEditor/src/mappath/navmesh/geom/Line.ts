@@ -104,6 +104,12 @@ export class Line {
             return LineClassification.LinesIntersect;
         }
     }
+
+    equals(line: Line) {
+        const { pA, pB } = this;
+        const { pA: lpA, pB: lpB } = line;
+        return pA.equals(lpA) && pB.equals(lpB) || pA.equals(lpB) && pB.equals(lpA);
+    }
 }
 
 export function getLine(p1: Point, p2: Point) {

@@ -177,12 +177,8 @@ class HGameEngine extends jy.GameEngine {
             this.currentMap = map;
 
             let bg = this._bg;
-            let g = bg.graphics;
             let { width, height } = map;
-            g.beginFill(0, 0);
-            g.drawRect(0, 0, width, height);
-            g.endFill();
-            this._bg.currentMap = map;
+            bg.currentMap = map;
             let camera = this.camera;
             camera.setLimits(width, height);
             camera.invalidate();

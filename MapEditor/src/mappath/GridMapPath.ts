@@ -159,6 +159,9 @@ function showMapGrid() {
 }
 
 function onBegin(e: MouseEvent) {
+    if ((e.target as HTMLElement).tagName.toLowerCase() !== "canvas") {
+        return
+    }
     if (e.button == 0) {
         view.addEventListener("mousemove", onMove);
         view.addEventListener("mouseup", onEnd);

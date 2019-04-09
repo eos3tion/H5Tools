@@ -1,4 +1,4 @@
-import { Core, createRadio } from "../Core";
+import { createRadio } from "../Core";
 export interface DrawMapPathControl {
     view: Element;
 

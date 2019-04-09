@@ -2,6 +2,8 @@ import { PathSolution } from "../../PathSolution";
 import { createRadio } from "../../../Core";
 import Point = egret.Point;
 import { Polygon } from "../geom/Polygon";
+import { Triangle } from "../geom/Triangle";
+import { createDelaunay } from "../geom/Delaunay";
 
 const enum Const {
     radioName = "radBlockPoint",
@@ -21,7 +23,24 @@ let btnEmpty: HTMLInputElement;
 let state: BlockPointState;
 const view = $g("StateEdit");
 
-const polygons = [] as Polygon[];
+const edgePoly = new Polygon();
+
+function initEdgePoly() {
+    const { width, height } = $engine.currentMap;
+    let v = edgePoly.vertexV;
+    v.length = 0;
+    v.push(
+        new Point(),
+        new Point(width, 0),
+        new Point(width, height),
+        new Point(0, height)
+    )
+}
+
+
+const polygons = [edgePoly] as Polygon[];
+
+let trangles: Triangle[];
 
 let currentDraw: Polygon;
 
@@ -50,6 +69,9 @@ function onKeyUp(e: KeyboardEvent) {
 }
 
 function onClick(e: MouseEvent) {
+    if ((e.target as HTMLElement).tagName.toLowerCase() !== "canvas") {
+        return
+    }
     const { clientX, clientY } = e;
     //转换成格位坐标
     let dpr = window.devicePixelRatio;
@@ -108,6 +130,30 @@ function removePoint(poly: Polygon, pt: Point) {
 }
 
 
+/**
+ * 合并网格
+ */
+function unionAll() {
+    let polys = polygons.concat();
+    for (let i = 0; i < polys.length; i++) {
+        const p0 = polys[i];
+        for (let j = 1; j < polys.length; j++) {
+            const p1 = polys[j];
+            if (p0 != p1 && p0.isCW() && p1.isCW()) {
+                let v = p0.union(p1);
+                if (v && v.length) {
+                    polys.remove(p0);
+                    polys.remove(p1);
+                    v.appendTo(polys);
+                }
+                i = 1;
+                break;
+            }
+        }
+    }
+    return polys;
+}
+
 
 let lblPixelPoint: HTMLLabelElement;
 function showCoord(e: MouseEvent) {
@@ -128,11 +174,15 @@ function redraw() {
  * 创建导航网格
  */
 function onBake() {
-
+    let polygons = unionAll();
+    trangles = createDelaunay(polygons);
+    redraw();
 }
 
 function onClear() {
-
+    polygons.length = 1;//保留边框
+    trangles = undefined;
+    redraw();
 }
 
 
@@ -156,7 +206,7 @@ class DrawMapPathControl {
         const div = document.createElement("div");
         btnEmpty = document.createElement("input");
         btnEmpty.type = "button";
-        btnEmpty.value = "清理";
+        btnEmpty.value = "清除全部网格";
         btnEmpty.addEventListener("click", onClear);
         div.appendChild(btnEmpty);
         div.appendChild(document.createElement("br"));
@@ -164,13 +214,14 @@ class DrawMapPathControl {
         createRadio("添加障碍点", BlockPointState.Add, Const.radioName, div, false, setState);
         createRadio("移除障碍点", BlockPointState.Del, Const.radioName, div, false, setState);
         div.appendChild(document.createElement("br"));
-        btnBake = document.createElement("input");
-        btnBake.type = "button";
-        btnBake.value = "烘焙网格";
-        btnBake.addEventListener("click", onBake);
-
         lblPixelPoint = document.createElement("label");
         div.appendChild(lblPixelPoint);
+        div.appendChild(document.createElement("br"));
+        btnBake = document.createElement("input");
+        btnBake.type = "button";
+        btnBake.value = "生成网格";
+        btnBake.addEventListener("click", onBake);
+        div.appendChild(btnBake);
         return div;
     };
 
@@ -199,6 +250,8 @@ export class NavMeshPath implements PathSolution {
     }
 
     onEnterMap() {
+        //创建边缘点
+        initEdgePoly();
 
         let bg = $engine.getLayer(jy.GameLayerID.Sorted) as jy.BaseLayer;
         let g = bg.graphics;
@@ -210,12 +263,21 @@ export class NavMeshPath implements PathSolution {
             if ($gm.$showMapGrid) {
                 //检查polygon中的点是否在范围内
                 let rect = new egret.Rectangle(x, y, w, h);
-                for (let poly of polygons) {
+                for (let i = 1; i < polygons.length; i++) {
+                    const poly = polygons[i];
                     let vertexV = poly.vertexV;
                     if (vertexV.find(p => rect.containsPoint(p))) {
+                        for (let i = 0; i < vertexV.length; i++) {
+                            const v = vertexV[i];
+                            g.beginFill(0xff0000, 1)
+                            g.drawCircle(v.x, v.y, 5);
+                            g.endFill();
+                        }
                         let first = vertexV[0];
                         g.lineStyle(2, 0xff0000);
-                        g.beginFill(0xff0000, 0.3);
+                        if (poly.isEnd) {
+                            g.beginFill(0xff0000, 0.3);
+                        }
                         g.moveTo(first.x, first.y);
                         for (let i = 1; i < vertexV.length; i++) {
                             const v = vertexV[i];
@@ -225,6 +287,18 @@ export class NavMeshPath implements PathSolution {
                             g.lineTo(first.x, first.y);
                             g.endFill();
                         }
+                    }
+                }
+                if (trangles) {
+                    g.lineStyle(2, 0xff00);
+                    for (let i = 0; i < trangles.length; i++) {
+                        const { pA, pB, pC } = trangles[i];
+                        g.beginFill(0xff00, 0.1);
+                        g.moveTo(pA.x, pA.y);
+                        g.lineTo(pB.x, pB.y);
+                        g.lineTo(pC.x, pC.y);
+                        g.lineTo(pA.x, pA.y);
+                        g.endFill();
                     }
                 }
             }

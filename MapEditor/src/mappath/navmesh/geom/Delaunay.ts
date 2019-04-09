@@ -4,29 +4,9 @@ import recyclable = jy.recyclable;
 import recycleList = recyclable.recycleList;
 import { Polygon } from "./Polygon";
 import { Line, getLine } from "./Line";
-import { Triangle } from "./Triangle";
+import { Triangle, getTriangle } from "./Triangle";
 
-function initData(polyV: Polygon[], vertexV: Recyclable<Point>[], edgeV: Recyclable<Line>[]) {
-    let j = 0;
-    for (let i = 0; i < polyV.length; i++) {
-        let poly = polyV[i];
-        let pVertexV = poly.vertexV;
-        for (let k = 0; k < pVertexV.length; k++) {
-            const v = pVertexV[k];
-            let old = vertexV[j++];
-            if (!old) {
-                old = recyclable(Point);
-            }
-            old.setTo(v.x, v.y);
-        }
-        recycleList(vertexV, j);
-        poly.vertexV.appendTo(vertexV);
-        putEdge(edgeV, poly.vertexV);
-    }
 
-    let outEdgeVecNum = polyV[0].vertexV.length;
-    return getInitOutEdge(outEdgeVecNum, vertexV, edgeV);
-}
 
 /**
  * Step2.	取任意一条外边界边 p1p2 .
@@ -34,7 +14,7 @@ function initData(polyV: Polygon[], vertexV: Recyclable<Point>[], edgeV: Recycla
  * @param vertexV 
  * @param edgeV 
  */
-function getInitOutEdge(outEdgeVecNum: number, vertexV: Recyclable<Point>[], edgeV: Recyclable<Line>[]) {
+function getInitOutEdge(outEdgeVecNum: number, vertexV: Point[], edgeV: Line[]) {
     let initEdge = edgeV[0];
     outEdgeVecNum--;
     //检查是否有顶点p在该边上，如果有则换一个外边界
@@ -103,10 +83,10 @@ function isVisibleIn2Point(pa: Point, pb: Point, edgeV: Line[]) {
     return flag;
 }
 
-const allVPoint = [] as Point[];		// line的所有可见点
+
 function findDT(line: Line, vertexV: Point[], edgeV: Line[]) {
     const { pA: p1, pB: p2 } = line;
-
+    const allVPoint = [] as Point[];		// line的所有可见点
     //搜索所有可见点 			TODO 按y方向搜索距线段终点最近的点
     let j = 0;
     for (let i = 0; i < vertexV.length; i++) {
@@ -117,7 +97,6 @@ function findDT(line: Line, vertexV: Point[], edgeV: Line[]) {
     }
     //			trace("vec:Vector2f in allVPoint:", allVPoint);
     if (j == 0) return;
-    allVPoint.length = j;
     let p3 = allVPoint[0];
     //			trace("line", line);
     //			trace("p3", p3);
@@ -130,7 +109,7 @@ function findDT(line: Line, vertexV: Point[], edgeV: Line[]) {
 
         //Step2. 依次访问网格包围盒内的每个网格单元：
         //		 若某个网格单元中存在可见点 p, 并且 ∠p1pp2 > ∠p1p3p2，则令 p3=p，转Step1；否则，转Step3.
-        var angle132: Number = Math.abs(lineAngle(p1, p3, p2));	// ∠p1p3p2
+        let angle132 = Math.abs(lineAngle(p1, p3, p2));	// ∠p1p3p2
         for (let i = 0; i < allVPoint.length; i++) {
             const vec = allVPoint[i];
             //					trace("测试点==================:", vec);
@@ -147,7 +126,7 @@ function findDT(line: Line, vertexV: Point[], edgeV: Line[]) {
             }
 
             //夹角
-            var a1: Number = Math.abs(lineAngle(p1, vec, p2));
+            let a1 = Math.abs(lineAngle(p1, vec, p2));
             //					trace("angle", a1, angle132);
             if (a1 > angle132) {
                 /////转Step1
@@ -203,12 +182,15 @@ function circumCircle(p1: Point, p2: Point, p3: Point) {
     let sqR = dx * dx + dy * dy;
     return { xc, yc, sqR }
 }
-
+/**
+ * 返回顶角在o点，起始边为os，终止边为oe的夹角, 即∠soe (单位：弧度) 
+ * 角度小于pi，返回正值;   角度大于pi，返回负值 
+ */
 function lineAngle(s: Point, o: Point, e: Point) {
-    var dsx = s.x - o.x;
-    var dsy = s.y - o.y;
-    var dex = e.x - o.x;
-    var dey = e.y - o.y;
+    let dsx = s.x - o.x;
+    let dsy = s.y - o.y;
+    let dex = e.x - o.x;
+    let dey = e.y - o.y;
 
     let cosfi = dsx * dex + dsy * dey;
     let norm = (dsx * dsx + dsy * dsy) * (dex * dex + dey * dey);
@@ -230,86 +212,84 @@ function indexOfVector(line: Line, vector: Line[]) {
     return -1;
 }
 
-export class Delaunay {
-    /**
-     * 所有多边形
-     */
-    polygonV = [] as Recyclable<Polygon>[];
+
+
+
+
+export function createDelaunay(polyV: Polygon[]) {
+    //Step1. 	建立单元大小为 E*E 的均匀网格，并将多边形的顶点和边放入其中.
+    //			其中 E=sqrt(w*h/n)，w 和 h 分别为多边形域包围盒的宽度、高度，n 为多边形域的顶点数 .
+
     /**
      * 所有顶点列表, 前`outEdgeVecNum`个为外边界顶点
      */
-    vertexV = [] as Recyclable<Point>[];
-    /**
-     * 所有约束边
-     */
-    edgeV = [] as Recyclable<Line>[];
-
-    /**
-     * 区域外边界顶点数
-     */
-    outEdgeVecNum: number;
-
-
+    let vertexV = [] as Point[];
     /**
      * 生成的`Delaunay`三角形
      */
-    triangleV = [] as Recyclable<Triangle>[];
+    let triangleV = [] as Triangle[];
 
-    createDelaunay(polyV: Polygon[]) {
-        //Step1. 	建立单元大小为 E*E 的均匀网格，并将多边形的顶点和边放入其中.
-        //			其中 E=sqrt(w*h/n)，w 和 h 分别为多边形域包围盒的宽度、高度，n 为多边形域的顶点数 .
-        const { vertexV, edgeV, triangleV } = this;
-        let initEdge = initData(polyV, vertexV, edgeV);
-        /**
-         * 线段堆栈
-         */
-        const lineV = [] as Recyclable<Line>[];
-        lineV.push(initEdge);
-        let t = 0;
-        do {
-            //Step3. 	计算 DT 点 p3，构成约束 Delaunay 三角形 Δp1p2p3 .
-            let edge = lineV.pop();
-            //				trace("开始处理edge###########:", edge);
-            let p3 = findDT(edge, vertexV, edgeV);
-            if (p3 == null) continue;
-            const { pA, pB } = edge;
-            let line13 = getLine(edge.pA, p3);
-            let line32 = getLine(p3, edge.pB);
+    /**
+     * 所有约束边
+     */
+    let edgeV = [] as Recyclable<Line>[];
 
-            //Delaunay三角形放入输出数组
-            let trg = triangleV[t];
-            if (!trg) {
-                triangleV[t] = trg = jy.recyclable(Triangle);
-            }
-            trg.setPoints(pA, pB, p3);
-            t++;
-
-            //Step4.	如果新生成的边 p1p3 不是约束边，若已经在堆栈中，
-            //			则将其从中删除；否则，将其放入堆栈；类似地，可处理 p3p2 .
-            let index: number;
-            if (indexOfVector(line13, this.edgeV) < 0) {
-                index = indexOfVector(line13, lineV);
-                if (index > -1) {
-                    lineV.splice(index, 1);
-                } else {
-                    lineV.push(line13);
-                }
-            }
-            if (indexOfVector(line32, this.edgeV) < 0) {
-                index = indexOfVector(line32, lineV);
-                if (index > -1) {
-                    lineV.splice(index, 1);
-                } else {
-                    lineV.push(line32);
-                }
-            }
-
-            //Step5.	若堆栈不空，则从中取出一条边，转Step3；否则，算法停止 .
-            //				trace("lineV.length:"+lineV.length);
-            //				trace("处理结束edge###########\n");
-        } while (lineV.length > 0);
-        recycleList(triangleV, t);
-        return triangleV;
-
+    let j = 0;
+    for (let i = 0; i < polyV.length; i++) {
+        let poly = polyV[i];
+        let pVertexV = poly.vertexV;
+        pVertexV.appendTo(vertexV);
+        putEdge(edgeV, pVertexV);
     }
+    /**
+     * 区域外边界顶点数
+     */
+    let outEdgeVecNum = polyV[0].vertexV.length;
+    let initEdge = getInitOutEdge(outEdgeVecNum, vertexV, edgeV);
+    /**
+     * 线段堆栈
+     */
+    const lineV = [] as Line[];
+    lineV.push(initEdge);
+    let t = 0;
+    do {
+        //Step3. 	计算 DT 点 p3，构成约束 Delaunay 三角形 Δp1p2p3 .
+        let edge = lineV.pop();
+        //				trace("开始处理edge###########:", edge);
+        let p3 = findDT(edge, vertexV, edgeV);
+        if (p3 == null) continue;
+        const { pA, pB } = edge;
+        let line13 = getLine(pA, p3);
+        let line32 = getLine(p3, pB);
+
+        //Delaunay三角形放入输出数组
+
+        triangleV[t++] = getTriangle(pA, pB, p3);
+
+        //Step4.	如果新生成的边 p1p3 不是约束边，若已经在堆栈中，
+        //			则将其从中删除；否则，将其放入堆栈；类似地，可处理 p3p2 .
+        let index: number;
+        if (indexOfVector(line13, edgeV) < 0) {
+            index = indexOfVector(line13, lineV);
+            if (index > -1) {
+                lineV.splice(index, 1);
+            } else {
+                lineV.push(line13);
+            }
+        }
+        if (indexOfVector(line32, edgeV) < 0) {
+            index = indexOfVector(line32, lineV);
+            if (index > -1) {
+                lineV.splice(index, 1);
+            } else {
+                lineV.push(line32);
+            }
+        }
+
+        //Step5.	若堆栈不空，则从中取出一条边，转Step3；否则，算法停止 .
+        //				trace("lineV.length:"+lineV.length);
+        //				trace("处理结束edge###########\n");
+    } while (lineV.length > 0)
+    return triangleV;
+
 }
