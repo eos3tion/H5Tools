@@ -7,14 +7,14 @@
 	<link rel="stylesheet" type="text/css" href="helpers/easyui/themes/default/easyui.css" />
 	<link rel="stylesheet" type="text/css" href="helpers/easyui/themes/icon.css" />
 	<script>
-        if (typeof window.require === "function") {
-            // 重命名 Electron 提供的 require
-            window.nodeRequire = require;
-            delete window.require;
-            delete window.exports;
-            delete window.module;
-        }
-    </script>
+		if (typeof window.require === "function") {
+			// 重命名 Electron 提供的 require
+			window.nodeRequire = require;
+			delete window.require;
+			delete window.exports;
+			delete window.module;
+		}
+	</script>
 	<script src="helpers/jquery.min.js"></script>
 	<script src="helpers/jscolor.min.js"></script>
 	<script src="helpers/easyui/jquery.easyui.min.js"></script>
@@ -75,15 +75,9 @@
 				context.shadowOffsetX = shadowOffsetX;
 				context.shadowOffsetY = shadowOffsetY;
 				var shadow = [shadowBlur];
-				if (+shadowColor != 0) {
-					shadow.push("#" + $g("shadowColor").value);
-				}
-				if (shadowOffsetX) {
-					shadow.push(shadowOffsetX);
-				}
-				if (shadowOffsetY) {
-					shadow.push(shadowOffsetY);
-				}
+				shadow[1] = +shadowColor != 0 ? "#" + $g("shadowColor").value : 0;
+				shadow[2] = shadowOffsetX || 0;
+				shadow[3] = shadowOffsetY || 0;
 				outData.shadow = shadow;
 			}
 			var stroke = +strokeWidth.value;
@@ -95,7 +89,7 @@
 				outData.strokeColor = "0x" + strokeColor.value;
 			}
 			context.fillText(text, x, y);
-			out.innerText = JSON.stringify(outData, 2, 2).replace(/"([a-zA-Z$_]+)"/g, "$1").replace(/"(0x[0-9a-fA-F]+)"/g,"$1");
+			out.innerText = JSON.stringify(outData, 2, 2).replace(/"([a-zA-Z$_]+)"/g, "$1").replace(/"(0x[0-9a-fA-F]+)"/g, "$1");
 		}
 		function addColorStop() {
 			var colorStops = $g("colorStops");
@@ -168,7 +162,8 @@
 			<tr style="height:80px">
 				<td>字号：</td>
 				<td>
-					<input onchange="repaint()" id="font-size" class="easyui-slider" style="width:300px" data-options="showTip:true,rule:[12,'|',20,'|',30,'|',40,'|',50],min:12,max:50,step:2,onChange:repaint">
+					<input onchange="repaint()" id="font-size" class="easyui-slider" style="width:300px"
+						data-options="showTip:true,rule:[12,'|',20,'|',30,'|',40,'|',50],min:12,max:50,step:2,onChange:repaint">
 				</td>
 			</tr>
 			<tr>
@@ -183,8 +178,8 @@
 				<td>描边</td>
 				<td>
 					大小：
-					<input id="strokeWidth" class="easyui-numberspinner" style="width:50px;" data-options="min:0,max:5,editable:false,onChange:repaint"
-					 value="0"> 颜色：
+					<input id="strokeWidth" class="easyui-numberspinner" style="width:50px;"
+						data-options="min:0,max:5,editable:false,onChange:repaint" value="0"> 颜色：
 					<input id="strokeColor" onchange="repaint()" class="jscolor" value="000000">
 				</td>
 			</tr>
@@ -192,8 +187,8 @@
 			<tr>
 				<td>投影模糊：</td>
 				<td>
-					<input id="shadowBlur" class="easyui-numberspinner" style="width:50px;" data-options="min:0,max:20,editable:false,onChange:repaint"
-					 value="0"> </td>
+					<input id="shadowBlur" class="easyui-numberspinner" style="width:50px;"
+						data-options="min:0,max:20,editable:false,onChange:repaint" value="0"> </td>
 			</tr>
 			<tr>
 				<td>投影颜色：</td>
@@ -203,19 +198,19 @@
 			<tr>
 				<td>投影偏移X：</td>
 				<td>
-					<input id="shadowOffsetX" class="easyui-numberspinner" style="width:50px;" data-options="min:0,max:20,editable:false,onChange:repaint"
-					 value="0"> </td>
+					<input id="shadowOffsetX" class="easyui-numberspinner" style="width:50px;"
+						data-options="min:0,max:20,editable:false,onChange:repaint" value="0"> </td>
 			</tr>
 			<tr>
 				<td>投影偏移Y：</td>
 				<td>
-					<input id="shadowOffsetY" class="easyui-numberspinner" style="width:50px;" data-options="min:0,max:20,editable:false,onChange:repaint"
-					 value="0"> </td>
+					<input id="shadowOffsetY" class="easyui-numberspinner" style="width:50px;"
+						data-options="min:0,max:20,editable:false,onChange:repaint" value="0"> </td>
 			</tr>
 		</table>
 		<div id="colorStops">
 		</div>
-		<br/>
+		<br />
 		<input type="button" value="添加渐变" onclick="addColorStop()">
 	</div>
 </body>
