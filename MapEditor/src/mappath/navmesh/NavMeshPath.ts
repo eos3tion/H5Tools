@@ -413,8 +413,10 @@ function getBytes() {
         pos += 4;
     }
     dv.setUint16(pos, tranLen);
+    pos += 2;
     for (let i = 0; i < trans.length; i++) {
-        dv.setUint16(pos++, trans[i]);
+        dv.setUint16(pos, trans[i]);
+        pos += 2;
     }
     return bytes;
     function getPoint(pt: Point) {
