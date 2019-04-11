@@ -1,10 +1,9 @@
 import Point = egret.Point;
 import Recyclable = jy.Recyclable;
-import recyclable = jy.recyclable;
-import recycleList = recyclable.recycleList;
+import NavMeshConst = jy.NavMeshConst;
 import { Polygon } from "./Polygon";
-import { Line, getLine } from "./Line";
-import { Triangle, getTriangle } from "./Triangle";
+import Line = jy.Line;
+import Triangle = jy.Triangle;
 
 
 
@@ -26,7 +25,7 @@ function getInitOutEdge(outEdgeVecNum: number, vertexV: Point[], edgeV: Line[]) 
         for (let i = 0; i < vertexV.length; i++) {
             const testV = vertexV[i];
             if (testV.equals(initEdge.pA) || testV.equals(initEdge.pB)) continue;
-            if (initEdge.classifyPoint(testV, NavMeshConst.Epsilon) == PointClassification.OnLine) {
+            if (initEdge.classifyPoint(testV, NavMeshConst.Epsilon) == jy.PointClassification.OnLine) {
                 loopSign = true;
                 initEdge = edgeV[loopIdx];
                 break;
@@ -54,7 +53,7 @@ function isVisiblePointOfLine(vec: Point, line: Line, edgeV: Line[]) {
     const { pA, pB } = line;
     if (vec.equals(pA)
         || vec.equals(pB)
-        || line.classifyPoint(vec, NavMeshConst.Epsilon) != PointClassification.RightSide //（1） p3 在边 p1p2 的右侧 (多边形顶点顺序为顺时针)；
+        || line.classifyPoint(vec, NavMeshConst.Epsilon) != jy.PointClassification.RightSide //（1） p3 在边 p1p2 的右侧 (多边形顶点顺序为顺时针)；
         || !isVisibleIn2Point(pA, vec, edgeV) //（2） p3 与 p1 可见，即 p1p3 不与任何一个约束边相交；
         || !isVisibleIn2Point(pB, vec, edgeV) //（3） p3 与 p2 可见
     ) {
@@ -71,7 +70,7 @@ function isVisibleIn2Point(pa: Point, pb: Point, edgeV: Line[]) {
     for (let i = 0; i < edgeV.length; i++) {
         const lineTmp = edgeV[i];
         //两线段相交
-        if (linepapb.intersection(lineTmp, interscetVector) == LineClassification.SegmentsIntersect) {
+        if (linepapb.intersection(lineTmp, interscetVector) == jy.LineClassification.SegmentsIntersect) {
             //交点是不是端点
             if (!pa.equals(interscetVector) && !pb.equals(interscetVector)) {
                 flag = false;
@@ -79,7 +78,6 @@ function isVisibleIn2Point(pa: Point, pb: Point, edgeV: Line[]) {
             }
         }
     }
-    linepapb.recycle();
     return flag;
 }
 
@@ -237,14 +235,14 @@ export function createDelaunay(polyV: Polygon[]) {
     let j = 0;
     for (let i = 0; i < polyV.length; i++) {
         let poly = polyV[i];
-        let pVertexV = poly.vertexV;
+        let pVertexV = poly.points;
         pVertexV.appendTo(vertexV);
         putEdge(edgeV, pVertexV);
     }
     /**
      * 区域外边界顶点数
      */
-    let outEdgeVecNum = polyV[0].vertexV.length;
+    let outEdgeVecNum = polyV[0].points.length;
     let initEdge = getInitOutEdge(outEdgeVecNum, vertexV, edgeV);
     /**
      * 线段堆栈
@@ -292,4 +290,14 @@ export function createDelaunay(polyV: Polygon[]) {
     } while (lineV.length > 0)
     return triangleV;
 
+}
+
+
+function getLine(p1: Point, p2: Point) {
+    return new Line().setPoints(p1, p2);
+}
+
+
+function getTriangle(p1: Point, p2: Point, p3: Point) {
+    return new Triangle().setPoints(p1, p2, p3);
 }

@@ -1,6 +1,8 @@
 import Point = egret.Point;
 import Rectangle = egret.Rectangle;
-import { Line } from "./Line";
+import LineClassification = jy.LineClassification;
+import PointClassification = jy.PointClassification;
+import Line = jy.Line;
 /**
  * r=multiply(sp,ep,op),得到(sp-op)*(ep-op)的叉积   
  * r>0:ep在矢量opsp的逆时针方向  
@@ -138,7 +140,7 @@ function linkToPolygon(cv0: Node[], cv1: Node[]): Polygon[] {
         if (testNode.i && !testNode.p) {
             //					trace("测试点0", testNode);
             let polygon = jy.recyclable(Polygon);
-            let rcNodes = polygon.vertexV;
+            let rcNodes = polygon.points;
             while (testNode) {
                 //						trace("测试点1", testNode);
 
@@ -188,7 +190,7 @@ export class Polygon {
     /**
      * 顶点列表
      */
-    vertexV = [] as Point[];
+    points = [] as Point[];
 
     private bounds = new egret.Rectangle();
 
@@ -203,14 +205,21 @@ export class Polygon {
      */
     isEnd: boolean;
 
+    setPoints(points: Point[]) {
+        this.points = points;
+        this.calcedCW = false;
+        this.calcedBounds = false;
+        return this;
+    }
+
     add(vertex: Point) {
-        this.vertexV.push(vertex);
+        this.points.push(vertex);
         this.calcedCW = false;
         this.calcedBounds = false;
     }
 
     remove(vertex: Point) {
-        this.vertexV.remove(vertex);
+        this.points.remove(vertex);
         this.calcedCW = false;
         this.calcedBounds = false;
     }
@@ -223,7 +232,7 @@ export class Polygon {
      */
     find(x: number, y: number, epsilon = 10) {
         const sqEpsilon = epsilon ** 2;
-        return this.vertexV.find(pt => {
+        return this.points.find(pt => {
             let dx = pt.x - x;
             let dy = pt.y - y;
             return dx * dx + dy * dy < sqEpsilon
@@ -237,7 +246,7 @@ export class Polygon {
     getAABB() {
         let bounds = this.bounds;
         if (!this.calcedBounds) {
-            getAABB(this.vertexV, bounds);
+            getAABB(this.points, bounds);
             this.calcedBounds = true;
         }
         return bounds;
@@ -248,7 +257,7 @@ export class Polygon {
      */
     cw() {
         if (!this.isCW()) {
-            this.vertexV.reverse();
+            this.points.reverse();
         }
     }
 
@@ -261,7 +270,7 @@ export class Polygon {
         if (!this.calcedCW) {
             //最上（y最小）最左（x最小）点， 肯定是一个凸点
             //寻找最上点
-            const vertexV = this.vertexV;
+            const vertexV = this.points;
             let topPt = vertexV[0];
             let topPtId = 0;	//点的索引
             for (let i = 1; i < vertexV.length; i++) {
@@ -289,8 +298,8 @@ export class Polygon {
         }
         let cv0 = [] as jy.Recyclable<Node>[];
         let cv1 = [] as jy.Recyclable<Node>[];
-        setNodes(this.vertexV, cv0, true);
-        setNodes(polygon.vertexV, cv1, false);
+        setNodes(this.points, cv0, true);
+        setNodes(polygon.points, cv1, false);
         let insCnt = intersectPoint(cv0, cv1);
         if (insCnt > 0) {
             return linkToPolygon(cv0, cv1);
@@ -311,7 +320,7 @@ export class Polygon {
     }
 
     onRecycle() {
-        this.vertexV.length = 0;
+        this.points.length = 0;
     }
 }
 

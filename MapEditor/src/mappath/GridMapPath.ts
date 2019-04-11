@@ -1,10 +1,6 @@
 import { PathSolution, OnSaveOption } from "./PathSolution";
 import { Core, createRadio } from "../Core";
-
-import * as $fs from "fs";
-const fs: typeof $fs = nodeRequire("fs");
-import * as $path from "path";
-const path: typeof $path = nodeRequire("path");
+import MapInfo = jy.GridMapInfo;
 
 const enum Const {
     radioName = "radMapPath",
@@ -26,7 +22,7 @@ let sizeNotMatch: boolean;
 /**
  * 加载到的地图配置
  */
-let cfg: jy.MapInfo;
+let cfg: MapInfo;
 
 function createInput(type: string) {
     const inp = document.createElement("input");
@@ -44,7 +40,7 @@ function makeRow(table: HTMLTableElement, label: string, control: Node) {
 
 
 function calGrids() {
-    let currentMap = Core.selectMap;
+    let currentMap = getMap();
     if (!currentMap) {
         return;
     }
@@ -67,7 +63,7 @@ function calGrids() {
     lblRows.innerText = rows + "";
     currentMap.gridHeight = gridHeight;
     currentMap.gridWidth = gridWidth;
-    let cfg = Core.mapCfg;
+    let cfg = Core.mapCfg as MapInfo;
     if (cfg) {
         if (cfg.columns != currentMap.columns || cfg.rows != currentMap.rows) {
             sizeNotMatch = true;
@@ -82,7 +78,7 @@ function calGrids() {
     }
 }
 
-function getWalk(this: jy.MapInfo, x: number, y: number): number {
+function getWalk(this: MapInfo, x: number, y: number): number {
     const { columns, pathdata } = this;
     if (!pathdata) {
         return 0;
@@ -93,7 +89,7 @@ function getWalk(this: jy.MapInfo, x: number, y: number): number {
     return (pathdata[byteCount] >> 7 - bitCount) & 1;
 }
 
-function setWalk(x: number, y: number, flag: any, map: jy.MapInfo) {
+function setWalk(x: number, y: number, flag: any, map: MapInfo) {
     let { columns, pathdata } = map;
     if (!pathdata) {
         map.pathdata = pathdata = new Uint8Array(Math.ceil(columns * map.rows / 8));
@@ -115,7 +111,7 @@ function setBitState(value: number, bitIdx: number, flag) {
 
 function fillGrids(val: number) {
     return function () {
-        let pathdata = Core.selectMap.pathdata;
+        let pathdata = getMap().pathdata;
         pathdata.fill(val);
         $engine.invalidate();
     }
@@ -130,7 +126,7 @@ function fillGrids(val: number) {
  */
 function screen2Map(point: jy.Point, out?: jy.Point) {
     out = out || point;
-    const map = Core.selectMap;
+    const map = getMap();
     out.x = Math.round(point.x / map.gridWidth);
     out.y = Math.round(point.y / map.gridHeight);
 }
@@ -144,7 +140,7 @@ function screen2Map(point: jy.Point, out?: jy.Point) {
  */
 function map2Screen(point: jy.Point, out?: jy.Point) {
     out = out || point;
-    const map = Core.selectMap;
+    const map = getMap();
     out.x = point.x * map.gridWidth + map.gridWidth * .5;
     out.y = point.y * map.gridHeight + map.gridHeight * .5;
 }
@@ -176,7 +172,7 @@ function onMove(e: MouseEvent) {
     let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
     screen2Map(pt);
     //设置可走/不可走
-    setWalk(pt.x, pt.y, +$(`input[name=${Const.radioName}]:checked`).val(), Core.selectMap);
+    setWalk(pt.x, pt.y, +$(`input[name=${Const.radioName}]:checked`).val(), getMap());
     $engine.invalidate();
 }
 
@@ -241,10 +237,20 @@ class DrawMapPathControl {
     }
 }
 
+function getMap() {
+    return Core.selectMap as MapInfo;
+}
 
-export class GridMapPath implements PathSolution {
-    map: jy.MapInfo;
-    setMapData(map: jy.MapInfo) {
+
+export class GridMapPath implements PathSolution<MapInfo> {
+
+    onLoad(map: MapInfo, cfg: MapInfo) {
+        map.gridWidth = cfg.gridWidth;
+        map.gridHeight = cfg.gridHeight;
+        map.pathdataB64 = cfg.pathdataB64;
+    }
+    map: MapInfo;
+    setMapData(map: MapInfo) {
         this.map = map;
         map.getWalk = getWalk;
         this.initView();
@@ -297,16 +303,19 @@ export class GridMapPath implements PathSolution {
 
         return table;
     }
-
-    getDataB64(pathdata: Uint8Array) {
-        let v = pathdata.find(v => v != 0);
-        if (v != undefined) {//检查pathdata中的数据,如果全部可走，则返回空
-            return egret.Base64Util.encode(pathdata.buffer);
+    beforeSave(out: MapInfo, current: MapInfo) {
+        out.gridHeight = current.gridHeight;
+        out.gridWidth = current.gridWidth;
+        let pathdata = current.pathdata;
+        if (pathdata) {
+            out.pathdataB64 = getDataB64(pathdata);
         }
     }
 
-    onSave(opt: OnSaveOption) {
+    afterSave(opt: OnSaveOption) {
         const { map, log } = opt;
+        const path: typeof import("path") = nodeRequire("path");
+        const fs: typeof import("fs") = nodeRequire("fs");
         let bytes = getDataForJava(map);
         let file = path.join(Core.basePath, map.path, ConstString.JavaMapPath);
         fs.writeFileSync(file, bytes);
@@ -314,6 +323,13 @@ export class GridMapPath implements PathSolution {
     }
 
     onEnterMap() { }
+}
+
+function getDataB64(pathdata: Uint8Array) {
+    let v = pathdata.find(v => v != 0);
+    if (v != undefined) {//检查pathdata中的数据,如果全部可走，则返回空
+        return egret.Base64Util.encode(pathdata.buffer);
+    }
 }
 
 function getDataForJava(map: jy.MapInfo) {//为了避免服务端数据结构变更，减少

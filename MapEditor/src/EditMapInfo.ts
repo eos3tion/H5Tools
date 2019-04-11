@@ -8,12 +8,12 @@ const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
 import * as $electron from "electron";
-import { NavMeshPath } from "./mappath/navmesh/solution/NavMeshPath";
+import { NavMeshPath } from "./mappath/navmesh/NavMeshPath";
 const electron: typeof $electron = nodeRequire("electron");
 
-PathSolution.regMapPath(0, new GridMapPath);
-PathSolution.regMapPath(1, new NavMeshPath);
-
+//注册路径处理器
+PathSolution.regMapPath(jy.MapPathType.Grid, new GridMapPath);
+PathSolution.regMapPath(jy.MapPathType.NavMesh, new NavMeshPath);
 
 const view = $g("StateEditMapInfo");
 const lblPath = $g("lblPath") as HTMLLabelElement;
@@ -52,10 +52,6 @@ btnDoEdit.addEventListener("click", e => {
 PathSolution.showGroups();
 
 function setData(map: jy.MapInfo) {
-    const solution = PathSolution.current;
-    if (!solution) {
-        return alert(`请先选择地图路径方案`);
-    }
 
 
     Core.selectMap = map;
@@ -74,6 +70,14 @@ function setData(map: jy.MapInfo) {
         }
     }
     Core.mapCfg = cfg;
+    let pathType = cfg.pathType | 0;
+    PathSolution.initType(pathType);
+
+    const solution = PathSolution.current;
+    if (!solution) {
+        return alert(`请先选择地图路径方案`);
+    }
+
     //遍历地图文件夹中的地图
     let list = fs.readdirSync(fullPath);
     let reg1 = /^(\d{3})(\d{3}).(jpg|png)$/, reg2 = /(\d+)_(\d+).(jpg|png)$/;
@@ -177,10 +181,8 @@ function setData(map: jy.MapInfo) {
             sizeNotMatch = true;
             alert(`检查到地图配置[${mapCfgFile}]中地图大小和当前文件夹图片文件名得到的地图大小不一致，请检查。\n如果继续操作，将会弃用原地图路径点数据`);
         }
-        map.pathdataB64 = cfg.pathdataB64;
-        map.effs = cfg.effs;
-        map.gridWidth = cfg.gridWidth;
-        map.gridHeight = cfg.gridHeight;
+        map.effs = cfg.effs;        
+        solution.onLoad(map, cfg);
     }
     let mpt = jy.MapInfo.prototype;
     if (type == 1) {

@@ -1,4 +1,5 @@
 import { createRadio } from "../Core";
+import MapInfo = jy.MapInfo;
 export interface DrawMapPathControl {
     view: Element;
 
@@ -10,7 +11,7 @@ export interface DrawMapPathControl {
     onToggle(flag: boolean);
 }
 export interface OnSaveOption {
-    map: jy.MapInfo,
+    map: MapInfo,
 
     /**
      * 写日志
@@ -18,7 +19,7 @@ export interface OnSaveOption {
     log: { (msg: string, color?: string) };
 }
 
-export interface PathSolution {
+export interface PathSolution<T extends MapInfo> {
     readonly name: string;
 
     /** 
@@ -31,14 +32,41 @@ export interface PathSolution {
      */
     drawMapPathControl: DrawMapPathControl;
 
-    setMapData(map: jy.MapInfo);
+    /**
+     * 初始设置地图数据  
+     * 如果已经有配置，会在 `onLoad` 之后执行
+     * @param map 
+     */
+    setMapData(map: T);
 
-    getDataB64(pathdata: Uint8Array);
+    /**
+     * 从配置中加载数据时调用的函数
+     * @param map 当前的地图数据
+     * @param cfg 配置数据
+     */
+    onLoad(map: T, cfg: Partial<T>);
 
-    onSave(opt: OnSaveOption);
+    /**
+     * 存储前调用的函数
+     * @param out 要存储的数据
+     * @param current 当前地图信息
+     */
+    beforeSave(out: T, current: T);
 
+    /**
+     * 存储数据后调用
+     * @param opt 
+     */
+    afterSave(opt: OnSaveOption);
+    /**
+     * 进入地图前触发
+     */
     onEnterMap();
+
+    readonly type?: jy.MapPathType;
 }
+
+export declare type $PathSolution = PathSolution<MapInfo>
 
 const enum Const {
     idConDetail = "tdPathDetail",
@@ -46,12 +74,14 @@ const enum Const {
     idPathType = "radPathType",
 }
 
-const dict: { [index: number]: PathSolution } = {};
+const dict: { [index: number]: $PathSolution } = {};
 
 let currentMapEditCtrl: Node;
-let current: PathSolution;
+let current: $PathSolution;
 
-function regMapPath(type: number, mapPath: PathSolution) {
+function regMapPath(type: jy.MapPathType, mapPath: $PathSolution) {
+    //@ts-ignore
+    mapPath.type = type;
     dict[type] = mapPath;
 }
 
@@ -80,7 +110,6 @@ function setType(type: any) {
 
 function showGroups() {
     const tdPathType = $g(Const.idConPathType) as HTMLTableCellElement;
-    let doc = document;
     for (let type in dict) {
         const mp = dict[type];
         if (mp) {
@@ -88,11 +117,19 @@ function showGroups() {
         }
     }
     //默认选中第一个
-    let v = doc.querySelector(`[name=${Const.idPathType}]`) as HTMLInputElement;
+    let v = document.querySelector(`[name=${Const.idPathType}]`) as HTMLInputElement;
     if (v) {
         v.checked = true;
         setType(v.value);
     }
+}
+
+function initType(value: number) {
+    let input = document.querySelector(`input[name="${Const.idPathType}"][value="${value}"]`) as HTMLInputElement;
+    if (input) {
+        input.checked = true;
+    }
+    setType(value);
 }
 
 export const PathSolution = {
@@ -100,5 +137,6 @@ export const PathSolution = {
     get current() {
         return current;
     },
-    showGroups
+    showGroups,
+    initType
 } 

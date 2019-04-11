@@ -252,14 +252,11 @@ function saveMap() {
     const mapCfgFile = path.join(Core.basePath, currentMap.path, ConstString.MapCfgFileName);
 
     //将数据写入文件
-    let out = currentMap.getSpecObject("path", "columns", "rows", "ext", "type", "gridWidth", "gridHeight", "pWidth", "pHeight", "maxPicX", "maxPicY") as jy.MapInfo;
-    let pathdata = currentMap.pathdata;
-    if (pathdata) {
-        let v = PathSolution.current.getDataB64(pathdata);
-        if (v) {
-            out.pathdataB64 = v;
-        }
-    }
+    let out = currentMap.getSpecObject("path", "columns", "rows", "ext", "type", "pWidth", "pHeight", "maxPicX", "maxPicY") as jy.MapInfo;
+    let solution = PathSolution.current;
+    out.pathType = solution.type;
+    solution.beforeSave(out, currentMap);
+
     let effDeles: AniDele[] = $engine.effs;
     let len = effDeles.length;
     if (len) {
@@ -272,7 +269,7 @@ function saveMap() {
     fs.writeFileSync(mapCfgFile, JSON.stringify(out));
     log(`存储到[${mapCfgFile}]`);
 
-    PathSolution.current.onSave({ map: currentMap, log });
+    solution.afterSave({ map: currentMap, log });
 
 
     let endAction = Core.cfg.endAction;

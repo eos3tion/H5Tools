@@ -1,4 +1,4 @@
-import { PathSolution } from "./mappath/PathSolution";
+import { $PathSolution } from "./mappath/PathSolution";
 export const Core = {
     /**
      * 地图列表
@@ -31,7 +31,7 @@ export const Core = {
     /**
      * 路径解决方案
      */
-    pathSolution: null as PathSolution,
+    pathSolution: null as $PathSolution,
 
 }
 

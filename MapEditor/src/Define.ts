@@ -153,6 +153,7 @@ module jy {
          */
         pathdataB64?: string;
 
+
         /**
          * 透明点数据的 base64字符串
          */
