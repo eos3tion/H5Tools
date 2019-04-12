@@ -1,6 +1,3 @@
-declare var global: any;
-declare var __global: any;
-declare let __define: any;
 declare namespace egret {
     /**
      * The HashObject class is the base class for all objects in the Egret framework.The HashObject
