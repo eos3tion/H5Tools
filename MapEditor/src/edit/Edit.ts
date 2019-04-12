@@ -89,7 +89,7 @@ let currentMap: jy.MapInfo;
 view.addEventListener("dragover", e => e.preventDefault());
 view.addEventListener("drop", onDrop);
 const anis: { [index: string]: jy.AniInfo } = $DD.ani = {};
-async function onDrop(e: DragEvent) {
+function onDrop(e: DragEvent) {
     e.preventDefault();
     let goted = checkAniFile(e.dataTransfer.files);
     if (goted) {
@@ -124,10 +124,12 @@ function checkAni(key: string, dataPath?: string, imgPath?: string) {
             return alert(`特效配置文件[${dataPath}]有误`);
         }
         ani = new jy.AniInfo();
-        let nImg = electron.nativeImage.createFromPath(imgPath);
+        ani.init(key, data);
+        if (!ani.actionInfo.isCircle) {
+            return alert(`特效配置文件不是循环动画，请检查`);
+        }
         let filename = path.basename(imgPath);
         addRes(`${jy.ResPrefix.Ani}${key}/${filename}`, imgPath);
-        ani.init(key, data);
         anis[key] = ani;
     }
 }
@@ -172,7 +174,7 @@ function checkAniFile(files: FileArray, parent: string = "") {
     }
 }
 
-async function setData(map: jy.MapInfo) {
+function setData(map: jy.MapInfo) {
     currentMap = map;
     let effs = map.effs;
     if (effs) {
