@@ -70,7 +70,7 @@ function setData(map: jy.MapInfo) {
         }
     }
     Core.mapCfg = cfg;
-    let pathType = cfg.pathType | 0;
+    let pathType = cfg && cfg.pathType || 0;
     PathSolution.initType(pathType);
 
     const solution = PathSolution.current;
@@ -181,7 +181,7 @@ function setData(map: jy.MapInfo) {
             sizeNotMatch = true;
             alert(`检查到地图配置[${mapCfgFile}]中地图大小和当前文件夹图片文件名得到的地图大小不一致，请检查。\n如果继续操作，将会弃用原地图路径点数据`);
         }
-        map.effs = cfg.effs;        
+        map.effs = cfg.effs;
         solution.onLoad(map, cfg);
     }
     let mpt = jy.MapInfo.prototype;
