@@ -1,4 +1,4 @@
-const enum ConstString {
+declare const enum ConstString {
     /**
      * 地图编辑器的配置文件
      */
@@ -28,11 +28,11 @@ const enum ConstString {
     JavaMapPath = "path.mm",
 }
 
-const enum ConstNum {
+declare const enum ConstNum {
     PicSize = 256,
 }
 
-const enum AppState {
+declare const enum AppState {
     /**
      * 选地图路径的阶段
      */
@@ -47,7 +47,7 @@ const enum AppState {
     Edit
 }
 
-const enum AppEvent {
+declare const enum AppEvent {
     /**
      * 状态发生改变 
      * data[0] {AppState} 要进入的状态
@@ -135,7 +135,7 @@ interface ViewState {
     setData?(data);
 }
 
-module jy {
+declare namespace jy {
     export interface MapInfo {
         effs: MapEffData[];
 
