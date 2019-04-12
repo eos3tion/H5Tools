@@ -70,7 +70,7 @@ function setData(map: jy.MapInfo) {
         }
     }
     Core.mapCfg = cfg;
-    let pathType = cfg && cfg.pathType || 0;
+    let pathType = cfg && cfg.pathType || jy.MapPathType.NavMesh;
     PathSolution.initType(pathType);
 
     const solution = PathSolution.current;
