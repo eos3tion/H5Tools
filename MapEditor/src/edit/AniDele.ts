@@ -1,6 +1,3 @@
-
-
-const view = $g("StateEdit");
 const divEffectPro = $("#divEffectPro");
 const chkAniIsMovable = $g("chkAniIsMovable") as HTMLInputElement;
 const sldAniScaleX = $("#sldAniScaleX");
@@ -327,11 +324,13 @@ export class AniDele extends egret.Sprite {
 
 }
 
-jy.UnitResource.prototype.noRes = function (uri: string, r: string) {
+jy.UnitResource.prototype.noRes = function (this: jy.UnitResource, uri: string, r: string) {
     let tmp = new jy.SplitUnitResource(uri, this.getUrl(uri));
     tmp.bmd = this.bmd;
     tmp.qid = this.qid;
-    tmp.bindTextures(this._datas, this.sInfo.adDict[r]);
+    //@ts-ignore
+    let datas = this._datas;
+    this.pst.bindResource(this.pst.getResKey(0, 0), tmp, datas);
     tmp.load();
     return tmp;
 }
