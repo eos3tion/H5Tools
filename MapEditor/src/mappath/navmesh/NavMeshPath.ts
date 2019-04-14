@@ -5,6 +5,11 @@ import { Polygon } from "./geom/Polygon";
 import { createDelaunay } from "./geom/Delaunay";
 import Triangle = jy.Triangle;
 
+Point.prototype.equals = function equals(this: Point, toCompare: Point) {
+    let dx = this.x - toCompare.x;
+    let dy = this.y - toCompare.y;
+    return dx * dx + dy * dy < 100 //10像素以内当做同一个点
+}
 
 function points2Arrs(pts: Point[]) {
     return pts.map(pt => [pt.x, pt.y]) as [number, number][]
@@ -35,9 +40,10 @@ const enum Const {
  * 障碍点的状态
  */
 const enum BlockPointState {
-    None = 0,
-    Add = 1,
-    Del = 2
+    None,
+    Add,
+    Del,
+    ModifyEdge,
 }
 
 let btnBake: HTMLInputElement;
@@ -60,22 +66,93 @@ function initEdgePoly() {
 
 const polygons = [edgePoly] as Polygon[];
 
-let trangles: Triangle[];
+let triangles: Triangle[];
 
 let currentDraw: Polygon;
 
 function setState() {
     state = +(document.querySelector(`input[name=${Const.radioName}]:checked`) as HTMLInputElement).value;
     window.removeEventListener("keyup", onKeyUp);
-    if (state == BlockPointState.None) {
-        view.removeEventListener("click", onClick);
-    } else {
+    view.removeEventListener("click", onClick);
+    edgeControl.clearEvent();
+    if (state == BlockPointState.Add || state == BlockPointState.Del) {
         view.addEventListener("click", onClick);
         if (state == BlockPointState.Add) {
             window.addEventListener("keyup", onKeyUp);
         }
+    } else if (state == BlockPointState.ModifyEdge) {
+        edgeControl.addEvent();
     }
 }
+
+const edgeControl = function () {
+    let curPt: Point;
+    return {
+        clearEvent,
+        addEvent() {
+            view.addEventListener("mousedown", onMouseDown);
+        }
+    }
+
+    function clearEvent() {
+        view.removeEventListener("mousedown", onMouseDown);
+        onUpClear();
+    }
+
+    function onMouseDown(e: MouseEvent) {
+        let pt = getMousePT(e);
+        if (!pt) {
+            return;
+        }
+        //检查点是否是边缘点
+        curPt = edgePoly.points.find(tpt => tpt.equals(pt));
+        if (curPt) {
+            view.addEventListener("mousemove", onMouseMove);
+            window.addEventListener("mouseup", onMouseUp);
+        }
+    }
+
+
+    function onMouseMove(e: MouseEvent) {
+        let pt = getMousePT(e);
+        if (!pt) {
+            return;
+        }
+        if (curPt) {
+            curPt.setTo(pt.x, pt.y);
+            triansChange();
+            redraw();
+        }
+    }
+
+    function onUpClear() {
+        curPt = undefined;
+        view.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+    }
+
+    function onMouseUp(e: MouseEvent) {
+        let pt = getMousePT(e);
+        if (!pt) {
+            return;
+        }
+        if (curPt) {
+            curPt.setTo(pt.x, pt.y);
+            //检查是否有点和edgePolygon外面，如果有则需要移除poly
+            let j = 1;
+            for (let i = 1; i < polygons.length; i++) {
+                const poly = polygons[i];
+                if (poly.points.every(pt => edgePoly.contain(pt))) {
+                    polygons[j++] = poly;
+                }
+            }
+            polygons.length = j;
+            redraw();
+        }
+        onUpClear();
+    }
+}()
+
 
 function onKeyUp(e: KeyboardEvent) {
     let keyCode = e.keyCode;
@@ -88,15 +165,29 @@ function onKeyUp(e: KeyboardEvent) {
     }
 }
 
-function onClick(e: MouseEvent) {
-    if ((e.target as HTMLElement).tagName.toLowerCase() !== "canvas") {
-        return
+function getMousePT(e: MouseEvent) {
+    if ((e.target as HTMLElement).tagName.toLowerCase() == "canvas") {
+        const { clientX, clientY } = e;
+        //转换成格位坐标
+        let dpr = window.devicePixelRatio;
+        let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
+        let { x, y } = pt;
+        const { width, height } = $engine.currentMap;
+        x = Math.clamp(x, 0, width);
+        y = Math.clamp(y, 0, height);
+        pt.setTo(x, y);
+        return pt;
     }
-    const { clientX, clientY } = e;
-    //转换成格位坐标
-    let dpr = window.devicePixelRatio;
-    let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-    const { x, y } = pt;
+}
+
+function onClick(e: MouseEvent) {
+    let pt = getMousePT(e);
+    if (!pt) {
+        return;
+    }
+    if (!edgePoly.contain(pt)) {
+        return;
+    }
 
     if (state == BlockPointState.Add) {
         if (!currentDraw) {
@@ -104,7 +195,7 @@ function onClick(e: MouseEvent) {
             polygons.push(currentDraw);
         }
         //检查点是否和之前的点相同
-        let has = currentDraw.find(x, y);
+        let has = currentDraw.find(pt);
         if (has) {//如果已经有很近的点了，不允许绘制，即便是转折点，也不给绘制
             let first = currentDraw.points[0];
             if (has == first) {//回到第一个点了，进行封闭
@@ -114,7 +205,7 @@ function onClick(e: MouseEvent) {
         } else {
             currentDraw.add(pt);
         }
-
+        triansChange();
         redraw();
     } else if (state == BlockPointState.Del) {
         //检查当前点击的位置，是否离原有的点很近
@@ -123,13 +214,14 @@ function onClick(e: MouseEvent) {
         //检查当前点是否和当前`polygon`中的点相近
         for (let i = 0; i < polygons.length; i++) {
             const polygon = polygons[i];
-            cur = polygon.find(x, y);
+            cur = polygon.find(pt);
             if (cur) {
                 findPoly = polygon;
                 break;
             }
         }
         if (cur) {
+            currentDraw = findPoly;
             removePoint(findPoly, cur);
         }
 
@@ -146,9 +238,13 @@ function removePoint(poly: Polygon, pt: Point) {
             currentDraw = null;
         }
     }
+    triansChange();
     redraw();
 }
 
+function triansChange() {
+    triangles = undefined;
+}
 
 /**
  * 合并网格
@@ -196,13 +292,14 @@ function redraw() {
 function onBake() {
     bytes = undefined;
     let polygons = unionAll();
-    trangles = createDelaunay(polygons);
+    triangles = createDelaunay(polygons);
     redraw();
 }
 
 function onClear() {
     polygons.length = 1;//保留边框
-    trangles = undefined;
+    initEdgePoly();//重置外边框
+    triangles = undefined;
     redraw();
 }
 
@@ -231,9 +328,12 @@ class DrawMapPathControl {
         btnEmpty.addEventListener("click", onClear);
         div.appendChild(btnEmpty);
         div.appendChild(document.createElement("br"));
+
         createRadio("无操作", BlockPointState.None, Const.radioName, div, true, setState);
         createRadio("添加障碍点", BlockPointState.Add, Const.radioName, div, false, setState);
         createRadio("移除障碍点", BlockPointState.Del, Const.radioName, div, false, setState);
+        createRadio("设置边框", BlockPointState.ModifyEdge, Const.radioName, div, false, setState);
+
         div.appendChild(document.createElement("br"));
         lblPixelPoint = document.createElement("label");
         div.appendChild(lblPixelPoint);
@@ -269,7 +369,7 @@ export class NavMeshPath implements PathSolution<MapInfo> {
                 })
         }
         if (trans) {
-            trangles = trans.map(points => {
+            triangles = trans.map(points => {
                 let [pA, pB, pC] = arrs2Points(points);
                 return new Triangle().setPoints(pA, pB, pC);
             });
@@ -284,7 +384,7 @@ export class NavMeshPath implements PathSolution<MapInfo> {
     }
     beforeSave(out: MapInfo, _: MapInfo) {
         onBake();
-        out.trans = trangles.map(tr => points2Arrs([tr.pA, tr.pB, tr.pC]));
+        out.trans = triangles.map(tr => points2Arrs([tr.pA, tr.pB, tr.pC]));
         let polys = [] as Poly[];
         for (let i = 1; i < polygons.length; i++) {
             const { points, isEnd } = polygons[i];
@@ -315,6 +415,7 @@ export class NavMeshPath implements PathSolution<MapInfo> {
 
         let bg = $engine.getLayer(jy.GameLayerID.Sorted) as jy.BaseLayer;
         let g = bg.graphics;
+        let rect = new egret.Rectangle();
         //@ts-ignore
         $engine._bg.drawGrid = function (this: jy.TileMapLayer, x: number, y: number, w: number, h: number, map: MapInfo) {
             //检查polygon是否有点在范围内
@@ -322,45 +423,61 @@ export class NavMeshPath implements PathSolution<MapInfo> {
             g.clear();
             if ($gm.$showMapGrid) {
                 //检查polygon中的点是否在范围内
-                let rect = new egret.Rectangle(x, y, w, h);
+                rect.setTo(x, y, w, h);
+                //绘制边框
+                let vertexV = edgePoly.points;
+
+                for (let i = 0; i < vertexV.length; i++) {
+                    const v = vertexV[i];
+                    g.beginFill(0xff, 1)
+                    g.drawCircle(v.x, v.y, 5);
+                    g.endFill();
+                }
+                let first = vertexV[0];
+                g.lineStyle(2, 0xff);
+                g.moveTo(first.x, first.y);
+                for (let i = 1; i < vertexV.length; i++) {
+                    const v = vertexV[i];
+                    g.lineTo(v.x, v.y);
+                }
+                g.lineTo(first.x, first.y);
+                g.lineStyle();
+
                 for (let i = 1; i < polygons.length; i++) {
                     const poly = polygons[i];
                     let vertexV = poly.points;
-                    if (vertexV.find(p => rect.containsPoint(p))) {
-                        for (let i = 0; i < vertexV.length; i++) {
-                            const v = vertexV[i];
-                            g.beginFill(0xff0000, 1)
-                            g.drawCircle(v.x, v.y, 5);
-                            g.endFill();
-                        }
-                        let first = vertexV[0];
-                        g.lineStyle(2, 0xff0000);
-                        if (poly.isEnd) {
-                            g.beginFill(0xff0000, 0.3);
-                        }
-                        g.moveTo(first.x, first.y);
-                        for (let i = 1; i < vertexV.length; i++) {
-                            const v = vertexV[i];
-                            g.lineTo(v.x, v.y);
-                        }
-                        if (poly.isEnd) {
-                            g.lineTo(first.x, first.y);
-                            g.endFill();
-                        }
+                    for (let i = 0; i < vertexV.length; i++) {
+                        const v = vertexV[i];
+                        g.beginFill(0xff0000, 1)
+                        g.drawCircle(v.x, v.y, 5);
+                        g.endFill();
+                    }
+                    let first = vertexV[0];
+                    g.lineStyle(2, 0xff0000);
+                    if (poly.isEnd) {
+                        g.beginFill(0xff0000, 0.3);
+                    }
+                    g.moveTo(first.x, first.y);
+                    for (let i = 1; i < vertexV.length; i++) {
+                        const v = vertexV[i];
+                        g.lineTo(v.x, v.y);
+                    }
+                    if (poly.isEnd) {
+                        g.lineTo(first.x, first.y);
+                        g.endFill();
                     }
                 }
-                if (trangles) {
+
+                if (triangles) {
                     g.lineStyle(2, 0xff00);
-                    for (let i = 0; i < trangles.length; i++) {
-                        const { pA, pB, pC } = trangles[i];
-                        if (rect.containsPoint(pA) || rect.containsPoint(pB) || rect.containsPoint(pC)) {
-                            g.beginFill(0xff00, 0.1);
-                            g.moveTo(pA.x, pA.y);
-                            g.lineTo(pB.x, pB.y);
-                            g.lineTo(pC.x, pC.y);
-                            g.lineTo(pA.x, pA.y);
-                            g.endFill();
-                        }
+                    for (let i = 0; i < triangles.length; i++) {
+                        const { pA, pB, pC } = triangles[i];
+                        g.beginFill(0xff00, 0.1);
+                        g.moveTo(pA.x, pA.y);
+                        g.lineTo(pB.x, pB.y);
+                        g.lineTo(pC.x, pC.y);
+                        g.lineTo(pA.x, pA.y);
+                        g.endFill();
                     }
                 }
             }
@@ -384,9 +501,9 @@ function getBytes() {
     let idx = 0;
     let pDict = {} as { [key: number]: TmpPoint };
     //检索点的索引
-    let tranLen = trangles.length;
+    let tranLen = triangles.length;
     for (let i = 0; i < tranLen; i++) {
-        const { pA, pB, pC } = trangles[i];
+        const { pA, pB, pC } = triangles[i];
         trans.push(
             getPoint(pA),
             getPoint(pB),

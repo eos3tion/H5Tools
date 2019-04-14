@@ -230,13 +230,8 @@ export class Polygon {
      * @param y 
      * @param epsilon 
      */
-    find(x: number, y: number, epsilon = 10) {
-        const sqEpsilon = epsilon ** 2;
-        return this.points.find(pt => {
-            let dx = pt.x - x;
-            let dy = pt.y - y;
-            return dx * dx + dy * dy < sqEpsilon
-        })
+    find(tpt: Point) {
+        return this.points.find(pt => pt.equals(tpt))
     }
 
 
@@ -290,6 +285,24 @@ export class Polygon {
             this.calcedCW = true;
         }
         return cw;
+    }
+
+    /**
+     * 是否包含点
+     * @param pt 
+     */
+    contain(pt: Point) {
+        let { x, y } = pt;
+        let inside = false;
+        let vs = this.points;
+        for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+            let { x: xi, y: yi } = vs[i];
+            let { x: xj, y: yj } = vs[j];
+            let intersect = ((yi > y) != (yj > y))
+                && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
     }
 
     union(polygon: Polygon) {

@@ -254,7 +254,7 @@ function saveMap() {
     const mapCfgFile = path.join(Core.basePath, currentMap.path, ConstString.MapCfgFileName);
 
     //将数据写入文件
-    let out = currentMap.getSpecObject("path", "columns", "rows", "ext", "type", "pWidth", "pHeight", "maxPicX", "maxPicY") as jy.MapInfo;
+    let out = currentMap.getSpecObject("path", "ext", "type", "pWidth", "pHeight", "maxPicX", "maxPicY") as jy.MapInfo;
     let solution = PathSolution.current;
     out.pathType = solution.type;
     solution.beforeSave(out, currentMap);

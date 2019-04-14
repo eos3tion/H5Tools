@@ -19,17 +19,6 @@ let btnFull: HTMLInputElement;
  */
 let sizeNotMatch: boolean;
 
-/**
- * 加载到的地图配置
- */
-let cfg: MapInfo;
-
-function createInput(type: string) {
-    const inp = document.createElement("input");
-    inp.type = type;
-    return inp;
-}
-
 function makeRow(table: HTMLTableElement, label: string, control: Node) {
     const row = table.insertRow();
     let cell = row.insertCell();
@@ -131,19 +120,19 @@ function screen2Map(point: jy.Point, out?: jy.Point) {
     out.y = Math.round(point.y / map.gridHeight);
 }
 
-/**
- * 地图坐标转换为屏幕像素坐标
- * 如果没有设置out，则会直接改变point
- * @export
- * @param {Point} point
- * @param {Point} [out]  
- */
-function map2Screen(point: jy.Point, out?: jy.Point) {
-    out = out || point;
-    const map = getMap();
-    out.x = point.x * map.gridWidth + map.gridWidth * .5;
-    out.y = point.y * map.gridHeight + map.gridHeight * .5;
-}
+// /**
+//  * 地图坐标转换为屏幕像素坐标
+//  * 如果没有设置out，则会直接改变point
+//  * @export
+//  * @param {Point} point
+//  * @param {Point} [out]  
+//  */
+// function map2Screen(point: jy.Point, out?: jy.Point) {
+//     out = out || point;
+//     const map = getMap();
+//     out.x = point.x * map.gridWidth + map.gridWidth * .5;
+//     out.y = point.y * map.gridHeight + map.gridHeight * .5;
+// }
 const view = $g("StateEdit");
 
 function showMapGrid() {
@@ -306,6 +295,8 @@ export class GridMapPath implements PathSolution<MapInfo> {
     beforeSave(out: MapInfo, current: MapInfo) {
         out.gridHeight = current.gridHeight;
         out.gridWidth = current.gridWidth;
+        out.columns = current.columns;
+        out.rows = current.rows;
         let pathdata = current.pathdata;
         if (pathdata) {
             out.pathdataB64 = getDataB64(pathdata);
@@ -316,7 +307,7 @@ export class GridMapPath implements PathSolution<MapInfo> {
         const { map, log } = opt;
         const path: typeof import("path") = nodeRequire("path");
         const fs: typeof import("fs") = nodeRequire("fs");
-        let bytes = getDataForJava(map);
+        let bytes = getDataForJava(map as MapInfo);
         let file = path.join(Core.basePath, map.path, ConstString.JavaMapPath);
         fs.writeFileSync(file, bytes);
         log(`存储至${file}`);
@@ -332,7 +323,7 @@ function getDataB64(pathdata: Uint8Array) {
     }
 }
 
-function getDataForJava(map: jy.MapInfo) {//为了避免服务端数据结构变更，减少
+function getDataForJava(map: MapInfo) {//为了避免服务端数据结构变更，减少
     //生成列表文件
     let w = map.columns;
     let h = map.rows;
