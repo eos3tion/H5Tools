@@ -12,16 +12,20 @@ Point.prototype.equals = function equals(this: Point, toCompare: Point) {
 }
 
 function points2Arrs(pts: Point[]) {
-    return pts.map(pt => [pt.x, pt.y]) as [number, number][]
+    return pts.map(pt => [pt.x, pt.y]) as PointArrList
 }
 
-function arrs2Points(arrs: [number, number][]) {
+function arrs2Points(arrs: PointArrList) {
     return arrs.map(([x, y]) => new Point(x, y));
 }
 
+declare type PointArr = [number, number];
+
+declare type PointArrList = PointArr[];
+
 interface Poly {
     isEnd: boolean;
-    points: [number, number][];
+    points: PointArrList;
 }
 
 
@@ -29,7 +33,11 @@ interface MapInfo extends jy.NavMeshMapInfo {
 
     polys: Poly[];
 
-    trans: [number, number][][];
+    trans: PointArrList[];
+    /**
+     * 边框点
+     */
+    edge: PointArrList;
 }
 
 const enum Const {
@@ -54,13 +62,17 @@ const view = $g("StateEdit");
 const edgePoly = new Polygon();
 
 function initEdgePoly() {
-    const { width, height } = $engine.currentMap;
-    edgePoly.setPoints([
-        new Point(),
-        new Point(width, 0),
-        new Point(width, height),
-        new Point(0, height)
-    ])
+    const { width, height, edge } = $engine.currentMap as MapInfo;
+    if (edge) {
+        edgePoly.setPoints(arrs2Points(edge));
+    } else {
+        edgePoly.setPoints([
+            new Point(),
+            new Point(width, 0),
+            new Point(width, height),
+            new Point(0, height)
+        ])
+    }
 }
 
 
@@ -357,8 +369,8 @@ class DrawMapPathControl {
 }
 
 export class NavMeshPath implements PathSolution<MapInfo> {
-    onLoad(_: MapInfo, cfg: Partial<MapInfo>) {
-        let { polys, trans } = cfg;
+    onLoad(map: MapInfo, cfg: Partial<MapInfo>) {
+        let { polys, trans, edge } = cfg;
         if (polys) {
             polygons.length = 1;
             polys
@@ -374,6 +386,7 @@ export class NavMeshPath implements PathSolution<MapInfo> {
                 return new Triangle().setPoints(pA, pB, pC);
             });
         }
+        map.edge = edge;
     }
 
     readonly name = "导航网格";
@@ -394,6 +407,7 @@ export class NavMeshPath implements PathSolution<MapInfo> {
             });
         }
         out.polys = polys;
+        out.edge = points2Arrs(edgePoly.points);
         out.pathdataB64 = egret.Base64Util.encode(getBytes());
     }
 
