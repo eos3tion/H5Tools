@@ -66,8 +66,7 @@
     <script type="text/javascript" src="../helpers/jquery.min.js"></script>
     <script type="text/javascript" src="../helpers/easyui/jquery.easyui.min.js"></script>
     <script data-main="dist/app" type="text/javascript" src="../helpers/require.js"></script>
-
-
+    <script src="../helpers/jscolor.min.js"></script>
 </head>
 
 <body>
@@ -91,19 +90,19 @@
             <tr>
                 <td>水平方向图片数量：</td>
                 <td>
-                    <label id="lblPicHCount"></label>
+                    <input id="lblPicHCount" />
                 </td>
             </tr>
             <tr>
                 <td>垂直方向图片数量：</td>
                 <td>
-                    <label id="lblPicVCount"></label>
+                    <input id="lblPicVCount" />
                 </td>
             </tr>
             <tr>
                 <td>图片尺寸：</td>
                 <td>
-                    <label id="lblPicSize"></label>
+                    <input id="lblPicSize" />
                 </td>
             </tr>
             <tr>
@@ -143,6 +142,8 @@
         <div id="divControl"
             style="width:400px;position:absolute;z-Index:2000;background-color:#fff;right:50px;top:50px;">
             <div title="控制面板" class="easyui-panel" data-options="collapsible:true">
+                背景颜色：<input id="bgColor" class="jscolor" value="ffffff">
+                <hr />
                 <input id="btnSave" type="button" value="保存地图数据" />
                 <div id="accControl" class="easyui-accordion" style="width:100%;height:300px;">
                     <div title="特效列表" data-options="selected:true" style="padding:10px;">

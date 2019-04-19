@@ -43,8 +43,9 @@ export interface PathSolution<T extends MapInfo> {
      * 从配置中加载数据时调用的函数
      * @param map 当前的地图数据
      * @param cfg 配置数据
+     * @param sizeNotMatch 尺寸是否不匹配
      */
-    onLoad(map: T, cfg: Partial<T>);
+    onLoad(map: T, cfg: Partial<T>, sizeNotMatch?: boolean);
 
     /**
      * 存储前调用的函数
