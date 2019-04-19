@@ -3,8 +3,6 @@ import * as $path from "path";
 const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
-import * as $electron from "electron";
-const electron: typeof $electron = nodeRequire("electron");
 import * as $http from "http";
 
 import { HGameEngine } from "./HGameEngine";
@@ -71,7 +69,9 @@ const view = $g("StateEdit");
  */
 const divEffectPro = $("#divEffectPro");
 const divControl = $("#divControl");
-divControl.draggable()
+divControl.draggable({
+    handle:".panel-header"
+})
 const dlEffectList = $("#dlEffectList");
 
 const btnSave = $("#btnSave");
