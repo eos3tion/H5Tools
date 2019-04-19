@@ -1,0 +1,14 @@
+{
+   "compilerOptions": {
+     "module": "amd",
+     "target": "es2015",
+     "experimentalDecorators": true,
+     "sourceMap": false,
+     "outDir": "dist",
+   },
+   "exclude": [
+     "node_modules",
+     "lib",
+     "h5core/src/**"
+   ]
+ }

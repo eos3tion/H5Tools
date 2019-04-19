@@ -20,6 +20,9 @@
 		},
 		{
 			"path": "Webp"
+		},
+		{
+			"path": "EffectTools"
 		}
 	],
 	"settings": {}

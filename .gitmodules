@@ -4,3 +4,6 @@
 [submodule "AvatarTools/h5core"]
 	path = AvatarTools/h5core
 	url = https://github.com/eos3tion/h5core.git
+[submodule "EffectTools/h5core"]
+	path = EffectTools/h5core
+	url = https://github.com/eos3tion/h5core.git
