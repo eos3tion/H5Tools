@@ -53,7 +53,6 @@ class Entry extends egret.Sprite {
     }
 
     onAdded() {
-        stage = this.stage;
         //创建地图
         jy.GameEngine.init(this.stage, HGameEngine);
         jy.Global.initTick();
@@ -62,7 +61,6 @@ class Entry extends egret.Sprite {
         mapPathCtrlInit();
     }
 }
-let stage: egret.Stage;
 
 window["EgretEntry"] = Entry;
 

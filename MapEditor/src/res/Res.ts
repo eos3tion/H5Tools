@@ -1,7 +1,5 @@
 import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
-import * as $electron from "electron";
-const electron: typeof $electron = nodeRequire("electron");
 import * as $path from "path";
 const path: typeof $path = nodeRequire("path");
 
@@ -27,6 +25,7 @@ class BinLoader implements Res.ResLoader {
                 data = fs.readFileSync(item.url);
                 break;
         }
+        item.state = state;
         callback.callAndRecycle(item);
 
     }
