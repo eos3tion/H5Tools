@@ -69,8 +69,11 @@ const view = $g("StateEdit");
  */
 const divEffectPro = $("#divEffectPro");
 const divControl = $("#divControl");
+$("#bgColor").on("change", function () {
+    view.style.backgroundColor = "#" + this.value;
+})
 divControl.draggable({
-    handle:".panel-header"
+    handle: ".panel-header"
 })
 const dlEffectList = $("#dlEffectList");
 
