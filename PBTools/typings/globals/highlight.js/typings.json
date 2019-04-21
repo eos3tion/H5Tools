@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/f6022108707d3cded7f8b9e91cb38c8f65c2c519/highlight.js/index.d.ts",
+    "raw": "registry:dt/highlight.js#9.1.0+20161227120821",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/f6022108707d3cded7f8b9e91cb38c8f65c2c519/highlight.js/index.d.ts"
+  }
+}

@@ -23,6 +23,12 @@
 		},
 		{
 			"path": "EffectTools"
+		},
+		{
+			"path": "helpers"
+		},
+		{
+			"path": "PBTools"
 		}
 	],
 	"settings": {}

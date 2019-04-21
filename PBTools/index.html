@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="../helpers/FsExtra.js"></script>
+    <script type="text/javascript" src="../helpers/Extend.js"></script>
+    <script>
+        // 先让node加载punycode，否则url调用punycode时，已经被requirejs加载了punycode
+        require("punycode");
+        if (typeof window.require === "function") {
+            // 重命名 Electron 提供的 require
+            window.nodeRequire = window.require;
+            delete window.require;
+            delete window.exports;
+            delete window.module;
+        }
+    </script>
+    <style>
+        html,
+        body {
+            padding: 0;
+            border: 0;
+            margin: 0;
+            height: 100%;
+            font: 14px "Microsoft YaHei";
+        }
+    </style>
+    <link rel="stylesheet" href="../helpers/highlight/styles/monokai-sublime.css">
+    <script type="text/javascript" src="../helpers/highlight/highlight.js"></script>
+    <script type="text/javascript" src="../helpers/highlight/helper.js"></script>
+    <script data-main="dist/app2" type="text/javascript" src="../helpers/require.js"></script>
+    <script type="text/javascript" src="../helpers/cookie.js"></script>
+</head>
+
+<body>
+    <div style="background: #f6f">
+        通信协议主页面地址：
+        <input id="txtServerWiki" style="width:400px;" type="input" value="" />
+    </div>
+    <div style="background:#fee">
+        服务端解析服务地址：
+        <input id="txtServerHttp" style="width:400px;" type="input" value="" />
+        <br/>
+        <progress style="width:500px" id="progress" max="100" value="0"></progress>
+        <label id="lblProgress"></label>
+        <input id="btnServer" type="button" value="生成服务端文件" />
+    </div>
+
+
+    <div id = "c2s">
+        c2s&s2c匹配规则：
+        <label><input name="c2sradio" type="radio" value="_C#_S" checked = "true" />_C#_S </label>
+        <label><input name="c2sradio" type="radio" value="_C2S#_S2C" />_C2S#_S2C </label>
+    </div>
+
+    <div style="background:#eef"> 客户端项目根目录：
+        <input id="txtClientPath" style="width:400px;" type="input" value="" />
+        <label>
+            <input type="checkbox" id="chkOptimizeMsg" />是否优化单数据的消息</label>
+    </div>
+    <div style="border-top:solid 1px #ccc;padding-top:5px;background:#eef">wiki上proto的地址：
+        <input id="txtUrl" style="width:400px;" type="input" value="" />
+        <input id="btnGen" type="button" value="生成" />
+        <hr/>
+        <progress style="width:500px" id="progressClient" max="100" value="0"></progress>
+        <label id="lblProgressClient"></label>
+        <input id="btnClientAll" type="button" value="基于通信协议地址生成全部文件" />
+    </div>
+    <textarea id="txtProto" style="width:49%;height:400px;margin-top:5px;border:#ccc solid 1px;overflow-y:auto;float:left;"></textarea>
+    <div id="txtLog" style="width:49%;height:404px;margin-top:5px;border:#ccc solid 1px;overflow-y:auto;float:left;">
+    </div>
+    <div id="code">
+    </div>
+</body>
+
+</html>
