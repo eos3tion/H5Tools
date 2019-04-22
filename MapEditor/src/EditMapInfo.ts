@@ -91,6 +91,7 @@ function setData(map: MapInfo) {
         }
     }
     Core.mapCfg = cfg;
+    Core.mapCfgFile = mapCfgFile;
     let pathType = cfg && cfg.pathType || jy.MapPathType.NavMesh;
     PathSolution.initType(pathType);
 
@@ -196,14 +197,24 @@ function setData(map: MapInfo) {
         //检查地图大小是否匹配
         let maxPicX = cfg.maxPicX || cfg.width / cfgPWidth;
         let maxPicY = cfg.maxPicY || cfg.height / cfgPHeight;
+        let sizeNotMatch = false;
+        let changeSize = false;
         if (cfgPHeight != pHeight || cfgPWidth != pWidth) {
-            alert(`检查到地图配置[${mapCfgFile}]中图片大小为[${cfgPWidth}×${cfgPHeight}]和实际图片大小[${pWidth}×${pHeight}]不一致，将已实际图片大小为准`);
-            cfgPWidth = pWidth;
-            cfgPHeight = pHeight;
+            changeSize = confirm(`检查到地图配置[${mapCfgFile}]中图片大小为[${cfgPWidth}×${cfgPHeight}]和实际图片大小[${pWidth}×${pHeight}]不一致，是否已实际图片大小为准`);
+            if (changeSize) {
+                cfgPWidth = pWidth;
+                cfgPHeight = pHeight;
+            } else {
+                pWidth = cfgPWidth;
+                pHeight = cfgPHeight;
+            }
         }
-        if (maxPicX != hPicIdx && maxPicY != vPicIdx) {
+        if (maxPicX != hPicIdx || maxPicY != vPicIdx) {
             sizeNotMatch = true;
-            alert(`检查到地图配置[${mapCfgFile}]中地图大小和当前文件夹图片文件名得到的地图大小不一致，请检查。\n如果继续操作，将会弃用原地图路径点数据`);
+            if (!changeSize) {
+                hPicIdx = maxPicX;
+                vPicIdx = maxPicY;
+            }
         }
         map.effs = cfg.effs;
         solution.onLoad(map, cfg, sizeNotMatch);

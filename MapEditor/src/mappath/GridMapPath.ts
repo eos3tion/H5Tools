@@ -55,8 +55,7 @@ function calGrids() {
     let cfg = Core.mapCfg as MapInfo;
     if (cfg) {
         if (cfg.columns != currentMap.columns || cfg.rows != currentMap.rows) {
-            sizeNotMatch = true;
-            alert(`检查到地图配置中地图格子尺寸[${cfg.columns}×${cfg.rows}]和计算的尺寸[${currentMap.columns}×${currentMap.rows}]不匹配，请检查。\n如果继续操作，将会弃用原地图路径点数据`);
+            sizeNotMatch = confirm(`检查到地图配置中地图格子尺寸[${cfg.columns}×${cfg.rows}]和计算的尺寸[${currentMap.columns}×${currentMap.rows}]不匹配，请检查。\n点击确定，将会弃用原地图路径点数据`);
         }
         if (!sizeNotMatch) {
             let b64 = cfg.pathdataB64;
@@ -233,7 +232,7 @@ function getMap() {
 
 export class GridMapPath implements PathSolution<MapInfo> {
 
-    onLoad(map: MapInfo, cfg: MapInfo) {
+    onLoad(map: MapInfo, cfg: MapInfo) {        
         map.gridWidth = cfg.gridWidth;
         map.gridHeight = cfg.gridHeight;
         map.pathdataB64 = cfg.pathdataB64;

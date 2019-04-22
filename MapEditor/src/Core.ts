@@ -29,6 +29,10 @@ export const Core = {
      */
     mapCfg: null as jy.MapInfo,
     /**
+     * 选中地图文件路径
+     */
+    mapCfgFile: null as string,
+    /**
      * 路径解决方案
      */
     pathSolution: null as $PathSolution,
