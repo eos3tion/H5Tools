@@ -195,8 +195,9 @@ function setData(map: MapInfo) {
         let cfgPWidth = cfg.pWidth || ConstNum.PicSize;
         let cfgPHeight = cfg.pHeight || ConstNum.PicSize;
         //检查地图大小是否匹配
-        let maxPicX = cfg.maxPicX || cfg.width / cfgPWidth;
-        let maxPicY = cfg.maxPicY || cfg.height / cfgPHeight;
+        let { maxPicX, maxPicY } = cfg;
+        maxPicX = maxPicX ? maxPicX + 1 : cfg.width / cfgPWidth;
+        maxPicY = maxPicY ? maxPicY + 1 : cfg.height / cfgPHeight;
         let sizeNotMatch = false;
         let changeSize = false;
         if (cfgPHeight != pHeight || cfgPWidth != pWidth) {
