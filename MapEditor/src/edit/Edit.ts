@@ -117,6 +117,9 @@ function checkAni(key: string, dataPath?: string, imgPath?: string) {
         if (!imgPath) {
             imgPath = path.join(Core.basePath, Core.cfg.effectPath, key, ConstString.AniImageFile);
         }
+        if (!fs.existsSync(dataPath)) {
+            return alert(`找不到指定的特效配置文件[${dataPath}]`)
+        }
         let str = fs.readFileSync(dataPath, "utf8");
         let data;
         try {

@@ -14,15 +14,19 @@ class BinLoader implements Res.ResLoader {
         let data, state = jy.RequestState.COMPLETE;
         switch (this.type) {
             case "json":
-                data = fs.readFileSync(item.url, "utf8");
                 try {
+                    data = fs.readFileSync(item.url, "utf8");
                     data = JSON.parse(data);
                 } catch {
                     state = jy.RequestState.FAILED;
                 }
                 break;
             default:
-                data = fs.readFileSync(item.url);
+                try {
+                    data = fs.readFileSync(item.url);
+                } catch{
+                    state = jy.RequestState.FAILED;
+                }
                 break;
         }
         item.state = state;
