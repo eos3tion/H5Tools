@@ -524,6 +524,16 @@ function getBytes() {
             getPoint(pC)
         );
     }
+    let polys = [] as number[][];
+    let polygons = unionAll();
+    let polyLength = polygons.length;
+    let polyByteLen = 0;
+    for (let i = 0; i < polyLength; i++) {
+        let { points } = polygons[i];
+        polyByteLen += 2 + points.length * 2;
+        polys.push(points.map(point => getPoint(point)));
+    }
+
     let plen = points.length;
 
     //数据结构 BigEdian
@@ -531,7 +541,9 @@ function getBytes() {
     //n *  Uint16 x  Uint16 y    (4*n bytes)
     //Uint16 三角形数量 m     (2 bytes)
     //m * 3 Uint16 点索引号     (3*2*m bytes)
-    let length = 2 + plen * 4 + 2 + tranLen * 3 * 2;
+    //Uint16 polys数量 l  (2 bytes)
+    //polys  的一个poly  Uint16的点数量 j   j*Uint16点索引号 (2+j*2 bytes)
+    let length = 2 + plen * 4 + 2 + tranLen * 3 * 2 + 2 + polyByteLen;
     bytes = new Uint8Array(length);
     let dv = new DataView(bytes.buffer);
     let pos = 0;
@@ -548,6 +560,18 @@ function getBytes() {
     for (let i = 0; i < trans.length; i++) {
         dv.setUint16(pos, trans[i]);
         pos += 2;
+    }
+
+    dv.setUint16(pos, polyLength);
+    pos += 2;
+    for (let i = 0; i < polys.length; i++) {
+        let poly = polys[i];
+        dv.setUint16(pos, poly.length);
+        pos += 2;
+        for (let j = 0; j < poly.length; j++) {
+            dv.setUint16(pos, poly[i]);
+            pos += 2;
+        }
     }
     return bytes;
     function getPoint(pt: Point) {
