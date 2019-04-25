@@ -279,7 +279,7 @@ $g("btnSaveGuides").onclick = function () {
     }
     if (!flag) {
         const electron: typeof _electron = nodeRequire("electron");
-        electron.dialog.showSaveDialog({ title: "存储引导文件", defaultPath: "Guide.json" });
+        electron.remote.dialog.showSaveDialog({ title: "存储引导文件", defaultPath: "Guide.json" });
     }
 }
 
