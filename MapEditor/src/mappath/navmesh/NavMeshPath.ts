@@ -569,7 +569,7 @@ function getBytes() {
         dv.setUint16(pos, poly.length);
         pos += 2;
         for (let j = 0; j < poly.length; j++) {
-            dv.setUint16(pos, poly[i]);
+            dv.setUint16(pos, poly[j]);
             pos += 2;
         }
     }
