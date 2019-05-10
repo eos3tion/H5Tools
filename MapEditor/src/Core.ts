@@ -39,6 +39,22 @@ export const Core = {
 
 }
 
+export function setMapBit(x: number, y: number, columns: number, pathdata: Uint8Array, flag: any) {
+    let position = y * columns + x;
+    let byteCount = position >> 3;
+    let bitCount = position - (byteCount << 3);
+    pathdata[byteCount] = setBitState(pathdata[byteCount], (7 - bitCount), flag);
+}
+
+function setBitState(value: number, bitIdx: number, flag) {
+    if (flag) {
+        value = value | 1 << bitIdx;
+    } else {
+        value = value & ~(1 << bitIdx)
+    }
+    return value;
+}
+
 export function createRadio(title: string, value: any, name: string, parent: Node, checked: boolean, onChange?: { (ev: Event) }) {
     const doc = document;
     let label = doc.createElement("label");

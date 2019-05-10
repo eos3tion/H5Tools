@@ -64,6 +64,12 @@ export interface PathSolution<T extends MapInfo> {
      */
     onEnterMap();
 
+    /**
+     * 得到地图的字节码数据
+     * @param map 地图
+     */
+    getMapBytes(map: T): jy.ByteArray;
+
     readonly type?: jy.MapPathType;
 }
 

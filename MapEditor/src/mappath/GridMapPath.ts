@@ -1,6 +1,7 @@
 import { PathSolution, OnSaveOption } from "./PathSolution";
-import { Core, createRadio } from "../Core";
+import { Core, createRadio, setMapBit } from "../Core";
 import MapInfo = jy.GridMapInfo;
+import { PB } from "../pb/PB";
 
 const enum Const {
     radioName = "radMapPath",
@@ -82,19 +83,7 @@ function setWalk(x: number, y: number, flag: any, map: MapInfo) {
     if (!pathdata) {
         map.pathdata = pathdata = new Uint8Array(Math.ceil(columns * map.rows / 8));
     }
-    let position = y * columns + x;
-    let byteCount = position >> 3;
-    let bitCount = position - (byteCount << 3);
-    pathdata[byteCount] = setBitState(pathdata[byteCount], (7 - bitCount), flag);
-}
-
-function setBitState(value: number, bitIdx: number, flag) {
-    if (flag) {
-        value = value | 1 << bitIdx;
-    } else {
-        value = value & ~(1 << bitIdx)
-    }
-    return value;
+    setMapBit(x, y, columns, pathdata, flag);
 }
 
 function fillGrids(val: number) {
@@ -232,7 +221,7 @@ function getMap() {
 
 export class GridMapPath implements PathSolution<MapInfo> {
 
-    onLoad(map: MapInfo, cfg: MapInfo) {        
+    onLoad(map: MapInfo, cfg: MapInfo) {
         map.gridWidth = cfg.gridWidth;
         map.gridHeight = cfg.gridHeight;
         map.pathdataB64 = cfg.pathdataB64;
@@ -313,6 +302,23 @@ export class GridMapPath implements PathSolution<MapInfo> {
     }
 
     onEnterMap() { }
+
+    getMapBytes(map: MapInfo) {
+        let pb = {} as jy.GridMapInfoPB;
+        pb.gridWidth = map.gridWidth;
+        pb.gridHeight = map.gridHeight;
+        pb.columns = map.columns;
+        pb.rows = map.rows;
+        let data = map.pathdata;
+        if (data) {
+            pb.pathdata = new jy.ByteArray(data.buffer);
+        }
+        data = map.adata;
+        if (data) {
+            pb.alphadata = new jy.ByteArray(data.buffer)
+        }
+        return PB.writeTo(pb, jy.MapPBDictKey.GridMapInfoPB);
+    }
 }
 
 function getDataB64(pathdata: Uint8Array) {

@@ -9,6 +9,7 @@ import { HGameEngine } from "./HGameEngine";
 import { AniDele } from "./AniDele";
 import { Core } from "../Core";
 import { PathSolution } from "../mappath/PathSolution";
+import { PB } from "../pb/PB";
 
 function mapPathCtrlInit() {
     const drawMapPathControl = PathSolution.current.drawMapPathControl;
@@ -100,7 +101,7 @@ function onDrop(e: DragEvent) {
         //将坐标转换到game上
         let dpr = window.devicePixelRatio;
         let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-        let dele = new AniDele({ uri: key, layerID: jy.GameLayerID.CeilEffect, sX: 1, sY: 1, rotation: 0 });
+        let dele = new AniDele({ uri: key, layerID: jy.GameLayerID.CeilEffect, scaleX: 1, scaleY: 1, rotation: 0 });
 
         dele.setStartPoint(pt.x, pt.y);
         $engine.effs.pushOnce(dele);
@@ -258,20 +259,25 @@ function saveMap() {
     const mapCfgFile = path.join(Core.basePath, currentMap.path, ConstString.MapCfgFileName);
 
     //将数据写入文件
-    let out = currentMap.getSpecObject("path", "ext", "type", "pWidth", "pHeight", "maxPicX", "maxPicY") as jy.MapInfo;
+    let out = currentMap.getSpecObject("path", "ext", "ftype", "pWidth", "pHeight", "maxPicX", "maxPicY") as jy.MapInfo;
     let solution = PathSolution.current;
     out.pathType = solution.type;
+
     solution.beforeSave(out, currentMap);
 
     let effDeles: AniDele[] = $engine.effs;
     let len = effDeles.length;
     if (len) {
-        let effs = [];
+        let effs = [] as MapEffData[];
         for (let i = 0; i < effDeles.length; i++) {
             effs[i] = effDeles[i].data;
         }
         out.effs = effs;
     }
+    let pb = getMapInfoPB(currentMap);
+    pb.data = solution.getMapBytes(out);
+    let mapBytes = PB.writeTo(pb, jy.MapPBDictKey.MapInfoPB);
+    out.mapBytesB64 = egret.Base64Util.encode(mapBytes.buffer);
     fs.writeFileSync(mapCfgFile, JSON.stringify(out));
     log(`存储到[${mapCfgFile}]`);
 
@@ -298,6 +304,24 @@ function saveMap() {
     }
 
 }
+
+function getMapInfoPB(map: jy.MapInfo) {
+    let pb = {} as jy.MapInfoPB;
+    pb.extType = +(map.ext == jy.Ext.PNG);
+    pb.id = map.id as number;
+    pb.pHeight = map.pHeight;
+    pb.pWidth = map.pWidth;
+    pb.width = map.width;
+    pb.height = map.height;
+    pb.type = map.pathType;
+    let noPic = map.noPic;
+    if (noPic) {
+        pb.noPic = new jy.ByteArray(noPic.buffer);
+    }
+    pb.effs = map.effs as jy.MapEffPB[];
+    return pb;
+}
+
 const txtLog = $g("txtLog");
 function log(msg: string, color = "#000000") {
     txtLog.innerHTML += color ? `<font color="${color}">${msg}</font><br/>` : `${msg}<br/>`;

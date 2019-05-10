@@ -98,11 +98,11 @@ interface MapEffData {
     /**
      * 缩放X
      */
-    sX?: number;
+    scaleX?: number;
     /**
      * 缩放Y
      */
-    sY?: number;
+    scaleY?: number;
     /**
      * 旋转
      */
@@ -146,7 +146,7 @@ declare namespace jy {
          * 1 000001 002003
          * 2 0_1 2_3
          */
-        type?: number;
+        ftype?: number;
 
         /**
          * 地图数据的 base64字符串
@@ -158,6 +158,11 @@ declare namespace jy {
          * 透明点数据的 base64字符串
          */
         adataB64?: string;
+
+        /**
+         * 地图所有数据的base64字符串
+         */
+        mapBytesB64?: string;
     }
 
     export interface GameEngine {

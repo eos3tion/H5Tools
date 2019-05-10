@@ -74,8 +74,8 @@ function showPro(dele: AniDele, x: number, y: number) {
             initedEffectPro = true;
         }
         let data = dele.data as MovableMapEffData;
-        sldAniScaleX.val(data.sX || 1);
-        sldAniScaleY.val(data.sY || 1);
+        sldAniScaleX.val(data.scaleX || 1);
+        sldAniScaleY.val(data.scaleY || 1);
         txtAniSeed.val(data.seed || 0);
         lblAniUri.text(data.uri);
         (document.querySelector(`input[name=layerID][value="${data.layerID || jy.GameLayerID.CeilEffect}"]`) as HTMLInputElement).checked = true;
@@ -101,8 +101,8 @@ function onChange() {
     if (currentShow && !setView) {
         currentShow.isMove = chkAniIsMovable.checked;
         let data = currentShow.data as MovableMapEffData;
-        data.sX = +sldAniScaleX.val() || 1;
-        data.sY = +sldAniScaleY.val() || 1;
+        data.scaleX = +sldAniScaleX.val() || 1;
+        data.scaleY = +sldAniScaleY.val() || 1;
         data.rotation = ~~sldAniRotation.val();
         currentShow.checkTransform();
         data.layerID = +$("input[name=layerID]:checked").val();
@@ -197,8 +197,8 @@ export class AniDele extends egret.Sprite {
     checkTransform() {
         let display = this.render.display;
         let data = this.data;
-        display.scaleX = data.sX || 1;
-        display.scaleY = data.sY || 1;
+        display.scaleX = data.scaleX || 1;
+        display.scaleY = data.scaleY || 1;
         display.rotation = data.rotation || 0;
     }
 

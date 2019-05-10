@@ -1,5 +1,5 @@
 
-import { Core } from "./Core";
+import { Core, setMapBit } from "./Core";
 import { addRes } from "./res/Res";
 import { PathSolution } from "./mappath/PathSolution";
 import { GridMapPath } from "./mappath/GridMapPath";
@@ -63,6 +63,8 @@ let cfg: MapInfo;
  */
 let sizeNotMatch: boolean;
 
+let hasPicDat: { [key: string]: true };
+
 // txtGridWidth.addEventListener("change", calGrids);
 // txtGridHeight.addEventListener("change", calGrids);
 btnRefreshPath.addEventListener("click", _ => {
@@ -104,8 +106,9 @@ function setData(map: MapInfo) {
     let list = fs.readdirSync(fullPath);
     let reg1 = /^(\d{3})(\d{3}).(jpg|png)$/, reg2 = /(\d+)_(\d+).(jpg|png)$/;
     let reg1Count = 0, reg2Count = 0, jpgCount = 0, pngCount = 0;
-    let hPicIdx = 0, vPicIdx = 0;
+    let hPicCount = 0, vPicCount = 0;
     let sizes = new jy.ArraySet<string[]>();
+    hasPicDat = {};
     let pWidth: number, pHeight: number;
     list.forEach(file => {
         let flag = false;
@@ -125,21 +128,21 @@ function setData(map: MapInfo) {
                 let y = +RegExp.$1;
                 let x = +RegExp.$2;
                 let ext = RegExp.$3;
-                if (x > hPicIdx) {
-                    hPicIdx = x;
+                if (x > hPicCount) {
+                    hPicCount = x;
                 }
-                if (y > vPicIdx) {
-                    vPicIdx = y;
+                if (y > vPicCount) {
+                    vPicCount = y;
                 }
                 if (ext == "jpg") {
                     jpgCount++;
                 } else if (ext == "png") {
                     pngCount++;
                 }
-            }
-            //检查图片尺寸
-            let img = electron.nativeImage.createFromPath(path.join(fullPath, file));
-            if (!isMini) {
+
+                //检查图片尺寸
+                let img = electron.nativeImage.createFromPath(path.join(fullPath, file));
+
                 let { width, height } = img.getSize();
                 if (!(height == 1 && width == 1)) {//1×1的图为特殊处理，不计入size中
                     let key = width + "×" + height;
@@ -151,6 +154,7 @@ function setData(map: MapInfo) {
                     pWidth = width;
                     pHeight = height;
                     list.push(file);
+                    hasPicDat[`${y}_${x}`] = true;
                 }
             }
             addRes(`${map.path}/${file}`, path.join(fullPath, file));
@@ -181,11 +185,11 @@ function setData(map: MapInfo) {
         return alert(`地图底图中，既有png又有jpg，请检查`)
     }
 
-    let type: number;
+    let ftype: number;
     if (reg1Count && !reg2Count) {
-        type = 1;
+        ftype = 1;
     } else if (reg2Count && !reg1Count) {
-        type = 2;
+        ftype = 2;
     } else {
         return alert(`地图底图中，有的图片是[0xx0yy]格式的，有的是[x_y]格式的，请检查`);
     }
@@ -210,18 +214,20 @@ function setData(map: MapInfo) {
                 pHeight = cfgPHeight;
             }
         }
-        if (maxPicX != hPicIdx || maxPicY != vPicIdx) {
+        if (maxPicX != hPicCount || maxPicY != vPicCount) {
             sizeNotMatch = true;
             if (!changeSize) {
-                hPicIdx = maxPicX;
-                vPicIdx = maxPicY;
+                hPicCount = maxPicX;
+                vPicCount = maxPicY;
             }
         }
         map.effs = cfg.effs;
         solution.onLoad(map, cfg, sizeNotMatch);
     }
+
+
     let mpt = MapInfo.prototype;
-    if (type == 1) {
+    if (ftype == 1) {
         mpt.getImgUri = function (this: MapInfo, uri: string) {
             return `${this.path}/${uri}`;
         }
@@ -237,10 +243,10 @@ function setData(map: MapInfo) {
         }
     }
     map.ext = ext;
-    map.type = type;
+    map.ftype = ftype;
     lblPath.innerText = map.path;
 
-    resizeMap(map, pWidth, pHeight, hPicIdx, vPicIdx);
+    resizeMap(map, pWidth, pHeight, hPicCount, vPicCount);
 }
 
 function resizeMap(map: MapInfo, pWidth: number, pHeight: number, hPicCount: number, vPicCount: number) {
@@ -256,6 +262,18 @@ function resizeMap(map: MapInfo, pWidth: number, pHeight: number, hPicCount: num
     lblPicVCount.value = vPicCount + "";
     lblPicSize.value = pWidth + "×" + pHeight;
     PathSolution.current.setMapData(map);
+    let total = hPicCount * vPicCount;
+    if (Object.keys(hasPicDat).length < total) {
+        let noPic = new Uint8Array(total);
+        for (let x = 0; x < hPicCount; x++) {
+            for (let y = 0; y < vPicCount; y++) {
+                setMapBit(x, y, hPicCount, noPic, !hasPicDat[`${y}_${x}`]);
+            }
+        }
+        map.noPic = noPic;
+    } else {
+        map.noPic = undefined;
+    }
 }
 
 

@@ -4,6 +4,7 @@ import Point = egret.Point;
 import { Polygon } from "./geom/Polygon";
 import { createDelaunay } from "./geom/Delaunay";
 import Triangle = jy.Triangle;
+import { PB } from "../../pb/PB";
 
 Point.prototype.equals = function equals(this: Point, toCompare: Point) {
     let dx = this.x - toCompare.x;
@@ -31,7 +32,7 @@ interface Poly {
 
 interface MapInfo extends jy.NavMeshMapInfo {
 
-    polys: Poly[];
+    $polys: Poly[];
 
     trans: PointArrList[];
     /**
@@ -370,7 +371,7 @@ class DrawMapPathControl {
 
 export class NavMeshPath implements PathSolution<MapInfo> {
     onLoad(map: MapInfo, cfg: Partial<MapInfo>) {
-        let { polys, trans, edge } = cfg;
+        let { $polys: polys, trans, edge } = cfg;
         if (polys) {
             polygons.length = 1;
             polys
@@ -406,9 +407,8 @@ export class NavMeshPath implements PathSolution<MapInfo> {
                 points: points2Arrs(points)
             });
         }
-        out.polys = polys;
+        out.$polys = polys;
         out.edge = points2Arrs(edgePoly.points);
-        out.pathdataB64 = egret.Base64Util.encode(getBytes());
     }
 
     afterSave(opt: OnSaveOption) {
@@ -496,6 +496,46 @@ export class NavMeshPath implements PathSolution<MapInfo> {
                 }
             }
         };
+    }
+
+    getMapBytes(_: MapInfo) {
+        let mapPB = {} as jy.NavMeshMapInfoPB;
+        //寻路只需要三角形数据，无需阻挡点数据
+        let points = [] as TmpPoint[];
+        let trans = [] as jy.TPointIdxPB[];
+        let idx = 0;
+        let pDict = {} as { [key: number]: TmpPoint };
+        //检索点的索引
+        let tranLen = triangles.length;
+        for (let i = 0; i < tranLen; i++) {
+            const { pA, pB, pC } = triangles[i];
+            trans.push({
+                a: getPoint(pA),
+                b: getPoint(pB),
+                c: getPoint(pC)
+            });
+        }
+        let polys = [] as jy.PolyPointIdxPB[];
+        let polygons = unionAll();
+        let polyLength = polygons.length;
+        for (let i = 0; i < polyLength; i++) {
+            let { points } = polygons[i];
+            polys.push({ idxs: points.map(point => getPoint(point)) });
+        }
+        mapPB.points = points;
+        mapPB.polys = polys;
+        mapPB.trians = trans;
+        return PB.writeTo(mapPB, jy.MapPBDictKey.NavMeshMapInfoPB);
+        function getPoint(pt: Point) {
+            const { x, y } = pt;
+            let key = x * m16 + y;
+            let tpt = pDict[key];
+            if (!tpt) {
+                pDict[key] = tpt = { x, y, idx };
+                points[idx++] = tpt;
+            }
+            return tpt.idx;
+        }
     }
 }
 
