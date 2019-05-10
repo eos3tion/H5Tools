@@ -275,6 +275,7 @@ function saveMap() {
         out.effs = effs;
     }
     let pb = getMapInfoPB(currentMap);
+    pb.type = solution.type | 0;
     pb.data = solution.getMapBytes(out);
     let mapBytes = PB.writeTo(pb, jy.MapPBDictKey.MapInfoPB);
     out.mapBytesB64 = egret.Base64Util.encode(mapBytes.buffer);
@@ -308,12 +309,11 @@ function saveMap() {
 function getMapInfoPB(map: jy.MapInfo) {
     let pb = {} as jy.MapInfoPB;
     pb.extType = +(map.ext == jy.Ext.PNG);
-    pb.id = map.id as number;
+    pb.id = +map.path;
     pb.pHeight = map.pHeight;
     pb.pWidth = map.pWidth;
     pb.width = map.width;
     pb.height = map.height;
-    pb.type = map.pathType;
     let noPic = map.noPic;
     if (noPic) {
         pb.noPic = new jy.ByteArray(noPic.buffer);
