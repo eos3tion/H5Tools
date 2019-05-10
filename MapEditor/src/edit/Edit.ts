@@ -101,7 +101,7 @@ function onDrop(e: DragEvent) {
         //将坐标转换到game上
         let dpr = window.devicePixelRatio;
         let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-        let dele = new AniDele({ uri: key, layerID: jy.GameLayerID.CeilEffect, scaleX: 1, scaleY: 1, rotation: 0 });
+        let dele = new AniDele({ uri: key, layerID: jy.GameLayerID.CeilEffect, sX: 1, sY: 1, rotation: 0 });
 
         dele.setStartPoint(pt.x, pt.y);
         $engine.effs.pushOnce(dele);
@@ -269,8 +269,13 @@ function saveMap() {
     let len = effDeles.length;
     if (len) {
         let effs = [] as MapEffData[];
+        const layers = [jy.GameLayerID.BottomEffect, jy.GameLayerID.CeilEffect, jy.GameLayerID.UnderMap];
         for (let i = 0; i < effDeles.length; i++) {
-            effs[i] = effDeles[i].data;
+            let dat = effDeles[i].data;
+            dat.layer = layers.indexOf(dat.layerID);
+            dat.scaleX = dat.sX * 100 | 0;
+            dat.scaleY = dat.sY * 100 | 0;
+            effs[i] = dat;
         }
         out.effs = effs;
     }

@@ -96,12 +96,19 @@ interface MapEffData {
      */
     layerID?: number;
     /**
+     * 层标识
+     */
+    layer?: number;
+    /**
      * 缩放X
      */
-    scaleX?: number;
+    sX?: number;
     /**
      * 缩放Y
      */
+    sY?: number;
+    scaleX?: number;
+
     scaleY?: number;
     /**
      * 旋转
