@@ -62,7 +62,7 @@ export interface PathSolution<T extends MapInfo> {
     /**
      * 进入地图前触发
      */
-    onEnterMap();
+    onEnterMap(map:T);
 
     /**
      * 得到地图的字节码数据

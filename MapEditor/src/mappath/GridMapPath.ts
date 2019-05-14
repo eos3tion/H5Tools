@@ -301,7 +301,9 @@ export class GridMapPath implements PathSolution<MapInfo> {
         log(`存储至${file}`);
     }
 
-    onEnterMap() { }
+    onEnterMap(map: MapInfo) {
+        map.getWalk = getWalk;
+    }
 
     getMapBytes(map: MapInfo) {
         let pb = {} as jy.GridMapInfoPB;
