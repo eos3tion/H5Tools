@@ -19,7 +19,7 @@ const enum Const {
     /**
      * protobuf的jar包路径
      */
-    ProtocJarPath = "proto/protobuf-java-2.5.0.jar",
+    ProtocJarPath = "proto/protobuf-java-3.7.0.jar",
 
     /**
      * 基础路径
@@ -38,7 +38,7 @@ const enum Const {
      */
     JavaFileBase = "src",
 
-    ProtoJavaPackage = "com.junyou.common.protobuf",
+    ProtoJavaPackage = "com.wallan.protobuf",
     /**
      * 编译出的classes的基础路径
      */
@@ -175,7 +175,8 @@ module ProtoFile {
     }
 
     export function flush() {
-        return `package ${Const.ProtoJavaPackage};
+        return `syntax = "proto2";
+package ${Const.ProtoJavaPackage};
 option java_package = "${Const.ProtoJavaPackage}";
 message DebugCmd_C{
 	repeated string args=1;//gm指令的参数列表
