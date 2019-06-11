@@ -15,8 +15,7 @@
             delete window.module;
         }
     </script>
-    <script defer="defer" data-main="dist/index" type="text/javascript"
-        src="../helpers/require.js"></script>
+    <script defer="defer" data-main="dist/index" type="text/javascript" src="../helpers/require.js"></script>
     <script type="text/javascript" src="../helpers/cookie.js"></script>
     <script type="text/javascript" src="../helpers/Extend.js"></script>
     <style>
@@ -65,6 +64,7 @@
         <output id="outAlpha">192</output>
         <font color="#f00">透明度高于此值的不会被裁剪</font><br /> 每帧持续时间：
         <input id="frameTime" style="width:50px" type="number" value="100" min="10" step="1" />
+        <label><input id="useCrop" type="checkbox">已裁剪区域中心作为原点</label>
     </form>
     <hr />　总进度：
     <progress style="width:500px" id="total" max="100" value="0"></progress><label id="lblTotal"></label><br />当前进度：

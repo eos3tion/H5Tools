@@ -1,6 +1,4 @@
 import { Core } from "./Core";
-import _electron = require("electron");
-import _fs = require("fs");
 
 /**
  * 用于处理图片
@@ -72,10 +70,10 @@ export class PngParser implements IBlock {
 
     checkFile(controls: PromiseControl) {
         return new Promise((resolve, reject) => {
-            const electron: typeof _electron = nodeRequire("electron");
-            const fs: typeof _fs = nodeRequire("fs");
+            const electron: typeof import("electron") = nodeRequire("electron");
+            const fs: typeof import("fs") = nodeRequire("fs");
             const img = this.image;
-            fs.readFile(img.path, (err, data) => {
+            fs.readFile(img.path, (_, data) => {
                 if (controls.stop) {
                     return reject(PromiseControlState.ExternalStop);
                 }
@@ -137,22 +135,24 @@ export class PngParser implements IBlock {
                     }
                 }
 
-                // //获取截取后的数据
-                // let cimg: Electron.NativeImage = image["crop"]({ x: left, y: top, width: w, height: h });
-                // img.data = cimg.toBitmap();
                 img.data = nB;
                 if (isNaN(img.tx)) {// 还未设置过偏移量，默认使用图片中心点作为偏移量
-                    if (w > 0) {
-                        let hW = width >> 1;
-                        img.tx = hW - left;
+                    if (Core.useCrop) {
+                        img.tx = w >> 1;
+                        img.ty = h >> 1;
                     } else {
-                        img.tx = 0;
-                    }
-                    if (h > 0) {
-                        let hH = height >> 1;
-                        img.ty = hH - top;
-                    } else {
-                        img.ty = 0;
+                        if (w > 0) {
+                            let hW = width >> 1;
+                            img.tx = hW - left;
+                        } else {
+                            img.tx = 0;
+                        }
+                        if (h > 0) {
+                            let hH = height >> 1;
+                            img.ty = hH - top;
+                        } else {
+                            img.ty = 0;
+                        }
                     }
                 }
                 console.timeEnd(img.name);

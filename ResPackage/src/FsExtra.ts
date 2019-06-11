@@ -1,5 +1,3 @@
-import _path = require("path");
-import _fs = require("fs");
 export const FsExtra = (function () {
     const fs = nodeRequire("fs");
     const path = nodeRequire("path");

@@ -1,5 +1,4 @@
 import { Progress } from "./Progress";
-import _electron = require("electron");
 import { GrowingPacking } from "packing/GrowingPacking";
 import { BinPacking } from "packing/BinPacking";
 const _project = "ResPackage";
@@ -9,7 +8,7 @@ const txtLog = $("#txtLog") as HTMLDivElement;
 
 //检查是否可以使用缩放
 let canResize = (function () {
-    let electron: typeof _electron = nodeRequire("electron");
+    let electron: typeof import("electron") = nodeRequire("electron");
     let test = electron.nativeImage.createEmpty();
     let pt = test.constructor.prototype;
     //早期版本的electron没有getBitmap方法
@@ -77,6 +76,12 @@ export const Core = {
      */
     get usePngquant() {
         return (<HTMLInputElement>$("#usePngquant")).checked;
+    },
+    /**
+     * 是否使用裁剪后的图片作为中心
+     */
+    get useCrop() {
+        return ($("#useCrop") as HTMLInputElement).checked;
     },
     /**
      * 使用pngquant的参数
