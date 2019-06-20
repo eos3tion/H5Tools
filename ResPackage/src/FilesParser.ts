@@ -111,10 +111,6 @@ export class FilesParser {
                 action = idx / 64 | 0;
                 frame = idx - action * 64;
             }
-            // else {
-            //     // ani的帧数取后4位
-            //     frame = +name.substr(-4);
-            // }
             let parser = new PngParser();
             let image = parser.image;
             image.path = path;
@@ -228,10 +224,21 @@ export class FilesParser {
     }
     getKey(data: { action?: number, direction?: number }) {
         return Core.nameRep.substitute({
-            a:
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"[data.action],
+            a: this.getA(data.action),
             d: data.direction
         });
+    }
+
+    repArr = Array.from("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    getA(action: number) {
+        let str = "";
+        let repArr = this.repArr;
+        let len = repArr.length;
+        do {
+            str = repArr[action % len] + str;
+            action = action / len >> 0;
+        } while (action)
+        return str;
     }
 
     parseFile(files: Array<PngParser>, key: string) {

@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "module": "amd",
-        "target": "es2015",
+        "target": "es2017",
         "sourceMap": false,
         "rootDir": "./src",
         "outDir": "dist"
