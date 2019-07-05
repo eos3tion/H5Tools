@@ -1327,7 +1327,11 @@ ${genManualAreaCode("$area3", sdict)}`;
                 let raw = data["数据"];
                 let clientParse = !!data["前端解析"];
                 let serverParse = !!data["后端解析"];
-                let checker = checkers[data["数据类型"]];
+                let type = data["数据类型"] || "";
+                let checker = checkers[type];
+                if (!checker) {
+                    throw Error(`表[${fname}.xlsx]，附加数据配置有误，[${JSON.stringify(data)}]，请检查`);
+                }
                 let value;
                 try {
                     value = checker.check(raw);
