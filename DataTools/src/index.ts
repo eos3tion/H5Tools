@@ -92,8 +92,9 @@ export class ExcelDataSaver {
             });
             this.getPathCookie("txtClientPath");
             this.getPathCookie("txtServerPath");
-            $g("chkClientPath").checked = cookie.getCookie(cookieKey + "chkClientPath") != "false";
-            $g("chkServerPath").checked = cookie.getCookie(cookieKey + "chkServerPath") != "false";
+            $g("chkClientPath").checked = !!cookie.getCookie(cookieKey + "chkClientPath");
+            $g("chkServerPath").checked = !!cookie.getCookie(cookieKey + "chkServerPath");
+            $g("chkESModule").checked = !!cookie.getCookie(cookieKey + "chkESModule");
         });
     }
 
@@ -128,6 +129,9 @@ export class ExcelDataSaver {
         cookie.setCookie(cookieKey + "chkClientPath", useClientPath);
         let useServerPath = $g("chkServerPath").checked;
         cookie.setCookie(cookieKey + "chkServerPath", useServerPath);
+        let useESModule = $g("chkESModule").checked;
+        cookie.setCookie(cookieKey + "chkESModule", useESModule);
+
         if (!useClientPath) {
             cPath = "";
         }
@@ -156,7 +160,7 @@ export class ExcelDataSaver {
                 }
                 try {
                     let xlsx = new XLSXDecoder();
-                    await xlsx.init(gcfg, file, cPath, sPath, i, cb, configKeyInfo, newSForbidden);
+                    await xlsx.init(gcfg, file, cPath, sPath, i, cb, configKeyInfo, newSForbidden, useESModule);
                 } catch (e) {
                     error("", e);
                     alert(`数据解析失败，发生错误：` + e.message);
@@ -231,7 +235,7 @@ export class ExcelDataSaver {
             if (unsolved.length == 0) {//全部文件处理完成
                 let cout = "";
                 if (hasClient) {
-                    cout = makeExtraInterfaceFile(gcfg, cPath, true);
+                    cout = makeExtraInterfaceFile(gcfg, cPath, true, !useESModule);
                 }
                 if (hasServer && gcfg.serverExtra) {
                     packageDatas(path.join(gcfg.serverPath, Extra), gcfg.serverPath, gcfg.serverExtra, Ext.ServerData);
@@ -424,7 +428,7 @@ class XLSXDecoder {
     constructor() {
 
     }
-    async init(gcfg: GlobalCfg, file: File, cPath: string, sPath: string, idx: number, cb: { (file: File, error: boolean, hasExtra: { hasClient?: boolean, hasServer?: boolean }) }, configKeyInfo: { cFileNames: Map<string, ConfigKeyBin>, sFileNames: Map<string, ConfigKeyBin> }, newSForbidden: { [index: string]: boolean }) {
+    async init(gcfg: GlobalCfg, file: File, cPath: string, sPath: string, idx: number, cb: { (file: File, error: boolean, hasExtra: { hasClient?: boolean, hasServer?: boolean }) }, configKeyInfo: { cFileNames: Map<string, ConfigKeyBin>, sFileNames: Map<string, ConfigKeyBin> }, newSForbidden: { [index: string]: boolean }, useESModule: boolean) {
         cPath = cPath || "";
         sPath = sPath || "";
         let fre = path.parse(file.name);
@@ -1167,17 +1171,25 @@ class XLSXDecoder {
                             classHead = `export class ${className}${cSuper ? " extends " + cSuper : ""}${cInterfaces.length ? " implements " + cInterfaces.join(",") : ""}`;
                         } else {
                             ext = Ext.ClientDefine;
-                            namespace = "declare namespace";
-                            classHead = `export interface ${className}${cInterfaces.length ? " extends " + cInterfaces.join(",") : ""}`
+                            if (useESModule) {
+                                classHead = `interface ${className}${cInterfaces.length ? " extends " + cInterfaces.join(",") : ""}`
+                            } else {
+                                namespace = "declare namespace";
+                                classHead = `export interface ${className}${cInterfaces.length ? " extends " + cInterfaces.join(",") : ""}`
+                            }
                         }
                         let outlines = [
                             `/**`,
                             `* 由junyouH5数据生成工具，从${file.path}生成`,
                             `* 创建时间：${createTime}`,
                             `**/`,
-                            `${namespace} ${modName} {`,
-                            `\t${genManualAreaCode("$area1", cdict, "\t")}`,
                         ]
+                        if (!useESModule) {
+                            outlines.push(
+                                `${namespace} ${modName} {`,
+                                `\t${genManualAreaCode("$area1", cdict, "\t")}`,
+                            )
+                        }
                         if (cPros.length || cLocal.length || hasDecode) {
                             cFlag = true;
                             outlines.push(
@@ -1204,19 +1216,20 @@ class XLSXDecoder {
                             }
 
                             let type: string;
+                            let modulePrefix = useESModule ? "" : `${modName}.`
                             switch (cTableType) {
                                 case CfgDataType.Array:
-                                    type = `${modName}.${className}[]`;
+                                    type = `${modulePrefix}${className}[]`;
                                     break;
                                 case CfgDataType.ArraySet:
-                                    type = `ArraySet<${modName}.${className}>`;
+                                    type = `ArraySet<${modulePrefix}${className}>`;
                                     break;
                                 case CfgDataType.Dictionary:
-                                    type = `{ [${clientMainKey}: ${cMainKeyType}]: ${modName}.${className} }`;
+                                    type = `{ [${clientMainKey}: ${cMainKeyType}]: ${modulePrefix}${className} }`;
                                     break;
                             }
                             outlines.push(
-                                `\texport interface CfgData {`,
+                                `\t${useESModule ? "" : "export"} interface CfgData {`,
                                 `\t\t${fname}: ${type}`,
                                 `\t}`,
                                 `\t${genManualAreaCode("$area3", cdict, `\t`)}`,
@@ -1228,16 +1241,18 @@ class XLSXDecoder {
                                 `\t/**`,
                                 `\t* 此数据通过服务端协议获得，此处只增加定义`,
                                 `\t**/`,
-                                `\texport interface $${className} {`,
+                                `\t${useESModule ? "" : "export"} interface $${className} {`,
                                 `\t\t${cSData.join("\n\t\t")}`,
                                 `\t\t${genManualAreaCode(`$cdata`, cdict, `\t\t`)}`,
                                 `\t}`,
                             )
                         }
-                        outlines.push(
-                            `}`,
-                            `${genManualAreaCode("$area4", cdict)}`
-                        )
+                        if (!useESModule) {
+                            outlines.push(
+                                `}`,
+                                `${genManualAreaCode("$area4", cdict)}`
+                            )
+                        }
                         cout = outlines.join("\n");
                     }
                     // 尝试存储文件
@@ -1503,15 +1518,16 @@ function createContent(parent: HTMLElement, filename: string, idx: number, ccode
  * @param {GlobalCfg} gcfg
  * @param {boolean} [isClient]
  */
-function makeExtraInterfaceFile(gcfg: GlobalCfg, codePath: string, isClient?: boolean) {
+function makeExtraInterfaceFile(gcfg: GlobalCfg, codePath: string, isClient?: boolean, hasNamespace?: boolean) {
     let d = isClient ? gcfg.clientPath : gcfg.serverPath;
+    hasNamespace = !isClient ? false : hasNamespace;
     let inputDir = path.join(d, Extra);
     let p = fs.statSync(inputDir);
     if (!p.isDirectory()) {
         error(`附加数据的配置文件夹有误：${inputDir}`);
         return;
     }
-    let lines: string[] = [`${isClient ? "export " : ""}interface ExtraData {`];
+    let lines: string[] = [`${hasNamespace ? "export " : ""}interface ExtraData {`];
     let modules: string[] = [`namespace ExtraData {`];
     let flist = fs.readdirSync(inputDir);
     let readonly = "readonly ";
@@ -1544,7 +1560,7 @@ function makeExtraInterfaceFile(gcfg: GlobalCfg, codePath: string, isClient?: bo
     modules.push(`}`);
     lines.push(`}`);
     modules.forEach(line => { lines.push(line) });
-    if (isClient) {
+    if (hasNamespace) {
         for (let i = lines.length; i > 0; i--) {
             lines[i] = "\t" + lines[i - 1];
         }
