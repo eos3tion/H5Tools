@@ -10,10 +10,10 @@ export default class ClientRegTemplate {
     * @param {string} key (description)
     * @return [{string} 错误描述,{string} 生成的代码]
     */
-    public addToFile(file: string, fnames: Map<string, ConfigKeyBin>, pak: string, useBin?: boolean) {
+    public addToFile(file: string, fnames: Map<string, ConfigKeyBin>, pak: string, useBin?: boolean, useESModule?: boolean) {
         let regDic: Map<string, string> = new Map();
         if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
-            return ["无法找到文件", this.addContent(fnames, regDic, pak, useBin)];
+            return ["无法找到文件", this.addContent(fnames, regDic, pak, useBin, useESModule)];
         }
         let content = fs.readFileSync(file, "utf8");
         regCfg.lastIndex = 0;
@@ -25,14 +25,17 @@ export default class ClientRegTemplate {
                 break;
             }
         }
-        return [null, this.addContent(fnames, regDic, pak, useBin)];
+        return [null, this.addContent(fnames, regDic, pak, useBin, useESModule)];
     }
 
 
-    private addContent(fnames: Map<string, ConfigKeyBin>, regDic: Map<string, string>, pak: string, useBin?: boolean) {
-        let lines = [`namespace ${pak} {`,
-            `\texport function initData() {`,
-        useBin ? `\t\tvar rP = DataLocator.regBytesParser;` : `\t\tvar rP = DataLocator.regCommonParser;`];
+    private addContent(fnames: Map<string, ConfigKeyBin>, regDic: Map<string, string>, pak: string, useBin?: boolean, useESModule?: boolean) {
+        let lines = useESModule ?
+            [`export function initData(rP: Function) {`]
+            :
+            [`namespace ${pak} {`,
+                `\texport function initData() {`,
+            useBin ? `\t\tvar rP = DataLocator.regBytesParser;` : `\t\tvar rP = DataLocator.regCommonParser;`];
         let tmp: string[] = [];
         for (let k of regDic.keys()) {
             let bin = fnames.get(k);
@@ -48,8 +51,10 @@ export default class ClientRegTemplate {
                 parseBin(bin, key, lines);
             }
         });
-        lines.push(`\t}`,
-            `}`);
+        lines.push(`\t}`)
+        if (!useESModule) {
+            lines.push(`}`);
+        }
         return lines.join("\n");
     }
 
