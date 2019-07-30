@@ -282,7 +282,7 @@ export class ExcelDataSaver {
                 if (cPath && gcfg.clientRegClass) {
                     let clientReg: ClientRegTemplate = new ClientRegTemplate();
                     let modName = gcfg.clientModule || `jy.${gcfg.project}`;
-                    let [cerr, crout] = clientReg.addToFile(path.join(cPath, gcfg.clientRegClass[1], gcfg.clientRegClass[0] + ".ts"), cFileNames, modName, gcfg.clientDataType == ClientDataType.PBBin);
+                    let [cerr, crout] = clientReg.addToFile(path.join(cPath, gcfg.clientRegClass[1], gcfg.clientRegClass[0] + ".ts"), cFileNames, modName, gcfg.clientDataType == ClientDataType.PBBin, useESModule);
                     if (cerr) {
                         error(cerr);
                     } else {
@@ -668,7 +668,7 @@ class XLSXDecoder {
             /**
              * 属性名称列
              */
-            let nameRow = list[rowCfgLines["nameRow"]];
+            let nameRow = list[rowCfgLines["nameRow"]] as any;
 
             let max = 0;
             for (let key in nameRow) {
