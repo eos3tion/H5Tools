@@ -208,7 +208,7 @@ class ArrayCheker extends AbsTypeChecker {
                 return;
             }
         } else {
-            value = "";
+            return;
         }
         let arr = value.split(/[:|]/g);
         arr.forEach((item, idx) => {
@@ -241,7 +241,7 @@ class Array2DCheker extends AbsTypeChecker {
                 return;
             }
         } else {
-            value = "";
+            return;
         }
         let arr: any[] = value.split("|");
         arr.forEach((item, idx) => {
