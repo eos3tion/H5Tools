@@ -1528,7 +1528,7 @@ function makeExtraInterfaceFile(gcfg: GlobalCfg, codePath: string, isClient?: bo
         return;
     }
     let lines: string[] = [`${hasNamespace ? "export " : ""}interface ExtraData {`];
-    let modules: string[] = [`namespace ExtraData {`];
+    let modules: string[] = [(hasNamespace ? "" : "declare ") + `namespace ExtraData {`];
     let flist = fs.readdirSync(inputDir);
     let readonly = "readonly ";
 
