@@ -62,7 +62,7 @@ export interface PathSolution<T extends MapInfo> {
     /**
      * 进入地图前触发
      */
-    onEnterMap(map:T);
+    onEnterMap(map: T);
 
     /**
      * 得到地图的字节码数据
@@ -71,6 +71,15 @@ export interface PathSolution<T extends MapInfo> {
     getMapBytes(map: T): jy.ByteArray;
 
     readonly type?: jy.MapPathType;
+
+    /**
+     * 在`编辑地图信息模式`时，切换为隐藏
+     */
+    onEditHide?(): void;
+    /**
+     * 在`编辑地图信息模式`时，切换为显示状态
+     */
+    onEditShow?(): void;
 }
 
 export declare type $PathSolution = PathSolution<MapInfo>
@@ -100,6 +109,9 @@ function onChange(e: Event) {
 function setType(type: any) {
     let path = dict[type];
     if (path != current) {
+        if (current && current.onEditHide) {
+            current.onEditHide();
+        }
         current = path;
         const tdPathDetail = $g(Const.idConDetail) as HTMLTableCellElement;
         if (currentMapEditCtrl) {
@@ -111,6 +123,9 @@ function setType(type: any) {
         currentMapEditCtrl = path.editMapInfoControl;
         if (currentMapEditCtrl) {
             tdPathDetail.appendChild(currentMapEditCtrl);
+        }
+        if (current && current.onEditShow) {
+            current.onEditShow();
         }
     }
 }

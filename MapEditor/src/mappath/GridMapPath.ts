@@ -321,6 +321,10 @@ export class GridMapPath implements PathSolution<MapInfo> {
         }
         return PB.writeTo(pb, jy.MapPBDictKey.GridMapInfoPB);
     }
+
+    onEditShow() {
+        calGrids();
+    }
 }
 
 function getDataB64(pathdata: Uint8Array) {
