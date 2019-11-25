@@ -175,16 +175,17 @@ module ProtoFile {
     }
 
     export function flush() {
-        return `syntax = "proto2";
-package ${Const.ProtoJavaPackage};
-option java_package = "${Const.ProtoJavaPackage}";
-message DebugCmd_C{
-	repeated string args=1;//gm指令的参数列表
-}
-message DebugCmd_S{
-	optional Code code=1;
-}
-` + messages.join("\n");
+        //         return `syntax = "proto2";
+        // package ${Const.ProtoJavaPackage};
+        // option java_package = "${Const.ProtoJavaPackage}";
+        // message DebugCmd_C{
+        // 	repeated string args=1;//gm指令的参数列表
+        // }
+        // message DebugCmd_S{
+        // 	optional Code code=1;
+        // }
+        // `+ messages.join("\n");
+        return messages.join("\n");
     }
 }
 
