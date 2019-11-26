@@ -185,7 +185,10 @@ module ProtoFile {
         // 	optional Code code=1;
         // }
         // `+ messages.join("\n");
-        return messages.join("\n");
+        return `syntax = "proto2";
+package ${Const.ProtoJavaPackage};
+option java_package = "${Const.ProtoJavaPackage}";`
+            + messages.join("\n");
     }
 }
 
