@@ -45,6 +45,12 @@ const SHEET_MAIN = "导出";
  */
 const SHEET_EXTRA = "附加数据";
 
+/**
+ * 用于配置表的配置  
+ * 程序用的一些配置
+ */
+const SHEET_CONFIG = "程序配置";
+
 var $g: any = (id) => { return document.getElementById(id) };
 /**
  * 输出日志
@@ -436,8 +442,13 @@ class XLSXDecoder {
         // let dirs: string[] = fre.dir.split(path.sep);
         let data = fs.readFileSync(file.path, "base64");
         let wb = XLSX.read(data);
-        let list = XLSX.utils.sheet_to_json(wb.Sheets[SHEET_MAIN], { header: 1 });
-        let len = list.length;
+        const Sheets = wb.Sheets;
+        let utils = XLSX.utils;
+
+
+        let list = utils.sheet_to_json(Sheets[SHEET_MAIN], { header: 1 });
+        let listCfg = utils.sheet_to_json(Sheets[SHEET_CONFIG], { header: 1 });
+
 
         let rowCfgs: { [index: string]: string } = {
             // 第一列的中文: 对应后续用到的属性
@@ -451,11 +462,15 @@ class XLSXDecoder {
             "描述": "desRow",
             "属性名称": "nameRow"//必须为配置的最后一行
         }
+
+
+
         /**
          * 数据起始行
          */
         let dataRowStart: number = 0;
         let rowCfgLines: { [index: string]: number } = {};
+        let len = list.length;
         // 先遍历所有行，直到得到"属性名称"行结束
         for (let i = 0; i < len; i++) {
             let rowData = list[i];
@@ -471,10 +486,29 @@ class XLSXDecoder {
                 }
             }
         }
-
-
-        // 配置列
-        let cfgRow = list[rowCfgLines["cfgRow"]];
+        let cfgRowList = list;
+        let cfgRow;
+        if (listCfg && listCfg.length) {
+            let len2 = listCfg.length;
+            // 先遍历所有行，直到得到"属性名称"行结束
+            for (let i = 0; i < len2; i++) {
+                let rowData = listCfg[i];
+                let col1 = rowData[0];
+                if (col1 in rowCfgs) {
+                    let key = rowCfgs[col1];
+                    if (key != null) {
+                        rowCfgLines[key] = i;
+                        if (key == "nameRow") {
+                            dataRowStart = i + 1;
+                            break;
+                        }
+                    }
+                }
+            }
+            //检查 listCfg
+            cfgRowList = listCfg;
+        }
+        cfgRow = cfgRowList[rowCfgLines["cfgRow"]];
         if (!cfgRow) {
             error(`表[${fname}]的配置有误，没有 "程序配置内容"这一行`);
             return;// cb(file, true, {});
@@ -499,7 +533,7 @@ class XLSXDecoder {
             cInstanceType: "前端类型",
         }
 
-        let cfgDefineRow = <any[]>list[rowCfgLines["cfgDefineRow"]];
+        let cfgDefineRow = <any[]>cfgRowList[rowCfgLines["cfgDefineRow"]];
         //已支持的配置属性
         let cfgCols: {
             plugin?: number,
