@@ -145,11 +145,13 @@
                 背景颜色：<input id="bgColor" class="jscolor" value="ffffff">
                 <hr />
                 <input id="btnSave" type="button" value="保存地图数据" />
-                <div id="accControl" class="easyui-accordion" style="width:100%;height:300px;">
+                <div id="accControl" class="easyui-accordion" style="width:100%;height:350px;">
                     <div title="特效列表" data-options="selected:true" style="padding:10px;">
                         要新加特效，请直接从特效文件夹拖到地图上
-                        <ul id="dlEffectList" class="easyui-datalist">
+                        <ul id="dlEffectList" class="easyui-datalist"
+                            data-options="singleSelect:false">
                         </ul>
+                        <input id="btnEditGroup" type="button" value="修改分组" />
                     </div>
                     <div id="divMapPath" data-options="selected:true" title="地图处理路径" style="padding:10px;height:40px;">
                     </div>

@@ -114,6 +114,10 @@ interface MapEffData {
      * 旋转
      */
     rotation?: number;
+    /**
+     * 分组数据
+     */
+    group?: string;
 }
 
 interface MovableMapEffData extends MapEffData {

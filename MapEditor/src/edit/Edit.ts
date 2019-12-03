@@ -79,14 +79,64 @@ divControl.draggable({
 const dlEffectList = $("#dlEffectList");
 
 const btnSave = $("#btnSave");
-btnSave.on("click", saveMap)
+btnSave.on("click", saveMap);
+
+const btnEditGroup = $("#btnEditGroup");
+btnEditGroup.on("click", editGroup);
+
+function editGroup() {
+    $["messager"].prompt("", "添加分组标识", groupId => {
+        groupId = groupId.trim();
+        const effs = $engine.effs;
+        for (let i = 0; i < effs.length; i++) {
+            const eff = effs[i];
+            if (eff.selected) {
+                eff.group = groupId;
+                effListFun("refreshRow", i);
+            }
+        }
+    });
+
+}
 
 divEffectPro.hide();
 
-dlEffectList.datalist({ onSelect: selectEff, textField: "text" });
+function effListFun(...args) {
+    return dlEffectList.datalist(...args);
+}
+effListFun({ onSelect: selectEff, textField: "text" });
 
 const state = AppState.Edit;
 let currentMap: jy.MapInfo;
+
+document.addEventListener("keydown", onKeyDown);
+document.addEventListener("keyup", onKeyUp);
+document.addEventListener("selectstart", e => e.preventDefault());
+
+let shiftDown = false;
+
+function onKeyDown(e: KeyboardEvent) {
+    if (e.keyCode == 16) {
+        shiftDown = true;
+    }
+}
+
+function onKeyUp(e: KeyboardEvent) {
+    if (e.keyCode == 16) {
+        shiftDown = false;
+    }
+}
+
+let _effDragging = false;
+
+jy.on(MapEvent.StartDragEff, function () {
+    _effDragging = true;
+})
+
+jy.on(MapEvent.StopDragEff, function () {
+    _effDragging = false;
+})
+
 
 view.addEventListener("dragover", e => e.preventDefault());
 view.addEventListener("drop", onDrop);
@@ -199,40 +249,151 @@ function showMap() {
     PathSolution.current.onEnterMap(currentMap);
 }
 
+let dragStartPt = { x: 0, y: 0 };
+let dragState: number;
+let dragSt = 0;
+
+function getNow() {
+    return Date.now();
+}
+
+function mousePt2MapPt(mouseX: number, mouseY: number) {
+    let dpr = window.devicePixelRatio;
+    let pt = $engine._bg.globalToLocal(mouseX / dpr, mouseY / dpr);
+    return pt
+}
+
 function checkDragStart(e: MouseEvent) {
-    if (e.button == 2) {
+    let button = e.button;
+    dragState = button;
+    dragSt = getNow();
+    let flag = true;
+    if (button == 2) {
         lx = e.clientX;
         ly = e.clientY;
+    } else if (button == 0) {
+        if (_effDragging) {
+            flag = false;
+        } else {
+            dragStartPt.x = e.clientX;
+            dragStartPt.y = e.clientY;
+
+        }
+    }
+    if (flag) {
         view.addEventListener("mousemove", dragMove);
         view.addEventListener("mouseup", dragEnd);
     }
 }
 
 function dragMove(e: MouseEvent) {
-    let dx = lx - e.clientX;
-    let dy = ly - e.clientY;
-    lx = e.clientX;
-    ly = e.clientY;
-    let camera = $engine.camera;
-    let rect = camera.rect;
-    camera.moveTo(rect.x + rect.width * .5 + dx, rect.y + rect.height * .5 + dy);
+    let { clientX, clientY } = e;
+    if (dragState == 2) {
+        let dx = lx - clientX;
+        let dy = ly - clientY;
+        lx = clientX;
+        ly = clientY;
+        let camera = $engine.camera;
+        let rect = camera.rect;
+        camera.moveTo(rect.x + rect.width * .5 + dx, rect.y + rect.height * .5 + dy);
+    } else if (dragState == 0 && !_effDragging) {
+        let layer = $engine.getLayer(jy.GameLayerID.TopEffect) as jy.BaseLayer;
+        let g = layer.graphics;
+        g.clear();
+        g.lineStyle(1, 0x00ff00);
+        let { x, y } = dragStartPt;
+        g.drawRect(x, y, clientX - x, clientY - y);
+    }
 }
 
 function dragEnd(e: MouseEvent) {
+    if (dragState == 0) {//拉框操作        
+        let layer = $engine.getLayer(jy.GameLayerID.TopEffect) as jy.BaseLayer;
+        let g = layer.graphics;
+        g.clear();
+
+        let { clientX, clientY } = e;
+        let { x, y } = dragStartPt;
+        let width = clientX - x;
+        let height = clientY - y;
+
+        let now = getNow();
+
+        if (now - dragSt > 200 && width * width + height * height >= 100) {
+            let pt = $engine._bg.globalToLocal(x, y);
+            //计算框选到的效果
+            checkSelect(pt.x, pt.y, width, height);
+        }
+    }
     view.removeEventListener("mousemove", dragMove);
     view.removeEventListener("mouseup", dragEnd);
 }
 
+function checkSelect(x: number, y: number, width: number, height: number) {
+    let rect = new egret.Rectangle(x, y, width, height);
+    const effs = $engine.effs;
+    let j = 0;
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        if (rect.contains(eff.x, eff.y)) {
+            eff.select(true);
+        } else {
+            if (!shiftDown) {
+                eff.select(false);
+            }
+        }
+    }
+    checkSelection();
+}
+
+let checkingSelectionData = false;
+
+function checkSelection() {
+    checkingSelectionData = true;
+    const effs = $engine.effs;
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        effListFun(eff.selected ? "selectRow" : "unselectRow", i);
+    }
+
+    checkingSelectionData = false;
+}
+
+
+
 /**
  * 选中特效
  */
-function selectEff() {
-    let data = dlEffectList.datalist("getSelected");
-    $engine.camera.moveTo(data.x, data.y);
+function selectEff(idx: number, data: AniDele) {
+    if (checkingSelectionData) {
+        return
+    }
+
+    if (data) {
+        //是否按住shift
+        if (!shiftDown) {
+            const effs = $engine.effs;
+            //清理数据
+            for (let i = 0; i < effs.length; i++) {
+                const eff = effs[i];
+                if (idx != i) {
+                    eff.select(false);
+                }
+            }
+        }
+
+        if (data.selected) {
+            data.select(false);
+        } else {
+            data.select(true);
+            $engine.camera.moveTo(data.x, data.y);
+        }
+    }
+    checkSelection();
 }
 
 function refreshEffectList() {
-    dlEffectList.datalist({ data: $engine.effs });
+    effListFun({ data: $engine.effs });
 }
 
 jy.on(AppEvent.RemoveEffect, e => {

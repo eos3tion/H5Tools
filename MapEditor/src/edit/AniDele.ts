@@ -150,9 +150,32 @@ export class AniDele extends egret.Sprite {
     disposed: boolean;
 
     showBtn: boolean;
+    selected = false;
+    _group: string;
+
+    /**
+     * 分组标识
+     */
+    get group() {
+        return this._group;
+    }
+
+    set group(value: string) {
+        if (value != this._group) {
+            this._group = value;
+            let data = this.data;
+            if (data) {
+                data.group = value;
+            }
+        }
+    }
 
     get text() {
-        return `[${this.guid}]----${this.uri}`;
+        let msg = `[${this.guid}]----${this.uri}`;
+        if (this._group) {
+            msg += `----group:[${this._group}]`;
+        }
+        return msg;
     }
 
     onRender(now: number) {
@@ -172,6 +195,7 @@ export class AniDele extends egret.Sprite {
         super();
         let uri = data.uri;
         this.uri = uri;
+        this.group = data.group;
         this.data = data;
         let render = jy.AniRender.getAni(uri, { start: 100 * Math.random() });
         this.render = render;
@@ -278,6 +302,7 @@ export class AniDele extends egret.Sprite {
         this.stage.on(EgretEvent.TOUCH_MOVE, this.dragMove, this);
         this.stage.on(EgretEvent.TOUCH_END, this.dragEnd, this);
         this.touching = true;
+        jy.dispatch(MapEvent.StartDragEff);
     }
 
     private dragMove(e: egret.TouchEvent) {
@@ -307,6 +332,7 @@ export class AniDele extends egret.Sprite {
         if (Date.now() - this._mt < 200) {
             this.toggle();
         }
+        jy.dispatch(MapEvent.StopDragEff);
     }
 
     public setStartPoint(sx: number, sy: number) {
@@ -322,6 +348,21 @@ export class AniDele extends egret.Sprite {
         lblAniPos.text(`${data.x}×${data.y}`);
     }
 
+
+    /**
+     * 切换选中状态
+     * @param flag  true 选中   false 未选中
+     */
+    select(flag: boolean) {
+        this.selected = flag;
+        let g = this.graphics;
+        g.clear();
+        if (flag) {
+            g.lineStyle(1, 0xff0000);
+            let b = this.getBounds();
+            g.drawRectangle(b);
+        }
+    }
 }
 
 jy.UnitResource.prototype.noRes = function (this: jy.UnitResource, uri: string, r: string) {

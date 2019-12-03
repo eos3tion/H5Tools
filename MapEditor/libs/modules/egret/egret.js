@@ -196,7 +196,6 @@ var egret;
          * @language zh_CN
          */
         function EventDispatcher(target) {
-            if (target === void 0) { target = null; }
             var _this = _super.call(this) || this;
             _this.$EventDispatcher = {
                 0: target ? target : _this,
@@ -221,8 +220,8 @@ var egret;
          * @version Egret 2.4
          * @platform Web,Native
          */
-        EventDispatcher.prototype.addEventListener = function (type, listener, thisObject, useCapture, priority) {
-            this.$addListener(type, listener, thisObject, useCapture, priority);
+        EventDispatcher.prototype.on = function (type, listener, thisObject, useCapture, priority) {
+            this.$on(type, listener, thisObject, useCapture, priority);
         };
         /**
          * @inheritDoc
@@ -230,12 +229,12 @@ var egret;
          * @platform Web,Native
          */
         EventDispatcher.prototype.once = function (type, listener, thisObject, useCapture, priority) {
-            this.$addListener(type, listener, thisObject, useCapture, priority, true);
+            this.$on(type, listener, thisObject, useCapture, priority, true);
         };
         /**
          * @private
          */
-        EventDispatcher.prototype.$addListener = function (type, listener, thisObject, useCapture, priority, dispatchOnce) {
+        EventDispatcher.prototype.$on = function (type, listener, thisObject, useCapture, priority, dispatchOnce) {
             if (true && !listener) {
                 egret.$error(1003, "listener");
             }
@@ -280,7 +279,10 @@ var egret;
          * @version Egret 2.4
          * @platform Web,Native
          */
-        EventDispatcher.prototype.removeEventListener = function (type, listener, thisObject, useCapture) {
+        EventDispatcher.prototype.off = function (type, listener, thisObject, useCapture) {
+            this.$off(type, listener, thisObject, useCapture);
+        };
+        EventDispatcher.prototype.$off = function (type, listener, thisObject, useCapture) {
             var values = this.$EventDispatcher;
             var eventMap = useCapture ? values[2 /* captureEventsMap */] : values[1 /* eventsMap */];
             var list = eventMap[type];
@@ -294,6 +296,17 @@ var egret;
             if (list.length == 0) {
                 eventMap[type] = null;
             }
+        };
+        /**
+         * @language zh_CN
+         * 派发一个指定参数的事件。
+         * @param type {string | number} 事件类型
+         * @param data {any} 事件data
+         * @version Egret 2.4
+         * @platform Web,Native
+         */
+        EventDispatcher.prototype.dispatch = function (type, data) {
+            return this.dispatchEventWith(type, false, data);
         };
         EventDispatcher.prototype.$removeEventBin = function (list, listener, thisObject) {
             var length = list.length;
@@ -311,7 +324,7 @@ var egret;
          * @version Egret 2.4
          * @platform Web,Native
          */
-        EventDispatcher.prototype.hasEventListener = function (type) {
+        EventDispatcher.prototype.hasListen = function (type) {
             var values = this.$EventDispatcher;
             return !!(values[1 /* eventsMap */][type] || values[2 /* captureEventsMap */][type]);
         };
@@ -321,7 +334,7 @@ var egret;
          * @platform Web,Native
          */
         EventDispatcher.prototype.willTrigger = function (type) {
-            return this.hasEventListener(type);
+            return this.hasListen(type);
         };
         /**
          * @inheritDoc
@@ -363,7 +376,7 @@ var egret;
             values[3 /* notifyLevel */]--;
             while (onceList.length) {
                 var eventBin = onceList.pop();
-                eventBin.target.removeEventListener(eventBin.type, eventBin.listener, eventBin.thisObject, eventBin.useCapture);
+                eventBin.target.off(eventBin.type, eventBin.listener, eventBin.thisObject, eventBin.useCapture);
             }
             return !event.$isDefaultPrevented;
         };
@@ -389,7 +402,7 @@ var egret;
          * @language zh_CN
          */
         EventDispatcher.prototype.dispatchEventWith = function (type, bubbles, data, cancelable) {
-            if (bubbles || this.hasEventListener(type)) {
+            if (bubbles || this.hasListen(type)) {
                 var event_1 = egret.Event.create(egret.Event, type, bubbles, cancelable);
                 event_1.data = data;
                 var result = this.dispatchEvent(event_1);
@@ -398,10 +411,38 @@ var egret;
             }
             return true;
         };
+        /**
+         * 移除指定type的监听器
+         *
+         * @param {(string | number)} type
+         * @param {boolean} [useCapture]
+         *
+         * @memberOf EventDispatcher
+         */
+        EventDispatcher.prototype.removeListeners = function (type, useCapture) {
+            var eventMap = this.$getEventMap(useCapture);
+            var list = eventMap[type];
+            if (list) {
+                list.length = 0;
+            }
+        };
+        /**
+         * 删除所有事件监听
+         *
+         */
+        EventDispatcher.prototype.removeAllListeners = function () {
+            var values = this.$EventDispatcher;
+            values[1 /**eventsMap */] = {};
+            values[2 /**captureEventsMap */] = {};
+        };
         return EventDispatcher;
     }(egret.HashObject));
     egret.EventDispatcher = EventDispatcher;
     __reflect(EventDispatcher.prototype, "egret.EventDispatcher", ["egret.IEventDispatcher"]);
+    var ept = EventDispatcher.prototype;
+    ept.addEventListener = ept.on;
+    ept.removeEventListener = ept.off;
+    ept.hasEventListener = ept.hasListen;
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -448,6 +489,12 @@ var egret;
         }
         return value;
     }
+    function cacheDirtyUp(p) {
+        if (p && !p.$cacheDirty) {
+            p.$cacheDirty = true;
+            p.$cacheDirtyUp();
+        }
+    }
     /**
      * The DisplayObject class is the base class for all objects that can be placed on the display list. The display list
      * manages all objects displayed in the runtime. Use the DisplayObjectContainer class to arrange the display
@@ -462,12 +509,12 @@ var egret;
      * instance, but rather all DisplayObject instances, including those that are not on the display list. This means that you
      * can add a listener to any DisplayObject instance to listen for broadcast events.
      *
-     * @event egret.Event.ADDED Dispatched when a display object is added to the display list.
-     * @event egret.Event.ADDED_TO_STAGE Dispatched when a display object is added to the on stage display list, either directly or through the addition of a sub tree in which the display object is contained.
-     * @event egret.Event.REMOVED Dispatched when a display object is about to be removed from the display list.
-     * @event egret.Event.REMOVED_FROM_STAGE Dispatched when a display object is about to be removed from the display list, either directly or through the removal of a sub tree in which the display object is contained.
-     * @event egret.Event.ENTER_FRAME [broadcast event] Dispatched when the playhead is entering a new frame.
-     * @event egret.Event.RENDER [broadcast event] Dispatched when the display list is about to be updated and rendered.
+     * @event egret.EventType.ADDED Dispatched when a display object is added to the display list.
+     * @event egret.EventType.ADDED_TO_STAGE Dispatched when a display object is added to the on stage display list, either directly or through the addition of a sub tree in which the display object is contained.
+     * @event egret.EventType.REMOVED Dispatched when a display object is about to be removed from the display list.
+     * @event egret.EventType.REMOVED_FROM_STAGE Dispatched when a display object is about to be removed from the display list, either directly or through the removal of a sub tree in which the display object is contained.
+     * @event egret.EventType.ENTER_FRAME [broadcast event] Dispatched when the playhead is entering a new frame.
+     * @event egret.EventType.RENDER [broadcast event] Dispatched when the display list is about to be updated and rendered.
      * @event egret.TouchEvent.TOUCH_MOVE Dispatched when the user touches the device, and is continuously dispatched until the point of contact is removed.
      * @event egret.TouchEvent.TOUCH_BEGIN Dispatched when the user first contacts a touch-enabled device (such as touches a finger to a mobile phone or tablet with a touch screen).
      * @event egret.TouchEvent.TOUCH_END Dispatched when the user removes contact with a touch-enabled device (such as lifts a finger off a mobile phone or tablet with a touch screen).
@@ -487,12 +534,12 @@ var egret;
      * 但是对于广播事件，目标不是特定的 DisplayObject 实例，而是所有 DisplayObject 实例（包括那些不在显示列表中的实例）。这意味着您可以向任何
      * DisplayObject 实例添加侦听器来侦听广播事件。
      *
-     * @event egret.Event.ADDED 将显示对象添加到显示列表中时调度。
-     * @event egret.Event.ADDED_TO_STAGE 在将显示对象直接添加到舞台显示列表或将包含显示对象的子树添加至舞台显示列表中时调度。
-     * @event egret.Event.REMOVED 将要从显示列表中删除显示对象时调度。
-     * @event egret.Event.REMOVED_FROM_STAGE 在从显示列表中直接删除显示对象或删除包含显示对象的子树时调度。
-     * @event egret.Event.ENTER_FRAME [广播事件] 播放头进入新帧时调度。
-     * @event egret.Event.RENDER [广播事件] 将要更新和呈现显示列表时调度。
+     * @event egret.EventType.ADDED 将显示对象添加到显示列表中时调度。
+     * @event egret.EventType.ADDED_TO_STAGE 在将显示对象直接添加到舞台显示列表或将包含显示对象的子树添加至舞台显示列表中时调度。
+     * @event egret.EventType.REMOVED 将要从显示列表中删除显示对象时调度。
+     * @event egret.EventType.REMOVED_FROM_STAGE 在从显示列表中直接删除显示对象或删除包含显示对象的子树时调度。
+     * @event egret.EventType.ENTER_FRAME [广播事件] 播放头进入新帧时调度。
+     * @event egret.EventType.RENDER [广播事件] 将要更新和呈现显示列表时调度。
      * @event egret.TouchEvent.TOUCH_MOVE 当用户触碰设备时进行调度，而且会连续调度，直到接触点被删除。
      * @event egret.TouchEvent.TOUCH_BEGIN 当用户第一次触摸启用触摸的设备时（例如，用手指触摸手机屏幕）调度。
      * @event egret.TouchEvent.TOUCH_END 当用户移除与启用触摸的设备的接触时（例如，将手指从屏幕上抬起）调度。
@@ -602,14 +649,8 @@ var egret;
             _this.$renderNode = null;
             _this.$renderDirty = false;
             _this.$renderMode = null;
-            if (egret.nativeRender) {
-                _this.createNativeDisplayObject();
-            }
             return _this;
         }
-        DisplayObject.prototype.createNativeDisplayObject = function () {
-            this.$nativeDisplayObject = new egret_native.NativeDisplayObject(0 /* CONTAINER */);
-        };
         Object.defineProperty(DisplayObject.prototype, "name", {
             /**
              * Indicates the instance name of the DisplayObject. The object can be identified in the child list of its parent
@@ -795,9 +836,6 @@ var egret;
                 self.$skewYdeg = clampRotation(self.$skewY * 180 / Math.PI);
                 self.$rotation = clampRotation(self.$skewY * 180 / Math.PI);
             }
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setMatrix(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
-            }
         };
         /**
          * @private
@@ -887,21 +925,7 @@ var egret;
                 return false;
             }
             self.$x = value;
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setX(value);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
             return true;
         };
         Object.defineProperty(DisplayObject.prototype, "y", {
@@ -953,21 +977,7 @@ var egret;
                 return false;
             }
             self.$y = value;
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setY(value);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
             return true;
         };
         Object.defineProperty(DisplayObject.prototype, "scaleX", {
@@ -1017,21 +1027,7 @@ var egret;
             self.$scaleX = value;
             self.$matrixDirty = true;
             self.$updateUseTransform();
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setScaleX(value);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
         };
         Object.defineProperty(DisplayObject.prototype, "scaleY", {
             /**
@@ -1079,21 +1075,7 @@ var egret;
             self.$scaleY = value;
             self.$matrixDirty = true;
             self.$updateUseTransform();
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setScaleY(value);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
         };
         Object.defineProperty(DisplayObject.prototype, "rotation", {
             /**
@@ -1144,21 +1126,7 @@ var egret;
             self.$rotation = value;
             self.$matrixDirty = true;
             self.$updateUseTransform();
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setRotation(value);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
         };
         Object.defineProperty(DisplayObject.prototype, "skewX", {
             /**
@@ -1194,21 +1162,7 @@ var egret;
             self.$skewX = value;
             self.$matrixDirty = true;
             self.$updateUseTransform();
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setSkewX(self.$skewXdeg);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
         };
         Object.defineProperty(DisplayObject.prototype, "skewY", {
             /**
@@ -1244,21 +1198,11 @@ var egret;
             self.$skewY = value;
             self.$matrixDirty = true;
             self.$updateUseTransform();
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setSkewY(self.$skewYdeg);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
+        };
+        DisplayObject.prototype.dirty = function () {
+            cacheDirtyUp(this);
+            cacheDirtyUp(this.$maskedObject);
         };
         Object.defineProperty(DisplayObject.prototype, "width", {
             /**
@@ -1409,21 +1353,7 @@ var egret;
                 return;
             }
             self.$anchorOffsetX = value;
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setAnchorOffsetX(value);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
         };
         Object.defineProperty(DisplayObject.prototype, "anchorOffsetY", {
             /**
@@ -1462,21 +1392,7 @@ var egret;
                 return;
             }
             self.$anchorOffsetY = value;
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setAnchorOffsetY(value);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
         };
         Object.defineProperty(DisplayObject.prototype, "visible", {
             /**
@@ -1509,22 +1425,8 @@ var egret;
                 return;
             }
             self.$visible = value;
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setVisible(value);
-            }
-            else {
-                self.$updateRenderMode();
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.$updateRenderMode();
+            self.dirty();
         };
         Object.defineProperty(DisplayObject.prototype, "cacheAsBitmap", {
             /**
@@ -1555,12 +1457,7 @@ var egret;
             set: function (value) {
                 var self = this;
                 self.$cacheAsBitmap = value;
-                if (egret.nativeRender) {
-                    self.$nativeDisplayObject.setCacheAsBitmap(value);
-                }
-                else {
-                    self.$setHasDisplayList(value);
-                }
+                self.$setHasDisplayList(value);
             },
             enumerable: true,
             configurable: true
@@ -1583,11 +1480,7 @@ var egret;
             }
         };
         DisplayObject.prototype.$cacheDirtyUp = function () {
-            var p = this.$parent;
-            if (p && !p.$cacheDirty) {
-                p.$cacheDirty = true;
-                p.$cacheDirtyUp();
-            }
+            cacheDirtyUp(this.$parent);
         };
         Object.defineProperty(DisplayObject.prototype, "alpha", {
             /**
@@ -1627,22 +1520,8 @@ var egret;
                 return;
             }
             self.$alpha = value;
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setAlpha(value);
-            }
-            else {
-                self.$updateRenderMode();
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.$updateRenderMode();
+            self.dirty();
         };
         Object.defineProperty(DisplayObject.prototype, "touchEnabled", {
             /**
@@ -1750,29 +1629,12 @@ var egret;
                     self.$scrollRect = new egret.Rectangle();
                 }
                 self.$scrollRect.copyFrom(value);
-                if (egret.nativeRender) {
-                    self.$nativeDisplayObject.setScrollRect(value.x, value.y, value.width, value.height);
-                }
             }
             else {
                 self.$scrollRect = null;
-                if (egret.nativeRender) {
-                    self.$nativeDisplayObject.setScrollRect(0, 0, 0, 0);
-                }
             }
-            if (!egret.nativeRender) {
-                self.$updateRenderMode();
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.$updateRenderMode();
+            self.dirty();
         };
         Object.defineProperty(DisplayObject.prototype, "blendMode", {
             /**
@@ -1804,22 +1666,8 @@ var egret;
                     return;
                 }
                 self.$blendMode = mode;
-                if (egret.nativeRender) {
-                    self.$nativeDisplayObject.setBlendMode(mode);
-                }
-                else {
-                    self.$updateRenderMode();
-                    var p = self.$parent;
-                    if (p && !p.$cacheDirty) {
-                        p.$cacheDirty = true;
-                        p.$cacheDirtyUp();
-                    }
-                    var maskedObject = self.$maskedObject;
-                    if (maskedObject && !maskedObject.$cacheDirty) {
-                        maskedObject.$cacheDirty = true;
-                        maskedObject.$cacheDirtyUp();
-                    }
-                }
+                self.$updateRenderMode();
+                self.dirty();
             },
             enumerable: true,
             configurable: true
@@ -1873,83 +1721,40 @@ var egret;
                         }
                         value.$maskedObject = self;
                         self.$mask = value;
-                        if (!egret.nativeRender) {
-                            value.$updateRenderMode();
-                        }
-                        if (self.$maskRect) {
-                            if (egret.nativeRender) {
-                                self.$nativeDisplayObject.setMaskRect(0, 0, 0, 0);
-                            }
-                            self.$maskRect = null;
-                        }
-                        if (egret.nativeRender) {
-                            self.$nativeDisplayObject.setMask(value.$nativeDisplayObject.id);
-                        }
+                        value.$updateRenderMode();
+                        self.$maskRect = null;
                     }
                     else {
                         if (!self.$maskRect) {
                             self.$maskRect = new egret.Rectangle();
                         }
                         self.$maskRect.copyFrom(value);
-                        if (egret.nativeRender) {
-                            self.$nativeDisplayObject.setMaskRect(value.x, value.y, value.width, value.height);
-                        }
-                        if (self.$mask) {
-                            self.$mask.$maskedObject = null;
-                            if (!egret.nativeRender) {
-                                self.$mask.$updateRenderMode();
-                            }
+                        var $mask = self.$mask;
+                        if ($mask) {
+                            $mask.$maskedObject = null;
+                            $mask.$updateRenderMode();
                         }
                         if (self.mask) {
-                            if (egret.nativeRender) {
-                                self.$nativeDisplayObject.setMask(-1);
-                            }
                             self.$mask = null;
                         }
                     }
                 }
                 else {
-                    if (self.$mask) {
-                        self.$mask.$maskedObject = null;
-                        if (!egret.nativeRender) {
-                            self.$mask.$updateRenderMode();
-                        }
+                    var $mask = self.$mask;
+                    if ($mask) {
+                        $mask.$maskedObject = null;
+                        $mask.$updateRenderMode();
                     }
                     if (self.mask) {
-                        if (egret.nativeRender) {
-                            self.$nativeDisplayObject.setMask(-1);
-                        }
                         self.$mask = null;
                     }
-                    if (self.$maskRect) {
-                        if (egret.nativeRender) {
-                            self.$nativeDisplayObject.setMaskRect(0, 0, 0, 0);
-                        }
-                        self.$maskRect = null;
-                    }
+                    self.$maskRect = null;
                 }
-                if (!egret.nativeRender) {
-                    self.$updateRenderMode();
-                }
+                self.$updateRenderMode();
             },
             enumerable: true,
             configurable: true
         });
-        DisplayObject.prototype.$setMaskRect = function (value) {
-            var self = this;
-            if (!value && !self.$maskRect) {
-                return;
-            }
-            if (value) {
-                if (!self.$maskRect) {
-                    self.$maskRect = new egret.Rectangle();
-                }
-                self.$maskRect.copyFrom(value);
-            }
-            else {
-                self.$maskRect = null;
-            }
-        };
         Object.defineProperty(DisplayObject.prototype, "filters", {
             /**
              * An indexed array that contains each filter object currently associated with the display object.
@@ -1968,53 +1773,13 @@ var egret;
             },
             set: function (value) {
                 var self = this;
-                var filters = self.$filters;
-                if (!filters && !value) {
-                    self.$filters = value;
-                    if (egret.nativeRender) {
-                        self.$nativeDisplayObject.setFilters(null);
-                    }
-                    else {
-                        self.$updateRenderMode();
-                        var p = self.$parent;
-                        if (p && !p.$cacheDirty) {
-                            p.$cacheDirty = true;
-                            p.$cacheDirtyUp();
-                        }
-                        var maskedObject = self.$maskedObject;
-                        if (maskedObject && !maskedObject.$cacheDirty) {
-                            maskedObject.$cacheDirty = true;
-                            maskedObject.$cacheDirtyUp();
-                        }
-                    }
-                    return;
-                }
+                var $filters;
                 if (value && value.length) {
-                    value = value.concat();
-                    self.$filters = value;
-                    if (egret.nativeRender) {
-                        self.$nativeDisplayObject.setFilters(value);
-                    }
+                    $filters = value.concat();
                 }
-                else {
-                    self.$filters = value;
-                    if (egret.nativeRender) {
-                        self.$nativeDisplayObject.setFilters(null);
-                    }
-                }
-                if (!egret.nativeRender) {
-                    self.$updateRenderMode();
-                    var p = self.$parent;
-                    if (p && !p.$cacheDirty) {
-                        p.$cacheDirty = true;
-                        p.$cacheDirtyUp();
-                    }
-                    var maskedObject = self.$maskedObject;
-                    if (maskedObject && !maskedObject.$cacheDirty) {
-                        maskedObject.$cacheDirty = true;
-                        maskedObject.$cacheDirtyUp();
-                    }
-                }
+                self.$filters = $filters;
+                self.$updateRenderMode();
+                self.dirty();
             },
             enumerable: true,
             configurable: true
@@ -2123,24 +1888,8 @@ var egret;
         DisplayObject.prototype.globalToLocal = function (stageX, stageY, resultPoint) {
             if (stageX === void 0) { stageX = 0; }
             if (stageY === void 0) { stageY = 0; }
-            if (egret.nativeRender) {
-                egret_native.updateNativeRender();
-                var result = egret_native.nrGlobalToLocal(this.$nativeDisplayObject.id, stageX, stageY);
-                var arr = result.split(",");
-                var x = parseFloat(arr[0]);
-                var y = parseFloat(arr[1]);
-                if (resultPoint) {
-                    resultPoint.setTo(x, y);
-                }
-                else {
-                    resultPoint = new egret.Point(x, y);
-                }
-                return resultPoint;
-            }
-            else {
-                var m = this.$getInvertedConcatenatedMatrix();
-                return m.transformPoint(stageX, stageY, resultPoint);
-            }
+            var m = this.$getInvertedConcatenatedMatrix();
+            return m.transformPoint(stageX, stageY, resultPoint);
         };
         /**
          * Converts the point object from the display object's (local) coordinates to the Stage (global) coordinates.
@@ -2166,24 +1915,8 @@ var egret;
         DisplayObject.prototype.localToGlobal = function (localX, localY, resultPoint) {
             if (localX === void 0) { localX = 0; }
             if (localY === void 0) { localY = 0; }
-            if (egret.nativeRender) {
-                egret_native.updateNativeRender();
-                var result = egret_native.nrLocalToGlobal(this.$nativeDisplayObject.id, localX, localY);
-                var arr = result.split(",");
-                var x = parseFloat(arr[0]);
-                var y = parseFloat(arr[1]);
-                if (resultPoint) {
-                    resultPoint.setTo(x, y);
-                }
-                else {
-                    resultPoint = new egret.Point(x, y);
-                }
-                return resultPoint;
-            }
-            else {
-                var m = this.$getConcatenatedMatrix();
-                return m.transformPoint(localX, localY, resultPoint);
-            }
+            var m = this.$getConcatenatedMatrix();
+            return m.transformPoint(localX, localY, resultPoint);
         };
         /**
          * @private
@@ -2375,7 +2108,7 @@ var egret;
          */
         DisplayObject.prototype.$hitTest = function (stageX, stageY) {
             var self = this;
-            if ((!egret.nativeRender && !self.$renderNode) || !self.$visible || self.$scaleX == 0 || self.$scaleY == 0) {
+            if (!self.$renderNode || !self.$visible || self.$scaleX == 0 || self.$scaleY == 0) {
                 return null;
             }
             var m = self.$getInvertedConcatenatedMatrix();
@@ -2446,67 +2179,44 @@ var egret;
                 var localX = m.a * x + m.c * y + m.tx;
                 var localY = m.b * x + m.d * y + m.ty;
                 var data = void 0;
-                if (egret.nativeRender) {
-                    var buffer = egret.sys.customHitTestBuffer;
-                    buffer.resize(3, 3);
-                    egret_native.forHitTest = true;
-                    egret_native.activateBuffer(buffer);
-                    egret_native.updateNativeRender();
-                    egret_native.nrRenderDisplayObject2(self.$nativeDisplayObject.id, 1 - localX, 1 - localY, true);
+                var displayList = self.$displayList;
+                if (displayList) {
+                    var buffer = displayList.renderBuffer;
                     try {
-                        data = new Uint8Array(4);
-                        egret_native.nrGetPixels(1, 1, 1, 1, data);
+                        data = buffer.getPixels(localX - displayList.offsetX, localY - displayList.offsetY);
                     }
                     catch (e) {
                         throw new Error(egret.sys.tr(1039));
                     }
-                    egret_native.activateBuffer(null);
-                    egret_native.forHitTest = false;
-                    if (data[3] === 0) {
-                        return false;
-                    }
-                    return true;
                 }
                 else {
-                    var displayList = self.$displayList;
-                    if (displayList) {
-                        var buffer = displayList.renderBuffer;
-                        try {
-                            data = buffer.getPixels(localX - displayList.offsetX, localY - displayList.offsetY);
-                        }
-                        catch (e) {
-                            throw new Error(egret.sys.tr(1039));
-                        }
+                    var buffer = egret.sys.customHitTestBuffer;
+                    buffer.resize(3, 3);
+                    var matrix = egret.Matrix.create();
+                    matrix.identity();
+                    matrix.translate(1 - localX, 1 - localY);
+                    egret.sys.systemRenderer.render(this, buffer, matrix, true);
+                    egret.Matrix.release(matrix);
+                    try {
+                        data = buffer.getPixels(1, 1);
                     }
-                    else {
-                        var buffer = egret.sys.customHitTestBuffer;
-                        buffer.resize(3, 3);
-                        var matrix = egret.Matrix.create();
-                        matrix.identity();
-                        matrix.translate(1 - localX, 1 - localY);
-                        egret.sys.systemRenderer.render(this, buffer, matrix, true);
-                        egret.Matrix.release(matrix);
-                        try {
-                            data = buffer.getPixels(1, 1);
-                        }
-                        catch (e) {
-                            throw new Error(egret.sys.tr(1039));
-                        }
+                    catch (e) {
+                        throw new Error(egret.sys.tr(1039));
                     }
-                    if (data[3] === 0) {
-                        return false;
-                    }
-                    return true;
                 }
+                if (data[3] === 0) {
+                    return false;
+                }
+                return true;
             }
         };
         /**
          * @private
          */
-        DisplayObject.prototype.$addListener = function (type, listener, thisObject, useCapture, priority, dispatchOnce) {
-            _super.prototype.$addListener.call(this, type, listener, thisObject, useCapture, priority, dispatchOnce);
-            var isEnterFrame = (type == egret.Event.ENTER_FRAME);
-            if (isEnterFrame || type == egret.Event.RENDER) {
+        DisplayObject.prototype.$on = function (type, listener, thisObject, useCapture, priority, dispatchOnce) {
+            _super.prototype.$on.call(this, type, listener, thisObject, useCapture, priority, dispatchOnce);
+            var isEnterFrame = (type == "enterFrame" /* ENTER_FRAME */);
+            if (isEnterFrame || type == "render" /* RENDER */) {
                 var list = isEnterFrame ? DisplayObject.$enterFrameCallBackList : DisplayObject.$renderCallBackList;
                 if (list.indexOf(this) == -1) {
                     list.push(this);
@@ -2518,10 +2228,10 @@ var egret;
          * @version Egret 2.4
          * @platform Web,Native
          */
-        DisplayObject.prototype.removeEventListener = function (type, listener, thisObject, useCapture) {
-            _super.prototype.removeEventListener.call(this, type, listener, thisObject, useCapture);
-            var isEnterFrame = (type == egret.Event.ENTER_FRAME);
-            if ((isEnterFrame || type == egret.Event.RENDER) && !this.hasEventListener(type)) {
+        DisplayObject.prototype.$off = function (type, listener, thisObject, useCapture) {
+            _super.prototype.$off.call(this, type, listener, thisObject, useCapture);
+            var isEnterFrame = (type == "enterFrame" /* ENTER_FRAME */);
+            if ((isEnterFrame || type == "render" /* RENDER */) && !this.hasListen(type)) {
                 var list = isEnterFrame ? DisplayObject.$enterFrameCallBackList : DisplayObject.$renderCallBackList;
                 var index = list.indexOf(this);
                 if (index !== -1) {
@@ -2598,11 +2308,31 @@ var egret;
         DisplayObject.prototype.willTrigger = function (type) {
             var parent = this;
             while (parent) {
-                if (parent.hasEventListener(type))
+                if (parent.hasListen(type))
                     return true;
                 parent = parent.$parent;
             }
             return false;
+        };
+        DisplayObject.prototype.removeListeners = function (type, useCapture) {
+            var list;
+            if ("enterFrame" == type) {
+                list = DisplayObject.$enterFrameCallBackList;
+            }
+            else if ("render" == type) {
+                list = DisplayObject.$renderCallBackList;
+            }
+            if (list) {
+                arrayRemove(list, this);
+            }
+            _super.prototype.removeListeners.call(this, type, useCapture);
+        };
+        DisplayObject.prototype.removeAllListeners = function () {
+            var values = this.$EventDispatcher;
+            values[1 /**eventsMap */] = {};
+            values[2 /**captureEventsMap */] = {};
+            arrayRemove(DisplayObject.$enterFrameCallBackList, this);
+            arrayRemove(DisplayObject.$renderCallBackList, this);
         };
         /**
          * @private
@@ -2633,6 +2363,12 @@ var egret;
     }(egret.EventDispatcher));
     egret.DisplayObject = DisplayObject;
     __reflect(DisplayObject.prototype, "egret.DisplayObject");
+    function arrayRemove(list, item) {
+        var idx = list.indexOf(item);
+        if (idx > -1) {
+            list.splice(idx, 1);
+        }
+    }
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -2699,9 +2435,6 @@ var egret;
              */
             _this.paddingRight = 0;
             _this.$uniforms = {};
-            if (egret.nativeRender) {
-                egret_native.NativeDisplayObject.createFilter(_this);
-            }
             return _this;
         }
         /**
@@ -2715,10 +2448,6 @@ var egret;
         Filter.prototype.onPropertyChange = function () {
             var self = this;
             self.updatePadding();
-            if (egret.nativeRender) {
-                egret_native.NativeDisplayObject.setFilterPadding(self.$id, self.paddingTop, self.paddingBottom, self.paddingLeft, self.paddingRight);
-                egret_native.NativeDisplayObject.setDataToFilter(self);
-            }
         };
         return Filter;
     }(egret.HashObject));
@@ -2932,9 +2661,6 @@ var egret;
             }
             return _this;
         }
-        Bitmap.prototype.createNativeDisplayObject = function () {
-            this.$nativeDisplayObject = new egret_native.NativeDisplayObject(1 /* BITMAP */);
-        };
         /**
          * @private
          * 显示对象添加到舞台
@@ -3004,19 +2730,7 @@ var egret;
                 }
                 self.setImageData(null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                 self.$renderDirty = true;
-                var p_1 = self.$parent;
-                if (p_1 && !p_1.$cacheDirty) {
-                    p_1.$cacheDirty = true;
-                    p_1.$cacheDirtyUp();
-                }
-                var maskedObject_1 = self.$maskedObject;
-                if (maskedObject_1 && !maskedObject_1.$cacheDirty) {
-                    maskedObject_1.$cacheDirty = true;
-                    maskedObject_1.$cacheDirtyUp();
-                }
-                if (egret.nativeRender) {
-                    this.setBitmapDataToWasm(null);
-                }
+                self.dirty();
                 return true;
             }
             if (self.$stage) {
@@ -3025,16 +2739,7 @@ var egret;
                     var newHashCode = value.$bitmapData ? value.$bitmapData.hashCode : -1;
                     if (oldHashCode == newHashCode) {
                         self.$renderDirty = true;
-                        var p_2 = self.$parent;
-                        if (p_2 && !p_2.$cacheDirty) {
-                            p_2.$cacheDirty = true;
-                            p_2.$cacheDirtyUp();
-                        }
-                        var maskedObject_2 = self.$maskedObject;
-                        if (maskedObject_2 && !maskedObject_2.$cacheDirty) {
-                            maskedObject_2.$cacheDirty = true;
-                            maskedObject_2.$cacheDirtyUp();
-                        }
+                        self.dirty();
                         return true;
                     }
                     egret.BitmapData.$removeDisplayObject(self, oldTexture.$bitmapData);
@@ -3042,16 +2747,7 @@ var egret;
                 egret.BitmapData.$addDisplayObject(self, value.$bitmapData);
             }
             self.$renderDirty = true;
-            var p = self.$parent;
-            if (p && !p.$cacheDirty) {
-                p.$cacheDirty = true;
-                p.$cacheDirtyUp();
-            }
-            var maskedObject = self.$maskedObject;
-            if (maskedObject && !maskedObject.$cacheDirty) {
-                maskedObject.$cacheDirty = true;
-                maskedObject.$cacheDirtyUp();
-            }
+            self.dirty();
             return true;
         };
         Bitmap.prototype.$setBitmapData = function (value) {
@@ -3060,24 +2756,10 @@ var egret;
         /**
          * @private
          */
-        Bitmap.prototype.setBitmapDataToWasm = function (data) {
-            this.$nativeDisplayObject.setTexture(data);
-        };
-        /**
-         * @private
-         */
         Bitmap.prototype.$refreshImageData = function () {
             var texture = this.$texture;
             if (texture) {
-                if (egret.nativeRender) {
-                    this.setBitmapDataToWasm(texture);
-                }
                 this.setImageData(texture.$bitmapData, texture.$bitmapX, texture.$bitmapY, texture.$bitmapWidth, texture.$bitmapHeight, texture.$offsetX, texture.$offsetY, texture.$getTextureWidth(), texture.$getTextureHeight(), texture.$sourceWidth, texture.$sourceHeight);
-            }
-            else {
-                if (egret.nativeRender) {
-                    this.setBitmapDataToWasm(null);
-                }
             }
         };
         /**
@@ -3127,26 +2809,7 @@ var egret;
             var self = this;
             self.$scale9Grid = value;
             self.$renderDirty = true;
-            if (egret.nativeRender) {
-                if (value) {
-                    self.$nativeDisplayObject.setScale9Grid(value.x, value.y, value.width, value.height);
-                }
-                else {
-                    self.$nativeDisplayObject.setScale9Grid(0, 0, -1, -1);
-                }
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
         };
         Object.defineProperty(Bitmap.prototype, "fillMode", {
             /**
@@ -3188,22 +2851,8 @@ var egret;
                 return false;
             }
             self.$fillMode = value;
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setBitmapFillMode(self.$fillMode);
-            }
-            else {
-                self.$renderDirty = true;
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.$renderDirty = true;
+            self.dirty();
             return true;
         };
         Object.defineProperty(Bitmap.prototype, "smoothing", {
@@ -3229,18 +2878,7 @@ var egret;
                 }
                 this.$smoothing = value;
                 this.$renderNode.smoothing = value;
-                if (!egret.nativeRender) {
-                    var p = self.$parent;
-                    if (p && !p.$cacheDirty) {
-                        p.$cacheDirty = true;
-                        p.$cacheDirtyUp();
-                    }
-                    var maskedObject = self.$maskedObject;
-                    if (maskedObject && !maskedObject.$cacheDirty) {
-                        maskedObject.$cacheDirty = true;
-                        maskedObject.$cacheDirtyUp();
-                    }
-                }
+                self.dirty();
             },
             enumerable: true,
             configurable: true
@@ -3257,21 +2895,7 @@ var egret;
             }
             self.$explicitBitmapWidth = value;
             self.$renderDirty = true;
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setWidth(value);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
             return true;
         };
         /**
@@ -3286,21 +2910,7 @@ var egret;
             }
             self.$explicitBitmapHeight = value;
             self.$renderDirty = true;
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setHeight(value);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
             return true;
         };
         /**
@@ -3347,7 +2957,7 @@ var egret;
                     egret.sys.BitmapNode.$updateTextureDataWithScale9Grid(this.$renderNode, this.$bitmapData, scale9Grid, this.$bitmapX, this.$bitmapY, this.$bitmapWidth, this.$bitmapHeight, this.$offsetX, this.$offsetY, this.$textureWidth, this.$textureHeight, destW, destH, this.$sourceWidth, this.$sourceHeight, this.$smoothing);
                 }
                 else {
-                    if (this.fillMode == egret.BitmapFillMode.REPEAT && this.$renderNode instanceof egret.sys.NormalBitmapNode) {
+                    if (this.fillMode == "repeat" /* REPEAT */ && this.$renderNode instanceof egret.sys.NormalBitmapNode) {
                         this.$renderNode = new egret.sys.BitmapNode();
                     }
                     egret.sys.BitmapNode.$updateTextureData(this.$renderNode, this.$bitmapData, this.$bitmapX, this.$bitmapY, this.$bitmapWidth, this.$bitmapHeight, this.$offsetX, this.$offsetY, this.$textureWidth, this.$textureHeight, destW, destH, this.$sourceWidth, this.$sourceHeight, this.$fillMode, this.$smoothing);
@@ -3519,11 +3129,12 @@ var egret;
          * @platform Web,Native
          * @language zh_CN
          */
-        DisplayObjectContainer.prototype.addChild = function (child) {
+        DisplayObjectContainer.prototype.addChild = function (child, notifyListeners) {
+            if (notifyListeners === void 0) { notifyListeners = true; }
             var index = this.$children.length;
             if (child.$parent == this)
                 index--;
-            return this.$doAddChild(child, index);
+            return this.$doAddChild(child, index, notifyListeners);
         };
         /**
          * Adds a child DisplayObject instance to this DisplayObjectContainer instance. The child is added at the index position
@@ -3550,7 +3161,8 @@ var egret;
          * @platform Web,Native
          * @language zh_CN
          */
-        DisplayObjectContainer.prototype.addChildAt = function (child, index) {
+        DisplayObjectContainer.prototype.addChildAt = function (child, index, notifyListeners) {
+            if (notifyListeners === void 0) { notifyListeners = true; }
             index = +index | 0;
             if (index < 0 || index >= this.$children.length) {
                 index = this.$children.length;
@@ -3558,7 +3170,7 @@ var egret;
                     index--;
                 }
             }
-            return this.$doAddChild(child, index);
+            return this.$doAddChild(child, index, notifyListeners);
         };
         /**
          * @private
@@ -3584,42 +3196,28 @@ var egret;
             }
             self.$children.splice(index, 0, child);
             child.$setParent(self);
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.addChildAt(child.$nativeDisplayObject.id, index);
-            }
             var stage = self.$stage;
             if (stage) { //当前容器在舞台
                 child.$onAddToStage(stage, self.$nestLevel + 1);
             }
             if (notifyListeners) {
-                child.dispatchEventWith(egret.Event.ADDED, true);
+                child.dispatchEventWith("added" /* ADDED */, true);
             }
             if (stage) {
                 var list = DisplayObjectContainer.$EVENT_ADD_TO_STAGE_LIST;
                 while (list.length) {
                     var childAddToStage = list.shift();
-                    if (childAddToStage.$stage && notifyListeners) {
-                        childAddToStage.dispatchEventWith(egret.Event.ADDED_TO_STAGE);
+                    if (childAddToStage.$stage) {
+                        childAddToStage.dispatchEventWith("addedToStage" /* ADDED_TO_STAGE */);
                     }
                 }
             }
-            if (!egret.nativeRender) {
-                if (child.$maskedObject) {
-                    child.$maskedObject.$updateRenderMode();
-                }
-                if (!self.$cacheDirty) {
-                    self.$cacheDirty = true;
-                    var p = self.$parent;
-                    if (p && !p.$cacheDirty) {
-                        p.$cacheDirty = true;
-                        p.$cacheDirtyUp();
-                    }
-                    var maskedObject = self.$maskedObject;
-                    if (maskedObject && !maskedObject.$cacheDirty) {
-                        maskedObject.$cacheDirty = true;
-                        maskedObject.$cacheDirtyUp();
-                    }
-                }
+            if (child.$maskedObject) {
+                child.$maskedObject.$updateRenderMode();
+            }
+            if (!self.$cacheDirty) {
+                self.$cacheDirty = true;
+                self.dirty();
             }
             this.$childAdded(child, index);
             return child;
@@ -3757,10 +3355,11 @@ var egret;
          * @platform Web,Native
          * @language zh_CN
          */
-        DisplayObjectContainer.prototype.removeChild = function (child) {
+        DisplayObjectContainer.prototype.removeChild = function (child, notifyListeners) {
+            if (notifyListeners === void 0) { notifyListeners = true; }
             var index = this.$children.indexOf(child);
             if (index >= 0) {
-                return this.$doRemoveChild(index);
+                return this.$doRemoveChild(index, notifyListeners);
             }
             else {
                 true && egret.$error(1006);
@@ -3788,10 +3387,11 @@ var egret;
          * @platform Web,Native
          * @language zh_CN
          */
-        DisplayObjectContainer.prototype.removeChildAt = function (index) {
+        DisplayObjectContainer.prototype.removeChildAt = function (index, notifyListeners) {
+            if (notifyListeners === void 0) { notifyListeners = true; }
             index = +index | 0;
             if (index >= 0 && index < this.$children.length) {
-                return this.$doRemoveChild(index);
+                return this.$doRemoveChild(index, notifyListeners);
             }
             else {
                 true && egret.$error(1007);
@@ -3809,16 +3409,16 @@ var egret;
             var child = children[index];
             this.$childRemoved(child, index);
             if (notifyListeners) {
-                child.dispatchEventWith(egret.Event.REMOVED, true);
+                child.dispatchEventWith("removed" /* REMOVED */, true);
             }
             if (this.$stage) { //在舞台上
                 child.$onRemoveFromStage();
                 var list = DisplayObjectContainer.$EVENT_REMOVE_FROM_STAGE_LIST;
                 while (list.length > 0) {
                     var childAddToStage = list.shift();
-                    if (notifyListeners && childAddToStage.$hasAddToStage) {
+                    if (childAddToStage.$hasAddToStage) {
                         childAddToStage.$hasAddToStage = false;
-                        childAddToStage.dispatchEventWith(egret.Event.REMOVED_FROM_STAGE);
+                        childAddToStage.dispatchEventWith("removedFromStage" /* REMOVED_FROM_STAGE */);
                     }
                     childAddToStage.$hasAddToStage = false;
                     childAddToStage.$stage = null;
@@ -3830,26 +3430,12 @@ var egret;
             if (indexNow != -1) {
                 children.splice(indexNow, 1);
             }
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.removeChild(child.$nativeDisplayObject.id);
+            if (child.$maskedObject) {
+                child.$maskedObject.$updateRenderMode();
             }
-            else {
-                if (child.$maskedObject) {
-                    child.$maskedObject.$updateRenderMode();
-                }
-                if (!self.$cacheDirty) {
-                    self.$cacheDirty = true;
-                    var p = self.$parent;
-                    if (p && !p.$cacheDirty) {
-                        p.$cacheDirty = true;
-                        p.$cacheDirtyUp();
-                    }
-                    var maskedObject = self.$maskedObject;
-                    if (maskedObject && !maskedObject.$cacheDirty) {
-                        maskedObject.$cacheDirty = true;
-                        maskedObject.$cacheDirtyUp();
-                    }
-                }
+            if (!self.$cacheDirty) {
+                self.$cacheDirty = true;
+                self.dirty();
             }
             return child;
         };
@@ -3885,37 +3471,23 @@ var egret;
          */
         DisplayObjectContainer.prototype.doSetChildIndex = function (child, index) {
             var self = this;
-            var lastIndex = this.$children.indexOf(child);
+            var $children = self.$children;
+            var lastIndex = $children.indexOf(child);
             if (lastIndex < 0) {
                 true && egret.$error(1006);
             }
             if (lastIndex == index) {
                 return;
             }
-            this.$childRemoved(child, lastIndex);
+            self.$childRemoved(child, lastIndex);
             //从原来的位置删除
-            this.$children.splice(lastIndex, 1);
+            $children.splice(lastIndex, 1);
             //放到新的位置
-            this.$children.splice(index, 0, child);
-            this.$childAdded(child, index);
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.removeChild(child.$nativeDisplayObject.id);
-                this.$nativeDisplayObject.addChildAt(child.$nativeDisplayObject.id, index);
-            }
-            else {
-                if (!self.$cacheDirty) {
-                    self.$cacheDirty = true;
-                    var p = self.$parent;
-                    if (p && !p.$cacheDirty) {
-                        p.$cacheDirty = true;
-                        p.$cacheDirtyUp();
-                    }
-                    var maskedObject = self.$maskedObject;
-                    if (maskedObject && !maskedObject.$cacheDirty) {
-                        maskedObject.$cacheDirty = true;
-                        maskedObject.$cacheDirtyUp();
-                    }
-                }
+            $children.splice(index, 0, child);
+            self.$childAdded(child, index);
+            if (!self.$cacheDirty) {
+                self.$cacheDirty = true;
+                self.dirty();
             }
         };
         /**
@@ -3998,23 +3570,9 @@ var egret;
             list[index2] = child1;
             this.$childAdded(child2, index1);
             this.$childAdded(child1, index2);
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.swapChild(index1, index2);
-            }
-            else {
-                if (!self.$cacheDirty) {
-                    self.$cacheDirty = true;
-                    var p = self.$parent;
-                    if (p && !p.$cacheDirty) {
-                        p.$cacheDirty = true;
-                        p.$cacheDirtyUp();
-                    }
-                    var maskedObject = self.$maskedObject;
-                    if (maskedObject && !maskedObject.$cacheDirty) {
-                        maskedObject.$cacheDirty = true;
-                        maskedObject.$cacheDirtyUp();
-                    }
-                }
+            if (!self.$cacheDirty) {
+                self.$cacheDirty = true;
+                self.dirty();
             }
         };
         /**
@@ -4034,10 +3592,11 @@ var egret;
          * @platform Web,Native
          * @language zh_CN
          */
-        DisplayObjectContainer.prototype.removeChildren = function () {
+        DisplayObjectContainer.prototype.removeChildren = function (notifyListeners) {
+            if (notifyListeners === void 0) { notifyListeners = true; }
             var children = this.$children;
             for (var i = children.length - 1; i >= 0; i--) {
-                this.$doRemoveChild(i);
+                this.$doRemoveChild(i, notifyListeners);
             }
         };
         /**
@@ -4063,7 +3622,7 @@ var egret;
             var length = children.length;
             nestLevel++;
             for (var i = 0; i < length; i++) {
-                var child = this.$children[i];
+                var child = children[i];
                 child.$onAddToStage(stage, nestLevel);
                 if (child.$maskedObject) {
                     child.$maskedObject.$updateRenderMode();
@@ -4225,187 +3784,6 @@ var egret;
     }(egret.DisplayObject));
     egret.DisplayObjectContainer = DisplayObjectContainer;
     __reflect(DisplayObjectContainer.prototype, "egret.DisplayObjectContainer");
-})(egret || (egret = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * SpriteSheet is a mosaic of multiple sub-bitmaps, comprising a plurality of Texture objects.
-     * Each Texture object shares the set bitmap of SpriteSheet, but it points to its different areas.
-     * On WebGL / OpenGL, this operation can significantly improve performance.
-     * At the same time, SpriteSheet can carry out material integration easily to reduce the number of HTTP requests
-     * For specification of the SpriteSheet format, see the document https://github.com/egret-labs/egret-core/wiki/Egret-SpriteSheet-Specification
-     * @see http://edn.egret.com/cn/docs/page/135 The use of texture packs
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/display/SpriteSheet.ts
-     * @language en_US
-     */
-    /**
-     * SpriteSheet 是一张由多个子位图拼接而成的集合位图，它包含多个 Texture 对象。
-     * 每一个 Texture 都共享 SpriteSheet 的集合位图，但是指向它的不同的区域。
-     * 在WebGL / OpenGL上，这种做法可以显著提升性能
-     * 同时，SpriteSheet可以很方便的进行素材整合，降低HTTP请求数量
-     * SpriteSheet 格式的具体规范可以参见此文档  https://github.com/egret-labs/egret-core/wiki/Egret-SpriteSheet-Specification
-     * @see http://edn.egret.com/cn/docs/page/135 纹理集的使用
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/display/SpriteSheet.ts
-     * @language zh_CN
-     */
-    var SpriteSheet = /** @class */ (function (_super) {
-        __extends(SpriteSheet, _super);
-        /**
-         * Create an egret.SpriteSheet object
-         * @param texture {Texture} Texture
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 创建一个 egret.SpriteSheet 对象
-         * @param texture {Texture} 纹理
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function SpriteSheet(texture) {
-            var _this = _super.call(this) || this;
-            /**
-             * @private
-             * 表示这个SpriteSheet的位图区域在bitmapData上的起始位置x。
-             */
-            _this._bitmapX = 0;
-            /**
-             * @private
-             * 表示这个SpriteSheet的位图区域在bitmapData上的起始位置y。
-             */
-            _this._bitmapY = 0;
-            /**
-             * @private
-             * 纹理缓存字典
-             */
-            _this._textureMap = egret.createMap();
-            _this.$texture = texture;
-            _this._bitmapX = texture.$bitmapX - texture.$offsetX;
-            _this._bitmapY = texture.$bitmapY - texture.$offsetY;
-            return _this;
-        }
-        /**
-         * Obtain a cached Texture object according to the specified texture name
-         * @param name {string} Cache the name of this Texture object
-         * @returns {egret.Texture} The Texture object
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 根据指定纹理名称获取一个缓存的 Texture 对象
-         * @param name {string} 缓存这个 Texture 对象所使用的名称
-         * @returns {egret.Texture} Texture 对象
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        SpriteSheet.prototype.getTexture = function (name) {
-            return this._textureMap[name];
-        };
-        /**
-         * Create a new Texture object for the specified area on SpriteSheet and cache it
-         * @param name {string} Cache the name of this Texture object. If the name already exists, the previous Texture object will be overwrited.
-         * @param bitmapX {number} Starting coordinate x of texture area on bitmapData
-         * @param bitmapY {number} Starting coordinate y of texture area on bitmapData
-         * @param bitmapWidth {number} Width of texture area on bitmapData
-         * @param bitmapHeight {number} Height of texture area on bitmapData
-         * @param offsetX {number} Starting point x for a non-transparent area of the original bitmap
-         * @param offsetY {number} Starting point y for a non-transparent area of the original bitmap
-         * @param textureWidth {number} Width of the original bitmap. If it is not passed, use the bitmapWidth  value.
-         * @param textureHeight {number} Height of the original bitmap. If it is not passed, use the bitmapHeight value.
-         * @returns {egret.Texture} The created Texture object
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 为 SpriteSheet 上的指定区域创建一个新的 Texture 对象并缓存它
-         * @param name {string} 缓存这个 Texture 对象所使用的名称，如果名称已存在，将会覆盖之前的 Texture 对象
-         * @param bitmapX {number} 纹理区域在 bitmapData 上的起始坐标x
-         * @param bitmapY {number} 纹理区域在 bitmapData 上的起始坐标y
-         * @param bitmapWidth {number} 纹理区域在 bitmapData 上的宽度
-         * @param bitmapHeight {number} 纹理区域在 bitmapData 上的高度
-         * @param offsetX {number} 原始位图的非透明区域 x 起始点
-         * @param offsetY {number} 原始位图的非透明区域 y 起始点
-         * @param textureWidth {number} 原始位图的高度，若不传入，则使用 bitmapWidth 的值。
-         * @param textureHeight {number} 原始位图的宽度，若不传入，则使用 bitmapHeight 的值。
-         * @returns {egret.Texture} 创建的 Texture 对象
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        SpriteSheet.prototype.createTexture = function (name, bitmapX, bitmapY, bitmapWidth, bitmapHeight, offsetX, offsetY, textureWidth, textureHeight) {
-            if (offsetX === void 0) { offsetX = 0; }
-            if (offsetY === void 0) { offsetY = 0; }
-            if (textureWidth === void 0) {
-                textureWidth = offsetX + bitmapWidth;
-            }
-            if (textureHeight === void 0) {
-                textureHeight = offsetY + bitmapHeight;
-            }
-            var texture = new egret.Texture();
-            texture.disposeBitmapData = false;
-            texture.$bitmapData = this.$texture.$bitmapData;
-            texture.$initData(this._bitmapX + bitmapX, this._bitmapY + bitmapY, bitmapWidth, bitmapHeight, offsetX, offsetY, textureWidth, textureHeight, this.$texture.$sourceWidth, this.$texture.$sourceHeight);
-            this._textureMap[name] = texture;
-            return texture;
-        };
-        /**
-         * dispose texture
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 释放纹理
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        SpriteSheet.prototype.dispose = function () {
-            if (this.$texture) {
-                this.$texture.dispose();
-            }
-        };
-        return SpriteSheet;
-    }(egret.HashObject));
-    egret.SpriteSheet = SpriteSheet;
-    __reflect(SpriteSheet.prototype, "egret.SpriteSheet");
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -5175,8 +4553,7 @@ var egret;
          * @language zh_CN
          */
         Event.dispatchEvent = function (target, type, bubbles, data) {
-            if (bubbles === void 0) { bubbles = false; }
-            var event = Event.create(Event, type, bubbles);
+            var event = Event.create(Event, type, !!bubbles);
             var props = Event._getPropertyData(Event);
             if (data != undefined) {
                 props.data = data;
@@ -5299,230 +4676,6 @@ var egret;
             var EventClass = Object.getPrototypeOf(event).constructor;
             EventClass.eventPool.push(event);
         };
-        /**
-         * Dispatched when a display object is added to the on stage display list, either directly or through the addition
-         * of a sub tree in which the display object is contained.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在将显示对象直接添加到舞台显示列表或将包含显示对象的子树添加至舞台显示列表中时调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.ADDED_TO_STAGE = "addedToStage";
-        /**
-         * Dispatched when a display object is about to be removed from the display list, either directly or through the removal
-         * of a sub tree in which the display object is contained.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在从显示列表中直接删除显示对象或删除包含显示对象的子树时调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.REMOVED_FROM_STAGE = "removedFromStage";
-        /**
-         * Dispatched when a display object is added to the display list.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 将显示对象添加到显示列表中时调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.ADDED = "added";
-        /**
-         * Dispatched when a display object is about to be removed from the display list.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 将要从显示列表中删除显示对象时调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.REMOVED = "removed";
-        /**
-         * [broadcast event] Dispatched when the playhead is entering a new frame.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * [广播事件] 进入新的一帧,监听此事件将会在下一帧开始时触发一次回调。这是一个广播事件，可以在任何一个显示对象上监听，无论它是否在显示列表中。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.ENTER_FRAME = "enterFrame";
-        /**
-         * Dispatched when the display list is about to be updated and rendered.
-         * Note: Every time you want to receive a render event,you must call the stage.invalidate() method.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 渲染事件，监听此事件将会在本帧末即将开始渲染的前一刻触发回调，这是一个广播事件，可以在任何一个显示对象上监听，无论它是否在显示列表中。
-         * 注意：每次您希望 Egret 发送 Event.RENDER 事件时，都必须调用 stage.invalidate() 方法，由于每帧只会触发一次屏幕刷新，
-         * 若在 Event.RENDER 回调函数执行期间再次调用stage.invalidate()，将会被忽略。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.RENDER = "render";
-        /**
-         * Dispatched when the size of stage or UIComponent is changed.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 舞台尺寸或UI组件尺寸发生改变
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.RESIZE = "resize";
-        /**
-         * Dispatched when the value or selection of a property is chaned.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 属性值或状态发生改变。通常是按钮的选中状态，或者列表的选中项索引改变。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.CHANGE = "change";
-        /**
-         * Dispatched when the value or selection of a property is going to change.you can cancel this by calling the
-         * preventDefault() method.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 属性值或状态即将发生改变,通常是按钮的选中状态，或者列表的选中项索引改变。可以通过调用 preventDefault() 方法阻止索引发生更改。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.CHANGING = "changing";
-        /**
-         * Dispatched when the net request is complete.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 网络请求加载完成
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.COMPLETE = "complete";
-        /**
-         * Dispatched when loop completed.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 循环完成。循环最后一次只派发 COMPLETE 事件，不派发 LOOP_COMPLETE 事件。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.LOOP_COMPLETE = "loopComplete";
-        /**
-         * Dispatched when the TextInput instance gets focus.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * TextInput实例获得焦点
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.FOCUS_IN = "focusIn";
-        /**
-         * Dispatched when the TextInput instance loses focus.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * TextInput实例失去焦点
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.FOCUS_OUT = "focusOut";
-        /**
-         * Dispatched when the playback is ended.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 动画声音等播放完成
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        Event.ENDED = "ended";
-        /**
-         * 游戏激活
-         * @version Egret 2.4
-         * @platform Web,Native
-         */
-        Event.ACTIVATE = "activate";
-        /**
-         * 取消激活
-         * @version Egret 2.4
-         * @platform Web,Native
-         */
-        Event.DEACTIVATE = "deactivate";
-        /**
-         * Event.CLOSE 常量定义 close 事件对象的 type 属性的值。
-         * @version Egret 2.4
-         * @platform Web,Native
-         */
-        Event.CLOSE = "close";
-        /**
-         * Event.CONNECT 常量定义 connect 事件对象的 type 属性的值。
-         * @version Egret 2.4
-         * @platform Web,Native
-         */
-        Event.CONNECT = "connect";
-        /**
-         * Event.LEAVE_STAGE 常量定义 leaveStage 事件对象的 type 属性的值。
-         * @version Egret 2.4
-         * @platform Web,Native
-         */
-        Event.LEAVE_STAGE = "leaveStage";
-        /**
-         * Event.SOUND_COMPLETE 常量定义 在声音完成播放后调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         */
-        Event.SOUND_COMPLETE = "soundComplete";
         return Event;
     }(egret.HashObject));
     egret.Event = Event;
@@ -6718,45 +5871,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-/**
- * @private
- */
-var egret;
-(function (egret) {
-    //todo remove
-    /**
-     * @private
-     */
-    egret.fontMapping = {};
-})(egret || (egret = {}));
 var egret;
 (function (egret) {
     /**
@@ -6858,11 +5972,6 @@ var egret;
              * webgl纹理生成后，是否删掉原始图像数据
              */
             _this.$deleteSource = true;
-            if (egret.nativeRender) {
-                var nativeBitmapData = new egret_native.NativeBitmapData();
-                nativeBitmapData.$init();
-                _this.$nativeBitmapData = nativeBitmapData;
-            }
             _this.source = source;
             _this.width = source.width;
             _this.height = source.height;
@@ -6874,9 +5983,6 @@ var egret;
             },
             set: function (value) {
                 this.$source = value;
-                if (egret.nativeRender) {
-                    egret_native.NativeDisplayObject.setSourceToNativeBitmapData(this.$nativeBitmapData, value);
-                }
             },
             enumerable: true,
             configurable: true
@@ -6919,14 +6025,11 @@ var egret;
                 egret.WebGLUtils.deleteWebGLTexture(this.webGLTexture);
                 this.webGLTexture = null;
             }
-            //native or WebGLRenderTarget
-            if (this.source && this.source.dispose) {
-                this.source.dispose();
+            var source = this.source;
+            if (source && source.dispose) {
+                source.dispose();
             }
             this.source = null;
-            if (egret.nativeRender) {
-                egret_native.NativeDisplayObject.disposeNativeBitmapData(this.$nativeBitmapData);
-            }
             BitmapData.$dispose(this);
         };
         BitmapData.$addDisplayObject = function (displayObject, bitmapData) {
@@ -6976,21 +6079,12 @@ var egret;
             }
             var tempList = BitmapData._displayList[hashCode];
             for (var i = 0; i < tempList.length; i++) {
-                if (tempList[i] instanceof egret.Bitmap) {
-                    tempList[i].$refreshImageData();
-                }
                 var bitmap = tempList[i];
+                if (bitmap instanceof egret.Bitmap) {
+                    bitmap.$refreshImageData();
+                }
                 bitmap.$renderDirty = true;
-                var p = bitmap.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = bitmap.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
+                bitmap.dirty();
             }
         };
         BitmapData.$dispose = function (bitmapData) {
@@ -7011,16 +6105,7 @@ var egret;
                     node.$bitmapData = null;
                 }
                 node.$renderDirty = true;
-                var p = node.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = node.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
+                node.dirty();
             }
             delete BitmapData._displayList[hashCode];
         };
@@ -7058,68 +6143,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * The BitmapFillMode class defines the image fill mode of Bitmap.
-     * The BitmapFillMode class defines a pattern enumeration for adjusting size. These patterns determine how Bitmap fill the size designated by the layout system.
-     * @see http://edn.egret.com/cn/docs/page/134 Texture filling way
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/display/BitmapFillMode.ts
-     * @language en_US
-     */
-    /**
-     * BitmapFillMode 类定义Bitmap的图像填充方式。
-     * BitmapFillMode 类定义了调整大小模式的一个枚举，这些模式确定 Bitmap 如何填充由布局系统指定的尺寸。
-     * @see http://edn.egret.com/cn/docs/page/134 纹理的填充方式
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/display/BitmapFillMode.ts
-     * @language zh_CN
-     */
-    egret.BitmapFillMode = {
-        /**
-         * Repeat the bitmap to fill area.
-         * @version Egret 2.4
-         * @platform Web
-         * @language en_US
-         */
-        /**
-         * 重复位图以填充区域。
-         * @version Egret 2.4
-         * @platform Web
-         * @language zh_CN
-         */
-        REPEAT: "repeat",
-        /**
-         * Scale bitmap fill to fill area.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 位图填充拉伸以填充区域。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        SCALE: "scale",
-        /**
-         * The bitmap ends at the edge of the region.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在区域的边缘处截断不显示位图。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        CLIP: "clip"
-    };
-})(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -7652,9 +6675,6 @@ var egret;
             if (alpha === void 0) { alpha = 1; }
             color = +color || 0;
             alpha = +alpha || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setBeginFill(color, alpha);
-            }
             this.fillPath = this.$renderNode.beginFill(color, alpha, this.strokePath);
             if (this.$renderNode.drawData.length > 1) {
                 this.fillPath.moveTo(this.lastX, this.lastY);
@@ -7686,9 +6706,6 @@ var egret;
          */
         Graphics.prototype.beginGradientFill = function (type, colors, alphas, ratios, matrix) {
             if (matrix === void 0) { matrix = null; }
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setBeginGradientFill(type, colors, alphas, ratios, matrix);
-            }
             this.fillPath = this.$renderNode.beginGradientFill(type, colors, alphas, ratios, matrix, this.strokePath);
             if (this.$renderNode.drawData.length > 1) {
                 this.fillPath.moveTo(this.lastX, this.lastY);
@@ -7707,9 +6724,6 @@ var egret;
          * @language zh_CN
          */
         Graphics.prototype.endFill = function (fillRule) {
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setEndFill();
-            }
             var fillPath = this.fillPath;
             if (fillPath) {
                 fillPath.fillRule = fillRule || "nonzero";
@@ -7759,9 +6773,6 @@ var egret;
             color = +color || 0;
             alpha = +alpha || 0;
             miterLimit = +miterLimit || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setLineStyle(thickness, color, alpha, pixelHinting, scaleMode, caps, joints, miterLimit);
-            }
             if (thickness <= 0) {
                 this.strokePath = null;
                 this.setStrokeWidth(0);
@@ -7799,9 +6810,6 @@ var egret;
             y = +y || 0;
             width = +width || 0;
             height = +height || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setDrawRect(x, y, width, height);
-            }
             var fillPath = this.fillPath;
             var strokePath = this.strokePath;
             fillPath && fillPath.drawRect(x, y, width, height);
@@ -7841,9 +6849,6 @@ var egret;
             height = +height || 0;
             ellipseWidth = +ellipseWidth || 0;
             ellipseHeight = +ellipseHeight || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setDrawRoundRect(x, y, width, height, ellipseWidth, ellipseHeight);
-            }
             var fillPath = this.fillPath;
             var strokePath = this.strokePath;
             fillPath && fillPath.drawRoundRect(x, y, width, height, ellipseWidth, ellipseHeight);
@@ -7880,9 +6885,6 @@ var egret;
             x = +x || 0;
             y = +y || 0;
             radius = +radius || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setDrawCircle(x, y, radius);
-            }
             var fillPath = this.fillPath;
             var strokePath = this.strokePath;
             fillPath && fillPath.drawCircle(x, y, radius);
@@ -7918,9 +6920,6 @@ var egret;
             y = +y || 0;
             width = +width || 0;
             height = +height || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setDrawEllipse(x, y, width, height);
-            }
             var fillPath = this.fillPath;
             var strokePath = this.strokePath;
             fillPath && fillPath.drawEllipse(x, y, width, height);
@@ -7950,9 +6949,6 @@ var egret;
         Graphics.prototype.moveTo = function (x, y) {
             x = +x || 0;
             y = +y || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setMoveTo(x, y);
-            }
             var fillPath = this.fillPath;
             var strokePath = this.strokePath;
             fillPath && fillPath.moveTo(x, y);
@@ -7981,9 +6977,6 @@ var egret;
         Graphics.prototype.lineTo = function (x, y) {
             x = +x || 0;
             y = +y || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setLineTo(x, y);
-            }
             var fillPath = this.fillPath;
             var strokePath = this.strokePath;
             fillPath && fillPath.lineTo(x, y);
@@ -8020,9 +7013,6 @@ var egret;
             controlY = +controlY || 0;
             anchorX = +anchorX || 0;
             anchorY = +anchorY || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setCurveTo(controlX, controlY, anchorX, anchorY);
-            }
             var fillPath = this.fillPath;
             var strokePath = this.strokePath;
             fillPath && fillPath.curveTo(controlX, controlY, anchorX, anchorY);
@@ -8070,9 +7060,6 @@ var egret;
             controlY2 = +controlY2 || 0;
             anchorX = +anchorX || 0;
             anchorY = +anchorY || 0;
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setCubicCurveTo(controlX1, controlY1, controlX2, controlY2, anchorX, anchorY);
-            }
             var fillPath = this.fillPath;
             var strokePath = this.strokePath;
             fillPath && fillPath.cubicCurveTo(controlX1, controlY1, controlX2, controlY2, anchorX, anchorY);
@@ -8126,9 +7113,6 @@ var egret;
             anticlockwise = !!anticlockwise;
             startAngle = clampAngle(startAngle);
             endAngle = clampAngle(endAngle);
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setDrawArc(x, y, radius, startAngle, endAngle, anticlockwise);
-            }
             var fillPath = this.fillPath;
             var strokePath = this.strokePath;
             if (fillPath) {
@@ -8155,20 +7139,9 @@ var egret;
         Graphics.prototype.dirty = function () {
             var self = this;
             self.$renderNode.dirtyRender = true;
-            if (!egret.nativeRender) {
-                var target = self.$targetDisplay;
-                target.$cacheDirty = true;
-                var p = target.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = target.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            var target = self.$targetDisplay;
+            target.$cacheDirty = true;
+            target.dirty();
         };
         /**
          * @private
@@ -8230,9 +7203,6 @@ var egret;
          * @language zh_CN
          */
         Graphics.prototype.clear = function () {
-            if (egret.nativeRender) {
-                this.$targetDisplay.$nativeDisplayObject.setGraphicsClear();
-            }
             this.$renderNode.clear();
             this.updatePosition(0, 0);
             this.minX = Infinity;
@@ -8333,9 +7303,6 @@ var egret;
             if (this.$renderNode) {
                 this.$renderNode.clean();
             }
-            if (egret.nativeRender) {
-                egret_native.NativeDisplayObject.disposeGraphicData(this);
-            }
         };
         return Graphics;
     }(egret.HashObject));
@@ -8370,65 +7337,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * The JointStyle class is an enumeration of constant values that specify the joint style to use in drawing lines.
-     * These constants are provided for use as values in the joints parameter of the egret.Graphics.lineStyle() method.
-     * @see egret.Graphics#lineStyle()
-     * @version Egret 2.5
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * JointStyle 类是指定要在绘制线条中使用的联接点样式的常量值枚举。提供的这些常量用作 egret.Graphics.lineStyle() 方法的 joints 参数中的值。
-     * @see egret.Graphics#lineStyle()
-     * @version Egret 2.5
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    egret.JointStyle = {
-        /**
-         * Specifies beveled joints in the joints parameter of the egret.Graphics.lineStyle() method.
-         * @version Egret 2.5
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在 egret.Graphics.lineStyle() 方法的 joints 参数中指定斜角连接。
-         * @version Egret 2.5
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        BEVEL: "bevel",
-        /**
-         * Specifies mitered joints in the joints parameter of the egret.Graphics.lineStyle() method.
-         * @version Egret 2.5
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在 egret.Graphics.lineStyle() 方法的 joints 参数中指定尖角连接。
-         * @version Egret 2.5
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        MITER: "miter",
-        /**
-         * Specifies round joints in the joints parameter of the egret.Graphics.lineStyle() method.
-         * @version Egret 2.5
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在 egret.Graphics.lineStyle() 方法的 joints 参数中指定圆角连接。
-         * @version Egret 2.5
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ROUND: "round"
-    };
-})(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -8474,15 +7382,6 @@ var egret;
             _this.$renderNode = new egret.sys.MeshNode();
             return _this;
         }
-        Mesh.prototype.createNativeDisplayObject = function () {
-            this.$nativeDisplayObject = new egret_native.NativeDisplayObject(12 /* MESH */);
-        };
-        /**
-         * @private
-         */
-        Mesh.prototype.setBitmapDataToWasm = function (data) {
-            this.$nativeDisplayObject.setBitmapDataToMesh(data);
-        };
         /**
          * @private
          */
@@ -8512,22 +7411,7 @@ var egret;
             var self = this;
             self._verticesDirty = true;
             self.$renderDirty = true;
-            if (egret.nativeRender) {
-                var renderNode = (this.$renderNode);
-                this.$nativeDisplayObject.setDataToMesh(renderNode.vertices, renderNode.indices, renderNode.uvs);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
         };
         /**
          * @private
@@ -8594,30 +7478,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * OrientationMode 类为舞台初始旋转模式提供值。
-     */
-    egret.OrientationMode = {
-        /**
-         * 适配屏幕
-         */
-        AUTO: "auto",
-        /**
-         * 默认竖屏
-         */
-        PORTRAIT: "portrait",
-        /**
-         * 默认横屏，舞台顺时针旋转90度
-         */
-        LANDSCAPE: "landscape",
-        /**
-         * 默认横屏，舞台逆时针旋转90度
-         */
-        LANDSCAPE_FLIPPED: "landscapeFlipped"
-    };
-})(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -8715,35 +7575,15 @@ var egret;
             renderBuffer.resize(width, height);
             this.$bitmapData.width = width;
             this.$bitmapData.height = height;
-            if (egret.nativeRender) {
-                egret_native.activateBuffer(this.$renderBuffer);
-                var useClip = false;
-                var clipX = 0;
-                var clipY = 0;
-                var clipW = 0;
-                var clipH = 0;
-                if (clipBounds) {
-                    useClip = true;
-                    clipX = clipBounds.x;
-                    clipY = clipBounds.y;
-                    clipW = clipBounds.width;
-                    clipH = clipBounds.height;
-                }
-                egret_native.updateNativeRender();
-                egret_native.nrRenderDisplayObject(displayObject.$nativeDisplayObject.id, scale, useClip, clipX, clipY, clipW, clipH);
-                egret_native.activateBuffer(null);
+            var matrix = egret.Matrix.create();
+            matrix.identity();
+            matrix.scale(scale, scale);
+            //应用裁切
+            if (clipBounds) {
+                matrix.translate(-clipBounds.x, -clipBounds.y);
             }
-            else {
-                var matrix = egret.Matrix.create();
-                matrix.identity();
-                matrix.scale(scale, scale);
-                //应用裁切
-                if (clipBounds) {
-                    matrix.translate(-clipBounds.x, -clipBounds.y);
-                }
-                egret.sys.systemRenderer.render(displayObject, renderBuffer, matrix, true);
-                egret.Matrix.release(matrix);
-            }
+            egret.sys.systemRenderer.render(displayObject, renderBuffer, matrix, true);
+            egret.Matrix.release(matrix);
             //设置纹理参数
             this.$initData(0, 0, width, height, 0, 0, width, height, width, height);
             return true;
@@ -8840,9 +7680,6 @@ var egret;
             _this.$graphics.$setTarget(_this);
             return _this;
         }
-        Shape.prototype.createNativeDisplayObject = function () {
-            this.$nativeDisplayObject = new egret_native.NativeDisplayObject(8 /* GRAPHICS */);
-        };
         Object.defineProperty(Shape.prototype, "graphics", {
             /**
              * Specifies the Graphics object belonging to this Shape object, where vector drawing commands can occur.
@@ -8953,9 +7790,6 @@ var egret;
             _this.$graphics.$setTarget(_this);
             return _this;
         }
-        Sprite.prototype.createNativeDisplayObject = function () {
-            this.$nativeDisplayObject = new egret_native.NativeDisplayObject(9 /* SPRITE */);
-        };
         Object.defineProperty(Sprite.prototype, "graphics", {
             /**
              * Specifies the Graphics object belonging to this Shape object, where vector drawing commands can occur.
@@ -9078,7 +7912,7 @@ var egret;
      * it through the stage property of a DisplayObject instance.<br/>
      * The Stage class has several ancestor classes — Sprite, DisplayObject, and EventDispatcher — from which it inherits
      * properties and methods. Many of these properties and methods are inapplicable to Stage objects.
-     * @event egret.Event.RESIZE Dispatched when the stageWidth or stageHeight property of the Stage object is changed.
+     * @event egret.EventType.RESIZE Dispatched when the stageWidth or stageHeight property of the Stage object is changed.
      * @version Egret 2.4
      * @platform Web,Native
      * @includeExample egret/display/Stage.ts
@@ -9089,9 +7923,9 @@ var egret;
      * 可以利用 DisplayObject 实例的 stage 属性进行访问。<br/>
      * Stage 类具有多个祖代类: Sprite、DisplayObject 和 EventDispatcher，属性和方法便是从这些类继承而来的。
      * 从这些继承的许多属性和方法不适用于 Stage 对象。
-     * @event egret.Event.RESIZE 当stageWidth或stageHeight属性发生改变时调度
-     * @event egret.Event.DEACTIVATE 当stage失去焦点后调度
-     * @event egret.Event.ACTIVATE 当stage获得焦点后调度
+     * @event egret.EventType.RESIZE 当stageWidth或stageHeight属性发生改变时调度
+     * @event egret.EventType.DEACTIVATE 当stage失去焦点后调度
+     * @event egret.EventType.ACTIVATE 当stage获得焦点后调度
      *
      * @version Egret 2.4
      * @platform Web,Native
@@ -9116,16 +7950,13 @@ var egret;
              * @private
              */
             _this.$stageHeight = 0;
-            _this.$scaleMode = egret.StageScaleMode.SHOW_ALL;
-            _this.$orientation = egret.OrientationMode.AUTO;
+            _this.$scaleMode = "showAll" /* SHOW_ALL */;
+            _this.$orientation = "auto" /* AUTO */;
             _this.$maxTouches = 99;
             _this.$stage = _this;
             _this.$nestLevel = 1;
             return _this;
         }
-        Stage.prototype.createNativeDisplayObject = function () {
-            this.$nativeDisplayObject = new egret_native.NativeDisplayObject(13 /* STAGE */);
-        };
         Object.defineProperty(Stage.prototype, "frameRate", {
             /**
              * Gets and sets the frame rate of the stage. The frame rate is defined as frames per second. Valid range for the
@@ -9200,8 +8031,8 @@ var egret;
          * @language en_US
          */
         /**
-         * 调用 invalidate() 方法后，在显示列表下次呈现时，Egret 会向每个已注册侦听 Event.RENDER 事件的显示对象发送一个 Event.RENDER 事件。
-         * 每次您希望 Egret 发送 Event.RENDER 事件时，都必须调用 invalidate() 方法。
+         * 调用 invalidate() 方法后，在显示列表下次呈现时，Egret 会向每个已注册侦听 EventType.RENDER 事件的显示对象发送一个 EventType.RENDER 事件。
+         * 每次您希望 Egret 发送 EventType.RENDER 事件时，都必须调用 invalidate() 方法。
          * @version Egret 2.4
          * @platform Web,Native
          * @language zh_CN
@@ -9440,112 +8271,6 @@ var egret;
 //////////////////////////////////////////////////////////////////////////////////////
 var egret;
 (function (egret) {
-    // export interface TextField{
-    //     addEventListener<Z>(type: "focusIn" |
-    //                               "focusOut"
-    //         , listener: (this: Z, e: FocusEvent) => void, thisObject: Z, useCapture?: boolean, priority?: number);
-    //     addEventListener(type: string, listener: Function, thisObject: any, useCapture?: boolean, priority?: number);
-    // }
-    /**
-     * When the user changes the focus from one object in the display list to another object, the object dispatches a FocusEvent object. Currently only supports input text.
-     * Focus events: FocusEvent.FOCUS_IN FocusEvent.FOCUS_OUT
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 用户将焦点从显示列表中的一个对象更改到另一个对象时，对象将调度 FocusEvent 对象。目前只支持输入文本。
-     * 焦点事件：FocusEvent.FOCUS_IN FocusEvent.FOCUS_OUT
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    var FocusEvent = /** @class */ (function (_super) {
-        __extends(FocusEvent, _super);
-        /**
-         * Create a egret.FocusEvent objects
-         * @param type  The type of the event, accessible as Event.type.
-         * @param bubbles  Determines whether the Event object participates in the bubbling stage of the event flow. The default value is false.
-         * @param cancelable Determines whether the Event object can be canceled. The default values is false.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 创建一个 egret.FocusEvent 对象
-         * @param type  事件的类型，可以作为 Event.type 访问。
-         * @param bubbles  确定 Event 对象是否参与事件流的冒泡阶段。默认值为 false。
-         * @param cancelable 确定是否可以取消 Event 对象。默认值为 false。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function FocusEvent(type, bubbles, cancelable) {
-            if (bubbles === void 0) { bubbles = false; }
-            if (cancelable === void 0) { cancelable = false; }
-            return _super.call(this, type, bubbles, cancelable) || this;
-        }
-        /**
-         * Gets focus
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 获得焦点
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        FocusEvent.FOCUS_IN = "focusIn";
-        /**
-         * Loses focus
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 失去焦点
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        FocusEvent.FOCUS_OUT = "focusOut";
-        return FocusEvent;
-    }(egret.Event));
-    egret.FocusEvent = FocusEvent;
-    __reflect(FocusEvent.prototype, "egret.FocusEvent");
-})(egret || (egret = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
     /**
      * The GeolocationEvent represents the position and altitude of the device on Earth,
      * and show errors occurred while getting the location of the device.
@@ -9568,32 +8293,6 @@ var egret;
         function GeolocationEvent() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        /**
-         * The acquisition of the location information failed because of app don't have permission.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 由于用户拒绝访问位置信息，获取位置信息失败
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        GeolocationEvent.PERMISSION_DENIED = "permissionDenied";
-        /**
-         * The acquisition of the location failed because at least one internal source of position returned an internal error.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 设备位置服务不可用或者超时等原因没有得到位置信息
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        GeolocationEvent.UNAVAILABLE = "unavailable";
         return GeolocationEvent;
     }(egret.Event));
     egret.GeolocationEvent = GeolocationEvent;
@@ -9664,8 +8363,6 @@ var egret;
          * @language zh_CN
          */
         function HTTPStatusEvent(type, bubbles, cancelable) {
-            if (bubbles === void 0) { bubbles = false; }
-            if (cancelable === void 0) { cancelable = false; }
             var _this = _super.call(this, type, bubbles, cancelable) || this;
             /**
              * @private
@@ -9709,25 +8406,12 @@ var egret;
          * @language zh_CN
          */
         HTTPStatusEvent.dispatchHTTPStatusEvent = function (target, status) {
-            var event = egret.Event.create(HTTPStatusEvent, HTTPStatusEvent.HTTP_STATUS);
+            var event = egret.Event.create(HTTPStatusEvent, "httpStatus" /* HTTP_STATUS */);
             event._status = status;
             var result = target.dispatchEvent(event);
             egret.Event.release(event);
             return result;
         };
-        /**
-         * HTTPStatusEvent.HTTP_STATUS constant defines the value of the type property httpStatus event object.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * HTTPStatusEvent.HTTP_STATUS 常量定义 httpStatus 事件对象的 type 属性值。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HTTPStatusEvent.HTTP_STATUS = "httpStatus";
         return HTTPStatusEvent;
     }(egret.Event));
     egret.HTTPStatusEvent = HTTPStatusEvent;
@@ -9789,85 +8473,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * @classdesc IO流事件，当错误导致输入或输出操作失败时调度 IOErrorEvent 对象。
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/events/IOErrorEvent.ts
-     * @language en_US
-     */
-    /**
-     * @classdesc IO流事件，当错误导致输入或输出操作失败时调度 IOErrorEvent 对象。
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/events/IOErrorEvent.ts
-     * @language zh_CN
-     */
-    var IOErrorEvent = /** @class */ (function (_super) {
-        __extends(IOErrorEvent, _super);
-        /**
-         * Create a egret.IOErrorEvent objects
-         * @param type {string} Type of event, accessible as Event.type.
-         * @param bubbles {boolean} Determines whether the Event object participates in the bubbling stage of the event flow. The default value is false.
-         * @param cancelable {boolean} Determine whether the Event object can be canceled. The default value is false.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 创建一个 egret.IOErrorEvent 对象
-         * @param type {string} 事件的类型，可以作为 Event.type 访问。
-         * @param bubbles {boolean} 确定 Event 对象是否参与事件流的冒泡阶段。默认值为 false。
-         * @param cancelable {boolean} 确定是否可以取消 Event 对象。默认值为 false。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function IOErrorEvent(type, bubbles, cancelable) {
-            if (bubbles === void 0) { bubbles = false; }
-            if (cancelable === void 0) { cancelable = false; }
-            return _super.call(this, type, bubbles, cancelable) || this;
-        }
-        /**
-         * EventDispatcher object using the specified event object thrown Event. The objects will be thrown in the object cache pool for the next round robin.
-         * @param target {egret.IEventDispatcher} Distribute event target
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 使用指定的EventDispatcher对象来抛出Event事件对象。抛出的对象将会缓存在对象池上，供下次循环复用。
-         * @param target {egret.IEventDispatcher} 派发事件目标
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        IOErrorEvent.dispatchIOErrorEvent = function (target) {
-            var event = egret.Event.create(IOErrorEvent, IOErrorEvent.IO_ERROR);
-            var result = target.dispatchEvent(event);
-            egret.Event.release(event);
-            return result;
-        };
-        /**
-         * io error
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * io发生错误
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        IOErrorEvent.IO_ERROR = "ioError";
-        return IOErrorEvent;
-    }(egret.Event));
-    egret.IOErrorEvent = IOErrorEvent;
-    __reflect(IOErrorEvent.prototype, "egret.IOErrorEvent");
-})(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -10053,10 +8658,6 @@ var egret;
          * @language zh_CN
          */
         function ProgressEvent(type, bubbles, cancelable, bytesLoaded, bytesTotal) {
-            if (bubbles === void 0) { bubbles = false; }
-            if (cancelable === void 0) { cancelable = false; }
-            if (bytesLoaded === void 0) { bytesLoaded = 0; }
-            if (bytesTotal === void 0) { bytesTotal = 0; }
             var _this = _super.call(this, type, bubbles, cancelable) || this;
             /**
              * Number of items or bytes when the listener processes the event。
@@ -10084,8 +8685,8 @@ var egret;
              * @language zh_CN
              */
             _this.bytesTotal = 0;
-            _this.bytesLoaded = bytesLoaded;
-            _this.bytesTotal = bytesTotal;
+            _this.bytesLoaded = bytesLoaded || 0;
+            _this.bytesTotal = bytesTotal || 0;
             return _this;
         }
         /**
@@ -10109,41 +8710,13 @@ var egret;
          * @language zh_CN
          */
         ProgressEvent.dispatchProgressEvent = function (target, type, bytesLoaded, bytesTotal) {
-            if (bytesLoaded === void 0) { bytesLoaded = 0; }
-            if (bytesTotal === void 0) { bytesTotal = 0; }
             var event = egret.Event.create(ProgressEvent, type);
-            event.bytesLoaded = bytesLoaded;
-            event.bytesTotal = bytesTotal;
+            event.bytesLoaded = bytesLoaded || 0;
+            event.bytesTotal = bytesTotal || 0;
             var result = target.dispatchEvent(event);
             egret.Event.release(event);
             return result;
         };
-        /**
-         * Changes in the loading progress
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 加载进度发生变化
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ProgressEvent.PROGRESS = "progress";
-        /**
-         * Get the data
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 获取到数据
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        ProgressEvent.SOCKET_DATA = "socketData";
         return ProgressEvent;
     }(egret.Event));
     egret.ProgressEvent = ProgressEvent;
@@ -10177,87 +8750,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * When the direction of the stage of change, Stage object dispatches StageOrientationEvent object.
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/events/StageOrientationEvent.ts
-     * @language en_US
-     */
-    /**
-     * 当舞台的方向更改时，Stage 对象将调度 StageOrientationEvent 对象。
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/events/StageOrientationEvent.ts
-     * @language zh_CN
-     */
-    var StageOrientationEvent = /** @class */ (function (_super) {
-        __extends(StageOrientationEvent, _super);
-        /**
-         * Creating contains specific information related to the event and the stage direction of StageOrientationEvent object.
-         * @param type Event types:StageOrientationEvent.ORIENTATION_CHANGE
-         * @param bubbles It indicates whether the Event object participates in the bubbling stage of the event flow.
-         * @param cancelable It indicates whether the Event object can be canceled.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 创建包含与舞台方向事件相关的特定信息的 StageOrientationEvent 对象。
-         * @param type 事件的类型：StageOrientationEvent.ORIENTATION_CHANGE
-         * @param bubbles 表示 Event 对象是否参与事件流的冒泡阶段。
-         * @param cancelable 表示是否可以取消 Event 对象。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function StageOrientationEvent(type, bubbles, cancelable) {
-            if (bubbles === void 0) { bubbles = false; }
-            if (cancelable === void 0) { cancelable = false; }
-            return _super.call(this, type, bubbles, cancelable) || this;
-        }
-        /**
-         * 派发一个屏幕旋转的事件。
-         * @param target {egret.IEventDispatcher} 派发事件目标
-         * @param type {egret.IEventDispatcher} 派发事件类型
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 派发一个屏幕旋转的事件。
-         * @param target {egret.IEventDispatcher} Distribute event target
-         * @param type {egret.IEventDispatcher} Distribute event type
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        StageOrientationEvent.dispatchStageOrientationEvent = function (target, type) {
-            var event = egret.Event.create(StageOrientationEvent, type);
-            var result = target.dispatchEvent(event);
-            egret.Event.release(event);
-            return result;
-        };
-        /**
-         * After screen rotation distribute events.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 屏幕旋转后派发的事件。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        StageOrientationEvent.ORIENTATION_CHANGE = "orientationChange";
-        return StageOrientationEvent;
-    }(egret.Event));
-    egret.StageOrientationEvent = StageOrientationEvent;
-    __reflect(StageOrientationEvent.prototype, "egret.StageOrientationEvent");
-})(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -10288,11 +8780,6 @@ var egret;
 //////////////////////////////////////////////////////////////////////////////////////
 var egret;
 (function (egret) {
-    // export interface TextField{
-    //     addEventListener<Z>(type: "link"
-    //         , listener: (this: Z, e: TextEvent) => void, thisObject: Z, useCapture?: boolean, priority?: number);
-    //     addEventListener(type: string, listener: Function, thisObject: any, useCapture?: boolean, priority?: number);
-    // }
     /**
      * When a user clicks a hyperlink rich text object dispatches TextEvent object. Text Event Type: TextEvent.LINK.
      * @version Egret 2.4
@@ -10330,11 +8817,8 @@ var egret;
          * @language zh_CN
          */
         function TextEvent(type, bubbles, cancelable, text) {
-            if (bubbles === void 0) { bubbles = false; }
-            if (cancelable === void 0) { cancelable = false; }
-            if (text === void 0) { text = ""; }
             var _this = _super.call(this, type, bubbles, cancelable) || this;
-            _this.text = text;
+            _this.text = text || "";
             return _this;
         }
         /**
@@ -10362,19 +8846,6 @@ var egret;
             egret.Event.release(event);
             return result;
         };
-        /**
-         * It defines the value of the type property of a link event object.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 定义 link 事件对象的 type 属性值。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        TextEvent.LINK = "link";
         return TextEvent;
     }(egret.Event));
     egret.TextEvent = TextEvent;
@@ -10529,32 +9000,6 @@ var egret;
             egret.Event.release(event);
             return result;
         };
-        /**
-         * Dispatched whenever a Timer object reaches an interval specified according to the Timer.delay property.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 每当 Timer 对象达到根据 Timer.delay 属性指定的间隔时调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        TimerEvent.TIMER = "timer";
-        /**
-         * Dispatched whenever it has completed the number of requests set by Timer.repeatCount.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 每当它完成 Timer.repeatCount 设置的请求数后调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        TimerEvent.TIMER_COMPLETE = "timerComplete";
         return TimerEvent;
     }(egret.Event));
     egret.TimerEvent = TimerEvent;
@@ -10822,100 +9267,16 @@ var egret;
          * @language zh_CN
          */
         TouchEvent.dispatchTouchEvent = function (target, type, bubbles, cancelable, stageX, stageY, touchPointID, touchDown) {
-            if (touchDown === void 0) { touchDown = false; }
-            if (!bubbles && !target.hasEventListener(type)) {
+            if (!bubbles && !target.hasListen(type)) {
                 return true;
             }
             var event = egret.Event.create(TouchEvent, type, bubbles, cancelable);
             event.$initTo(stageX, stageY, touchPointID);
-            event.touchDown = touchDown;
+            event.touchDown = !!touchDown;
             var result = target.dispatchEvent(event);
             egret.Event.release(event);
             return result;
         };
-        /**
-         * Dispatched when the user touches the device, and is continuously dispatched until the point of contact is removed.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 当用户触碰设备时进行调度，而且会连续调度，直到接触点被删除。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        TouchEvent.TOUCH_MOVE = "touchMove";
-        /**
-         * Dispatched when the user first contacts a touch-enabled device (such as touches a finger to a mobile phone or tablet with a touch screen).
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 当用户第一次触摸启用触摸的设备时（例如，用手指触摸配有触摸屏的移动电话或平板电脑）调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        TouchEvent.TOUCH_BEGIN = "touchBegin";
-        /**
-         * Dispatched when the user removes contact with a touch-enabled device (such as lifts a finger off a mobile phone
-         * or tablet with a touch screen).
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 当用户移除与启用触摸的设备的接触时（例如，将手指从配有触摸屏的移动电话或平板电脑上抬起）调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        TouchEvent.TOUCH_END = "touchEnd";
-        /**
-         * Dispatched when an event of some kind occurred that canceled the touch.
-         * Such as the eui.Scroller will dispatch 'TOUCH_CANCEL' when it start move, the 'TOUCH_END' and 'TOUCH_TAP' will not be triggered.
-         * @version Egret 3.0.1
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 由于某个事件取消了触摸时触发。比如 eui.Scroller 在开始滚动后会触发 'TOUCH_CANCEL' 事件，不再触发后续的 'TOUCH_END' 和 'TOUCH_TAP' 事件
-         * @version Egret 3.0.1
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        TouchEvent.TOUCH_CANCEL = "touchCancel";
-        /**
-         * Dispatched when the user lifts the point of contact over the same DisplayObject instance on which the contact
-         * was initiated on a touch-enabled device.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 当用户在触摸设备上与开始触摸的同一 DisplayObject 实例上抬起接触点时调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        TouchEvent.TOUCH_TAP = "touchTap";
-        /**
-         * Dispatched when the user lifts the point of contact over the different DisplayObject instance on which the contact
-         * was initiated on a touch-enabled device (such as presses and releases a finger from a single point over a display
-         * object on a mobile phone or tablet with a touch screen).
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 当用户在触摸设备上与开始触摸的不同 DisplayObject 实例上抬起接触点时调度。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        TouchEvent.TOUCH_RELEASE_OUTSIDE = "touchReleaseOutside";
         return TouchEvent;
     }(egret.Event));
     egret.TouchEvent = TouchEvent;
@@ -11102,11 +9463,6 @@ var egret;
         BlurFilter.prototype.onPropertyChange = function () {
             var self = this;
             self.updatePadding();
-            if (egret.nativeRender) {
-                egret_native.NativeDisplayObject.setFilterPadding(self.blurXFilter.$id, 0, 0, self.paddingLeft, self.paddingRight);
-                egret_native.NativeDisplayObject.setFilterPadding(self.blurYFilter.$id, self.paddingTop, self.paddingBottom, 0, 0);
-                egret_native.NativeDisplayObject.setDataToFilter(self);
-            }
         };
         return BlurFilter;
     }(egret.Filter));
@@ -11117,12 +9473,7 @@ var egret;
         function BlurXFilter(blurX) {
             if (blurX === void 0) { blurX = 4; }
             var _this = _super.call(this) || this;
-            if (egret.nativeRender) {
-                _this.type = "blur";
-            }
-            else {
-                _this.type = "blurX";
-            }
+            _this.type = "blurX";
             _this.$uniforms.blur = { x: blurX, y: 0 };
             _this.onPropertyChange();
             return _this;
@@ -11145,12 +9496,7 @@ var egret;
         function BlurYFilter(blurY) {
             if (blurY === void 0) { blurY = 4; }
             var _this = _super.call(this) || this;
-            if (egret.nativeRender) {
-                _this.type = "blur";
-            }
-            else {
-                _this.type = "blurY";
-            }
+            _this.type = "blurY";
             _this.$uniforms.blur = { x: 0, y: blurY };
             _this.onPropertyChange();
             return _this;
@@ -11480,13 +9826,6 @@ var egret;
             enumerable: true,
             configurable: true
         });
-        CustomFilter.prototype.onPropertyChange = function () {
-            if (egret.nativeRender) {
-                var self_1 = this;
-                egret_native.NativeDisplayObject.setFilterPadding(self_1.$id, self_1.$padding, self_1.$padding, self_1.$padding, self_1.$padding);
-                egret_native.NativeDisplayObject.setDataToFilter(self_1);
-            }
-        };
         return CustomFilter;
     }(egret.Filter));
     egret.CustomFilter = CustomFilter;
@@ -12120,7 +10459,8 @@ var egret;
             var x = this.a * pointX + this.c * pointY + this.tx;
             var y = this.b * pointX + this.d * pointY + this.ty;
             if (resultPoint) {
-                resultPoint.setTo(x, y);
+                resultPoint.x = x;
+                resultPoint.y = y;
                 return resultPoint;
             }
             return new egret.Point(x, y);
@@ -12553,6 +10893,15 @@ var egret;
 var egret;
 (function (egret) {
     var rectanglePool = [];
+    function getRight(rect) {
+        return rect.x + rect.width;
+    }
+    function getBottom(rect) {
+        return rect.y + rect.height;
+    }
+    function isEmpty(rect) {
+        return rect.width <= 0 || rect.height <= 0;
+    }
     /**
      * A Rectangle object is an area defined by its position, as indicated by its top-left corner point (x, y) and by its
      * width and its height.<br/>
@@ -12661,7 +11010,7 @@ var egret;
              * @language zh_CN
              */
             get: function () {
-                return this.x + this.width;
+                return getRight(this);
             },
             set: function (value) {
                 this.width = value - this.x;
@@ -12683,7 +11032,7 @@ var egret;
              * @language zh_CN
              */
             get: function () {
-                return this.y + this.height;
+                return getBottom(this);
             },
             set: function (value) {
                 this.height = value - this.y;
@@ -12952,8 +11301,8 @@ var egret;
          * @language zh_CN
          */
         Rectangle.prototype.intersects = function (toIntersect) {
-            return Math.max(this.x, toIntersect.x) <= Math.min(this.right, toIntersect.right)
-                && Math.max(this.y, toIntersect.y) <= Math.min(this.bottom, toIntersect.bottom);
+            return Math.max(this.x, toIntersect.x) <= Math.min(this.right, getRight(toIntersect))
+                && Math.max(this.y, toIntersect.y) <= Math.min(this.bottom, getBottom(toIntersect));
         };
         /**
          * Determines whether or not this Rectangle object is empty.
@@ -12970,7 +11319,7 @@ var egret;
          * @language zh_CN
          */
         Rectangle.prototype.isEmpty = function () {
-            return this.width <= 0 || this.height <= 0;
+            return isEmpty(this);
         };
         /**
          * Sets all of the Rectangle object's properties to 0. A Rectangle object is empty if its width or height is less than or equal to 0.
@@ -13173,7 +11522,7 @@ var egret;
          */
         Rectangle.prototype.union = function (toUnion) {
             var result = this.clone();
-            if (toUnion.isEmpty()) {
+            if (isEmpty(toUnion)) {
                 return result;
             }
             if (result.isEmpty()) {
@@ -13182,7 +11531,7 @@ var egret;
             }
             var l = Math.min(result.x, toUnion.x);
             var t = Math.min(result.y, toUnion.y);
-            result.setTo(l, t, Math.max(result.right, toUnion.right) - l, Math.max(result.bottom, toUnion.bottom) - t);
+            result.setTo(l, t, Math.max(result.right, getRight(toUnion)) - l, Math.max(result.bottom, getBottom(toUnion)) - t);
             return result;
         };
         /**
@@ -13527,54 +11876,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * The HttpMethod class provides values that specify whether the HttpRequest object should use the POST method
-     * or the GET method when sending data to a server.
-     * @see egret.HttpRequest
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * HttpRequestMethod 类提供了一些值，这些值可指定在将数据发送到服务器时，
-     * HttpRequest 对象应使用 POST 方法还是 GET 方法。
-     * @see egret.HttpRequest
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    var HttpMethod;
-    (function (HttpMethod) {
-        /**
-         * Specifies that the HttpRequest object is a GET.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 表示 HttpRequest 对象是一个 GET。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HttpMethod.GET = "GET";
-        /**
-         * Specifies that the HttpRequest object is a POST.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 表示 HttpRequest 对象是一个 POST。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HttpMethod.POST = "POST";
-    })(HttpMethod = egret.HttpMethod || (egret.HttpMethod = {}));
-})(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -13634,56 +11935,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * The HttpResponseType class provides values that specify how downloaded data is received.
-     * @see egret.HttpRequest
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * URLLoaderDataFormat 类提供了一些用于指定如何接收已下载数据的值。
-     * @see egret.HttpRequest
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    var HttpResponseType = /** @class */ (function () {
-        function HttpResponseType() {
-        }
-        /**
-         * Specifies that downloaded data is received as text. This is the default value of HttpRequest.responseType
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 返回字符串。HttpRequest.responseType属性的默认值。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HttpResponseType.TEXT = "text";
-        /**
-         * Specifies that downloaded data is received as raw binary data.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 返回二进制的ArrayBuffer对象。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HttpResponseType.ARRAY_BUFFER = "arraybuffer";
-        return HttpResponseType;
-    }());
-    egret.HttpResponseType = HttpResponseType;
-    __reflect(HttpResponseType.prototype, "egret.HttpResponseType");
-})(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -13747,9 +11998,6 @@ var egret;
 (function (egret) {
     var sys;
     (function (sys) {
-        var displayListPool = [];
-        var blendModes = ["source-over", "lighter", "destination-out"];
-        var defaultCompositeOp = "source-over";
         /**
          * @private
          * 显示列表
@@ -13832,7 +12080,9 @@ var egret;
                     this.changeSurfaceSize();
                 }
                 var buffer = this.renderBuffer;
-                buffer.clear();
+                if (egret.sys.autoClear) {
+                    buffer.clear();
+                }
                 drawCalls = sys.systemRenderer.render(this.root, buffer, this.offsetMatrix);
                 if (!this.isStage) { //对非舞台画布要保存渲染节点。
                     var surface = buffer.surface;
@@ -13860,7 +12110,6 @@ var egret;
              * 改变画布的尺寸，由于画布尺寸修改会清空原始画布。所以这里将原始画布绘制到一个新画布上，再与原始画布交换。
              */
             DisplayList.prototype.changeSurfaceSize = function () {
-                var root = this.root;
                 var oldOffsetX = this.offsetX;
                 var oldOffsetY = this.offsetY;
                 var bounds = this.root.$getOriginalBounds();
@@ -13887,9 +12136,6 @@ var egret;
             DisplayList.$setCanvasScale = function (x, y) {
                 DisplayList.$canvasScaleX = x;
                 DisplayList.$canvasScaleY = y;
-                if (egret.nativeRender) {
-                    egret_native.nrSetCanvasScaleFactor(DisplayList.$canvasScaleFactor, x, y);
-                }
             };
             DisplayList.$canvasScaleFactor = 1;
             /**
@@ -13997,6 +12243,7 @@ var egret;
 (function (egret) {
     var sys;
     (function (sys) {
+        sys.autoClear = true;
         /**
          * @private
          * Egret播放器
@@ -14022,9 +12269,6 @@ var egret;
                 _this.showFPS = false;
                 _this.showLog = false;
                 _this.stageDisplayList = null;
-                if (egret.nativeRender) {
-                    egret_native.rootWebGLBuffer = buffer;
-                }
                 return _this;
             }
             /**
@@ -14097,11 +12341,6 @@ var egret;
              * 渲染屏幕
              */
             Player.prototype.$render = function (triggerByFrame, costTicker) {
-                if (egret.nativeRender) {
-                    egret_native.updateNativeRender();
-                    egret_native.nrRender();
-                    return;
-                }
                 var stage = this.stage;
                 var t1 = egret.getTimer();
                 var drawCalls = stage.$displayList.drawToSurface();
@@ -14120,16 +12359,11 @@ var egret;
                 var stage = this.stage;
                 stage.$stageWidth = stageWidth;
                 stage.$stageHeight = stageHeight;
-                if (egret.nativeRender) {
-                    egret_native.nrResize(stageWidth, stageHeight);
+                this.screenDisplayList.setClipRect(stageWidth, stageHeight);
+                if (this.stageDisplayList) {
+                    this.stageDisplayList.setClipRect(stageWidth, stageHeight);
                 }
-                else {
-                    this.screenDisplayList.setClipRect(stageWidth, stageHeight);
-                    if (this.stageDisplayList) {
-                        this.stageDisplayList.setClipRect(stageWidth, stageHeight);
-                    }
-                }
-                stage.dispatchEventWith(egret.Event.RESIZE);
+                stage.dispatchEventWith("resize" /* RESIZE */);
             };
             /**
              * @private
@@ -14222,14 +12456,12 @@ var egret;
                 this.showLog = showLog;
                 this.logFilter = logFilter;
                 this.styles = styles;
-                this.infoLines = [];
                 this.totalTime = 0;
                 this.totalTick = 0;
                 this.lastTime = 0;
                 this.drawCalls = 0;
                 this.costRender = 0;
                 this.costTicker = 0;
-                this.infoLines = [];
                 this.totalTime = 0;
                 this.totalTick = 0;
                 this.lastTime = 0;
@@ -14352,33 +12584,6 @@ var egret;
             console.log.apply(console, toArray(arguments));
         };
     })(sys = egret.sys || (egret.sys = {}));
-})(egret || (egret = {}));
-/**
- * @private
- */
-(function (egret) {
-    /**
-     * @private
-     */
-    egret.nativeRender = __global.nativeRender;
-    //检测版本是否匹配，不匹配改用非原生加速渲染方式
-    if (egret.nativeRender) {
-        var nrABIVersion = egret_native.nrABIVersion;
-        var nrMinEgretVersion = egret_native.nrMinEgretVersion;
-        var requiredNrABIVersion = 5;
-        if (nrABIVersion < requiredNrABIVersion) {
-            egret.nativeRender = false;
-            var msg = "需要升级微端版本到 0.1.14 才可以开启原生渲染加速";
-            egret.sys.$warnToFPS(msg);
-            egret.warn(msg);
-        }
-        else if (nrABIVersion > requiredNrABIVersion) {
-            egret.nativeRender = false;
-            var msg = "\u9700\u8981\u5347\u7EA7\u5F15\u64CE\u7248\u672C\u5230 " + nrMinEgretVersion + " \u624D\u53EF\u4EE5\u5F00\u542F\u539F\u751F\u6E32\u67D3\u52A0\u901F";
-            egret.sys.$warnToFPS(msg);
-            egret.warn(msg);
-        }
-    }
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
@@ -14531,15 +12736,15 @@ var egret;
                 var scaleX = (screenWidth / stageWidth) || 0;
                 var scaleY = (screenHeight / stageHeight) || 0;
                 switch (scaleMode) {
-                    case egret.StageScaleMode.EXACT_FIT:
+                    case "exactFit" /* EXACT_FIT */:
                         break;
-                    case egret.StageScaleMode.FIXED_HEIGHT:
+                    case "fixedHeight" /* FIXED_HEIGHT */:
                         stageWidth = Math.round(screenWidth / scaleY);
                         break;
-                    case egret.StageScaleMode.FIXED_WIDTH:
+                    case "fixedWidth" /* FIXED_WIDTH */:
                         stageHeight = Math.round(screenHeight / scaleX);
                         break;
-                    case egret.StageScaleMode.NO_BORDER:
+                    case "noBorder" /* NO_BORDER */:
                         if (scaleX > scaleY) {
                             displayHeight = Math.round(stageHeight * scaleX);
                         }
@@ -14547,7 +12752,7 @@ var egret;
                             displayWidth = Math.round(stageWidth * scaleY);
                         }
                         break;
-                    case egret.StageScaleMode.SHOW_ALL:
+                    case "showAll" /* SHOW_ALL */:
                         if (scaleX > scaleY) {
                             displayWidth = Math.round(stageWidth * scaleY);
                         }
@@ -14555,7 +12760,7 @@ var egret;
                             displayHeight = Math.round(stageHeight * scaleX);
                         }
                         break;
-                    case egret.StageScaleMode.FIXED_NARROW:
+                    case "fixedNarrow" /* FIXED_NARROW */:
                         if (scaleX > scaleY) {
                             stageWidth = Math.round(screenWidth / scaleY);
                         }
@@ -14563,7 +12768,7 @@ var egret;
                             stageHeight = Math.round(screenHeight / scaleX);
                         }
                         break;
-                    case egret.StageScaleMode.FIXED_WIDE:
+                    case "fixedWide" /* FIXED_WIDE */:
                         if (scaleX > scaleY) {
                             stageHeight = Math.round(screenHeight / scaleX);
                         }
@@ -14576,7 +12781,7 @@ var egret;
                         stageHeight = screenHeight;
                         break;
                 }
-                if (egret.Capabilities.runtimeType != egret.RuntimeType.WXGAME) {
+                if (egret.Capabilities.runtimeType != "wxgame" /* WXGAME */) {
                     //宽高不是2的整数倍会导致图片绘制出现问题
                     if (stageWidth % 2 != 0) {
                         stageWidth += 1;
@@ -14632,118 +12837,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * StageScaleMode class provides values for the stage zoom mode.
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/player/StageScaleMode.ts
-     * @language en_US
-     */
-    /**
-     * StageScaleMode 类为舞台缩放模式提供值。
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/player/StageScaleMode.ts
-     * @language zh_CN
-     */
-    var StageScaleMode = /** @class */ (function () {
-        function StageScaleMode() {
-        }
-        /**
-         * Do not scale application content. Even when you change the player viewport size, it remains unchanged. If the player is smaller than the viewport content, possibly with some cropping.<br/>
-         * In this mode, the stage size (Stage.stageWidth, Stage.stageHeight) always with the player viewport size consistent.
-         * @language en_US
-         */
-        /**
-         * 不缩放应用程序内容。即使在更改播放器视口大小时，它仍然保持不变。如果播放器视口比内容小，则可能进行一些裁切。<br/>
-         * 在此模式下，舞台尺寸（Stage.stageWidth,Stage.stageHeight）始终跟播放器视口大小保持一致。
-         * @language zh_CN
-         */
-        StageScaleMode.NO_SCALE = "noScale";
-        /**
-         * Keep the original aspect ratio scaling application content, after scaling a wide directions application content to fill the viewport players on both sides in the other direction may not be wide enough and left black bars.<br/>
-         * In this mode, the stage size (Stage.stageWidth, Stage.stageHeight) is always equal to the initialization incoming external application content size.
-         * @language en_US
-         */
-        /**
-         * 保持原始宽高比缩放应用程序内容，缩放后应用程序内容的较宽方向填满播放器视口，另一个方向的两侧可能会不够宽而留有黑边。<br/>
-         * 在此模式下，舞台尺寸(Stage.stageWidth,Stage.stageHeight)始终等于初始化时外部传入的应用程序内容尺寸。
-         * @language zh_CN
-         */
-        StageScaleMode.SHOW_ALL = "showAll";
-        /**
-         * Keep the original aspect ratio scaling application content, after scaling a narrow direction of application content to fill the viewport players on both sides in the other direction may exceed the viewport and the player is cut.<br/>
-         * In this mode, the stage size (Stage.stageWidth, Stage.stageHeight) is always equal to the initialization incoming external application content size.
-         * @language en_US
-         */
-        /**
-         * 保持原始宽高比缩放应用程序内容，缩放后应用程序内容的较窄方向填满播放器视口，另一个方向的两侧可能会超出播放器视口而被裁切。<br/>
-         * 在此模式下，舞台尺寸(Stage.stageWidth,Stage.stageHeight)始终等于初始化时外部传入的应用程序内容尺寸。
-         * @language zh_CN
-         */
-        StageScaleMode.NO_BORDER = "noBorder";
-        /**
-         * Do not keep the original aspect ratio scaling application content, after scaling application content just fill the player viewport.<br/>
-         * In this mode, the stage size (Stage.stageWidth, Stage.stageHeight) is always equal to the initialization incoming external application content size.
-         * @language en_US
-         */
-        /**
-         * 不保持原始宽高比缩放应用程序内容，缩放后应用程序内容正好填满播放器视口。<br/>
-         * 在此模式下，舞台尺寸(Stage.stageWidth,Stage.stageHeight)始终等于初始化时外部传入的应用程序内容尺寸。
-         * @language zh_CN
-         */
-        StageScaleMode.EXACT_FIT = "exactFit";
-        /**
-         * Keep the original aspect ratio scaling application content, after scaling application content in the horizontal and vertical directions to fill the viewport player, but only to keep the contents of the original application constant width, height may change.<br/>
-         * In this mode, the stage width (Stage.stageWidth) is always equal to initialize external incoming application content width. Stage height (Stage.stageHeight) by the current scale with the player viewport height decision.
-         * @language en_US
-         */
-        /**
-         * 保持原始宽高比缩放应用程序内容，缩放后应用程序内容在水平和垂直方向都填满播放器视口，但只保持应用程序内容的原始宽度不变，高度可能会改变。<br/>
-         * 在此模式下，舞台宽度(Stage.stageWidth)始终等于初始化时外部传入的应用程序内容宽度。舞台高度(Stage.stageHeight)由当前的缩放比例与播放器视口高度决定。
-         * @language zh_CN
-         */
-        StageScaleMode.FIXED_WIDTH = "fixedWidth";
-        /**
-         * Keep the original aspect ratio scaling application content, after scaling application content in the horizontal and vertical directions to fill the viewport player, but only to keep the contents of the original application constant height, width may change.<br/>
-         * In this mode, the stage height (Stage.stageHeight) is always equal to initialize external incoming application content height. Stage width (Stage.stageWidth) by the current scale with the player viewport width decision.
-         * @language en_US
-         */
-        /**
-         * 保持原始宽高比缩放应用程序内容，缩放后应用程序内容在水平和垂直方向都填满播放器视口，但只保持应用程序内容的原始高度不变，宽度可能会改变。<br/>
-         * 在此模式下，舞台高度(Stage.stageHeight)始终等于初始化时外部传入的应用程序内容高度。舞台宽度(Stage.stageWidth)由当前的缩放比例与播放器视口宽度决定。
-         * @language zh_CN
-         */
-        StageScaleMode.FIXED_HEIGHT = "fixedHeight";
-        /**
-         * Keep the original aspect ratio scaling application content, after scaling application content in the horizontal and vertical directions to fill the viewport player,a narrow direction may not be wide enough and fill.<br/>
-         * In this mode, the stage height (Stage.stageHeight) and the stage width (Stage.stageWidth) by the current scale with the player viewport size.
-         * @language en_US
-         */
-        /**
-         * 保持原始宽高比缩放应用程序内容，缩放后应用程序内容在水平和垂直方向都填满播放器视口，应用程序内容的较窄方向可能会不够宽而填充。<br/>
-         * 在此模式下，舞台高度(Stage.stageHeight)和舞台宽度(Stage.stageWidth)由当前的缩放比例与播放器视口宽高决定。
-         * @language zh_CN
-         */
-        StageScaleMode.FIXED_NARROW = "fixedNarrow";
-        /**
-         * Keep the original aspect ratio scaling application content, after scaling application content in the horizontal and vertical directions to fill the viewport player, a wide direction may exceed the viewport and the player is cut.<br/>
-         * In this mode, the stage height (Stage.stageHeight) and the stage width (Stage.stageWidth) by the current scale with the player viewport size.
-         * @language en_US
-         */
-        /**
-         * 保持原始宽高比缩放应用程序内容，缩放后应用程序内容在水平和垂直方向都填满播放器视口，应用程序内容的较宽方向的两侧可能会超出播放器视口而被裁切。<br/>
-         * 在此模式下，舞台高度(Stage.stageHeight)和舞台宽度(Stage.stageWidth)由当前的缩放比例与播放器视口宽高决定。
-         * @language zh_CN
-         */
-        StageScaleMode.FIXED_WIDE = "fixedWide";
-        return StageScaleMode;
-    }());
-    egret.StageScaleMode = StageScaleMode;
-    __reflect(StageScaleMode.prototype, "egret.StageScaleMode");
-})(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -14816,7 +12909,7 @@ var egret;
         sys.$START_TIME = 0;
         /**
          * @private
-         * 是否要广播Event.RENDER事件的标志。
+         * 是否要广播EventType.RENDER事件的标志。
          */
         sys.$invalidateRenderFlag = false;
         /**
@@ -15077,7 +13170,7 @@ var egret;
                 }
                 list = list.concat();
                 for (var i = 0; i < length; i++) {
-                    list[i].dispatchEventWith(egret.Event.ENTER_FRAME);
+                    list[i].dispatchEventWith("enterFrame" /* ENTER_FRAME */);
                 }
             };
             /**
@@ -15092,7 +13185,7 @@ var egret;
                 }
                 list = list.concat();
                 for (var i = 0; i < length; i++) {
-                    list[i].dispatchEventWith(egret.Event.RENDER);
+                    list[i].dispatchEventWith("render" /* RENDER */);
                 }
             };
             /**
@@ -15159,7 +13252,7 @@ var egret;
             LifecycleContext.prototype.pause = function () {
                 if (isActivate) {
                     isActivate = false;
-                    lifecycle.stage.dispatchEvent(new egret.Event(egret.Event.DEACTIVATE));
+                    lifecycle.stage.dispatchEvent(new egret.Event("deactivate" /* DEACTIVATE */));
                     if (lifecycle.onPause) {
                         lifecycle.onPause();
                     }
@@ -15168,7 +13261,7 @@ var egret;
             LifecycleContext.prototype.resume = function () {
                 if (!isActivate) {
                     isActivate = true;
-                    lifecycle.stage.dispatchEvent(new egret.Event(egret.Event.ACTIVATE));
+                    lifecycle.stage.dispatchEvent(new egret.Event("activate" /* ACTIVATE */));
                     if (lifecycle.onResume) {
                         lifecycle.onResume();
                     }
@@ -15278,7 +13371,7 @@ var egret;
                     this.touchDownTarget[touchPointID] = target;
                     this.useTouchesCount++;
                 }
-                egret.TouchEvent.dispatchTouchEvent(target, egret.TouchEvent.TOUCH_BEGIN, true, true, x, y, touchPointID, true);
+                egret.TouchEvent.dispatchTouchEvent(target, "touchBegin" /* TOUCH_BEGIN */, true, true, x, y, touchPointID, true);
             };
             /**
              * @private
@@ -15297,7 +13390,7 @@ var egret;
                 this.lastTouchX = x;
                 this.lastTouchY = y;
                 var target = this.findTarget(x, y);
-                egret.TouchEvent.dispatchTouchEvent(target, egret.TouchEvent.TOUCH_MOVE, true, true, x, y, touchPointID, true);
+                egret.TouchEvent.dispatchTouchEvent(target, "touchMove" /* TOUCH_MOVE */, true, true, x, y, touchPointID, true);
             };
             /**
              * @private
@@ -15314,12 +13407,12 @@ var egret;
                 var oldTarget = this.touchDownTarget[touchPointID];
                 delete this.touchDownTarget[touchPointID];
                 this.useTouchesCount--;
-                egret.TouchEvent.dispatchTouchEvent(target, egret.TouchEvent.TOUCH_END, true, true, x, y, touchPointID, false);
+                egret.TouchEvent.dispatchTouchEvent(target, "touchEnd" /* TOUCH_END */, true, true, x, y, touchPointID, false);
                 if (oldTarget == target) {
-                    egret.TouchEvent.dispatchTouchEvent(target, egret.TouchEvent.TOUCH_TAP, true, true, x, y, touchPointID, false);
+                    egret.TouchEvent.dispatchTouchEvent(target, "touchTap" /* TOUCH_TAP */, true, true, x, y, touchPointID, false);
                 }
                 else {
-                    egret.TouchEvent.dispatchTouchEvent(oldTarget, egret.TouchEvent.TOUCH_RELEASE_OUTSIDE, true, true, x, y, touchPointID, false);
+                    egret.TouchEvent.dispatchTouchEvent(oldTarget, "touchReleaseOutside" /* TOUCH_RELEASE_OUTSIDE */, true, true, x, y, touchPointID, false);
                 }
             };
             /**
@@ -15433,12 +13526,12 @@ var egret;
                 node.image = image;
                 node.imageWidth = sourceWidth;
                 node.imageHeight = sourceHeight;
-                if (fillMode == egret.BitmapFillMode.SCALE) {
+                if (fillMode == "scale" /* SCALE */) {
                     var tsX = destW / textureWidth * scale;
                     var tsY = destH / textureHeight * scale;
                     node.drawImage(bitmapX, bitmapY, bitmapWidth, bitmapHeight, tsX * offsetX, tsY * offsetY, tsX * bitmapWidth, tsY * bitmapHeight);
                 }
-                else if (fillMode == egret.BitmapFillMode.CLIP) {
+                else if (fillMode == "clip" /* CLIP */) {
                     var displayW = Math.min(textureWidth, destW);
                     var displayH = Math.min(textureHeight, destH);
                     var scaledBitmapW = bitmapWidth * scale;
@@ -17579,101 +15672,6 @@ var egret;
 var egret;
 (function (egret) {
     /**
-     * Type of operation.
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * 运行类型的类型。
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    var RuntimeType;
-    (function (RuntimeType) {
-        /**
-         * Running on Web
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 运行在Web上
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        RuntimeType.WEB = "web";
-        /**
-         * Running on NATIVE
-         * @version Egret 2.4
-         * @deprecated
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 运行在NATIVE上
-         * @version Egret 2.4
-         * @deprecated
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        RuntimeType.NATIVE = "native";
-        /**
-         * Running on Runtime2.0
-         * @version Egret 5.1.5
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 运行在Runtime2.0上
-         * @version Egret 5.1.5
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        RuntimeType.RUNTIME2 = "runtime2";
-        /**
-         * Running on WeChat mini game
-         * @version Egret 5.1.5
-         * @platform All
-         * @language en_US
-         */
-        /**
-         * 运行在微信小游戏上
-         * @version Egret 5.1.5
-         * @platform All
-         * @language zh_CN
-         */
-        RuntimeType.WXGAME = "wxgame";
-        /**
-         * Running on Baidu mini game
-         * @version Egret 5.2.13
-         * @platform All
-         * @language en_US
-         */
-        /**
-         * 运行在百度小游戏上
-         * @version Egret 5.2.13
-         * @platform All
-         * @language zh_CN
-         */
-        RuntimeType.BAIDUGAME = "baidugame";
-        /**
-         * Running on Xiaomi quick game
-         * @version Egret 5.2.14
-         * @platform All
-         * @language en_US
-         */
-        /**
-         * 运行在小米快游戏上
-         * @version Egret 5.2.14
-         * @platform All
-         * @language zh_CN
-         */
-        RuntimeType.QGAME = "qgame";
-    })(RuntimeType = egret.RuntimeType || (egret.RuntimeType = {}));
-    /**
      * The Capabilities class provides properties that describe the system and runtime that are hosting the application.
      * @version Egret 2.4
      * @platform Web,Native
@@ -17773,7 +15771,7 @@ var egret;
          * @platform Web,Native
          * @language zh_CN
          */
-        Capabilities.runtimeType = egret.RuntimeType.WEB;
+        Capabilities.runtimeType = "web" /* WEB */;
         /***
          * version of Egret.
          * @type {string}
@@ -17807,7 +15805,7 @@ var egret;
         /***
          * Clients border width.
          * The value before the document class initialization is always 0.
-         * This value will change after the distribution Event.RESIZE and StageOrientationEvent.ORIENTATION_CHANGE.
+         * This value will change after the distribution EventType.RESIZE and StageOrientationEvent.ORIENTATION_CHANGE.
          * @version Egret 3.1.3
          * @platform Web,Native
          * @language en_US
@@ -17815,7 +15813,7 @@ var egret;
         /***
          * 客户端边界宽度。
          * 该值在文档类初始化之前始终是0。
-         * 该值在派发 Event.RESIZE 以及 StageOrientationEvent.ORIENTATION_CHANGE 之后会发生改变。
+         * 该值在派发 EventType.RESIZE 以及 StageOrientationEvent.ORIENTATION_CHANGE 之后会发生改变。
          * @version Egret 3.1.3
          * @platform Web,Native
          * @language zh_CN
@@ -17824,7 +15822,7 @@ var egret;
         /***
          * Clients border height.
          * The value before the document class initialization is always 0.
-         * This value will change after the distribution Event.RESIZE and StageOrientationEvent.ORIENTATION_CHANGE.
+         * This value will change after the distribution EventType.RESIZE and StageOrientationEvent.ORIENTATION_CHANGE.
          * @version Egret 3.1.3
          * @platform Web,Native
          * @language en_US
@@ -17832,7 +15830,7 @@ var egret;
         /***
          * 客户端边界高度。
          * 该值在文档类初始化之前始终是0。
-         * 该值在派发 Event.RESIZE 以及 StageOrientationEvent.ORIENTATION_CHANGE 之后会发生改变。
+         * 该值在派发 EventType.RESIZE 以及 StageOrientationEvent.ORIENTATION_CHANGE 之后会发生改变。
          * @version Egret 3.1.3
          * @platform Web,Native
          * @language zh_CN
@@ -17919,1022 +15917,6 @@ var egret;
 //  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * Bitmap font, texture set of a font. It is generally used as the value of the BitmapText.font attribute.
-     * @see http://bbs.egret-labs.org/thread-918-1-1.html TextureMerger
-     * @see http://bbs.egret-labs.org/forum.php?mod=viewthread&tid=251 Text(Containing the specific usage of the bitmap font )
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/text/BitmapFont.ts
-     * @language en_US
-     */
-    /**
-     * 位图字体,是一个字体的纹理集，通常作为BitmapText.font属性的值。
-     * @see http://bbs.egret-labs.org/thread-918-1-1.html TextureMerger
-     * @see http://bbs.egret-labs.org/forum.php?mod=viewthread&tid=251 文本(含位图字体具体用法)
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/text/BitmapFont.ts
-     * @language zh_CN
-     */
-    var BitmapFont = /** @class */ (function (_super) {
-        __extends(BitmapFont, _super);
-        /**
-         * Create an egret.BitmapFont object
-         * @param texture {egret.Texture} Texture set that use TextureMerger create
-         * @param config {any} Configure data that use TextureMerger create
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 创建一个 egret.BitmapFont 对象
-         * @param texture {egret.Texture} 使用TextureMerger生成的纹理集
-         * @param config {any} 使用TextureMerger生成的配置数据
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function BitmapFont(texture, config) {
-            var _this = _super.call(this, texture) || this;
-            /**
-             * @private
-             */
-            _this.firstCharHeight = 0;
-            if (typeof (config) == "string") {
-                _this.charList = _this.parseConfig(config);
-            }
-            else if (config && config.hasOwnProperty("frames")) {
-                _this.charList = config.frames;
-            }
-            else {
-                _this.charList = {};
-            }
-            return _this;
-        }
-        /**
-         * Obtain corresponding texture through the name attribute
-         * @param name {string} name Attribute
-         * @returns {egret.Texture}
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 通过 name 属性获取对应纹理
-         * @param name {string} name属性
-         * @returns {egret.Texture}
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        BitmapFont.prototype.getTexture = function (name) {
-            var texture = this._textureMap[name];
-            if (!texture) {
-                var c = this.charList[name];
-                if (!c) {
-                    return null;
-                }
-                texture = this.createTexture(name, c.x, c.y, c.w, c.h, c.offX, c.offY, c.sourceW, c.sourceH);
-                this._textureMap[name] = texture;
-            }
-            return texture;
-        };
-        /**
-         * @private
-         */
-        BitmapFont.prototype.getConfig = function (name, key) {
-            if (!this.charList[name]) {
-                return 0;
-            }
-            return this.charList[name][key];
-        };
-        /**
-         * @private
-         *
-         * @returns
-         */
-        BitmapFont.prototype._getFirstCharHeight = function () {
-            if (this.firstCharHeight == 0) {
-                for (var str in this.charList) {
-                    var c = this.charList[str];
-                    if (c) {
-                        var sourceH = c.sourceH;
-                        if (sourceH === undefined) {
-                            var h = c.h;
-                            if (h === undefined) {
-                                h = 0;
-                            }
-                            var offY = c.offY;
-                            if (offY === undefined) {
-                                offY = 0;
-                            }
-                            sourceH = h + offY;
-                        }
-                        if (sourceH <= 0) {
-                            continue;
-                        }
-                        this.firstCharHeight = sourceH;
-                        break;
-                    }
-                }
-            }
-            return this.firstCharHeight;
-        };
-        /**
-         * @private
-         *
-         * @param fntText
-         * @returns
-         */
-        BitmapFont.prototype.parseConfig = function (fntText) {
-            fntText = fntText.split("\r\n").join("\n");
-            var lines = fntText.split("\n");
-            var charsCount = this.getConfigByKey(lines[3], "count");
-            var chars = {};
-            for (var i = 4; i < 4 + charsCount; i++) {
-                var charText = lines[i];
-                var letter = String.fromCharCode(this.getConfigByKey(charText, "id"));
-                var c = {};
-                chars[letter] = c;
-                c["x"] = this.getConfigByKey(charText, "x");
-                c["y"] = this.getConfigByKey(charText, "y");
-                c["w"] = this.getConfigByKey(charText, "width");
-                c["h"] = this.getConfigByKey(charText, "height");
-                c["offX"] = this.getConfigByKey(charText, "xoffset");
-                c["offY"] = this.getConfigByKey(charText, "yoffset");
-                c["xadvance"] = this.getConfigByKey(charText, "xadvance");
-            }
-            return chars;
-        };
-        /**
-         * @private
-         *
-         * @param configText
-         * @param key
-         * @returns
-         */
-        BitmapFont.prototype.getConfigByKey = function (configText, key) {
-            var itemConfigTextList = configText.split(" ");
-            for (var i = 0, length_6 = itemConfigTextList.length; i < length_6; i++) {
-                var itemConfigText = itemConfigTextList[i];
-                if (key == itemConfigText.substring(0, key.length)) {
-                    var value = itemConfigText.substring(key.length + 1);
-                    return parseInt(value);
-                }
-            }
-            return 0;
-        };
-        return BitmapFont;
-    }(egret.SpriteSheet));
-    egret.BitmapFont = BitmapFont;
-    __reflect(BitmapFont.prototype, "egret.BitmapFont");
-})(egret || (egret = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * Bitmap font adopts the Bitmap+SpriteSheet mode to render text.
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/text/BitmapText.ts
-     * @language en_US
-     */
-    /**
-     * 位图字体采用了Bitmap+SpriteSheet的方式来渲染文字。
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @includeExample egret/text/BitmapText.ts
-     * @language zh_CN
-     */
-    var BitmapText = /** @class */ (function (_super) {
-        __extends(BitmapText, _super);
-        /**
-         * Create an egret.BitmapText object
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 创建一个 egret.BitmapText 对象
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        function BitmapText() {
-            var _this = _super.call(this) || this;
-            _this.$smoothing = egret.Bitmap.defaultSmoothing;
-            _this.$text = "";
-            _this.$textFieldWidth = NaN;
-            _this.$textLinesChanged = false;
-            _this.$textFieldHeight = NaN;
-            _this.$font = null;
-            _this.$fontStringChanged = false;
-            _this.$lineSpacing = 0;
-            _this.$letterSpacing = 0;
-            _this.$textAlign = egret.HorizontalAlign.LEFT;
-            _this.$verticalAlign = egret.VerticalAlign.TOP;
-            _this.$textWidth = NaN;
-            _this.$textHeight = NaN;
-            /**
-             * @private
-             */
-            _this.$textOffsetX = 0;
-            /**
-             * @private
-             */
-            _this.$textOffsetY = 0;
-            /**
-             * @private
-             */
-            _this.$textStartX = 0;
-            /**
-             * @private
-             */
-            _this.$textStartY = 0;
-            /**
-             * @private
-             */
-            _this.textLines = [];
-            /**
-             * @private
-             */
-            _this.$lineHeights = [];
-            if (!egret.nativeRender) {
-                _this.$renderNode = new egret.sys.BitmapNode();
-            }
-            return _this;
-        }
-        BitmapText.prototype.createNativeDisplayObject = function () {
-            this.$nativeDisplayObject = new egret_native.NativeDisplayObject(11 /* BITMAP_TEXT */);
-        };
-        Object.defineProperty(BitmapText.prototype, "smoothing", {
-            /**
-             * Whether or not is smoothed when scaled.
-             * @default true。
-             * @version Egret 3.0
-             * @platform Web
-             * @language en_US
-             */
-            /**
-             * 控制在缩放时是否进行平滑处理。
-             * @default true。
-             * @version Egret 3.0
-             * @platform Web
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$smoothing;
-            },
-            set: function (value) {
-                var self = this;
-                if (value == self.$smoothing) {
-                    return;
-                }
-                self.$smoothing = value;
-                if (!egret.nativeRender) {
-                    var p = self.$parent;
-                    if (p && !p.$cacheDirty) {
-                        p.$cacheDirty = true;
-                        p.$cacheDirtyUp();
-                    }
-                    var maskedObject = self.$maskedObject;
-                    if (maskedObject && !maskedObject.$cacheDirty) {
-                        maskedObject.$cacheDirty = true;
-                        maskedObject.$cacheDirtyUp();
-                    }
-                }
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(BitmapText.prototype, "text", {
-            /**
-             * A string to display in the text field.
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 要显示的文本内容
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$text;
-            },
-            set: function (value) {
-                this.$setText(value);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * @private
-         */
-        BitmapText.prototype.$setText = function (value) {
-            if (value == null) {
-                value = "";
-            }
-            else {
-                value = String(value);
-            }
-            var self = this;
-            if (value == self.$text)
-                return false;
-            self.$text = value;
-            self.$invalidateContentBounds();
-            return true;
-        };
-        /**
-         * @private
-         */
-        BitmapText.prototype.$getWidth = function () {
-            var self = this;
-            var w = self.$textFieldWidth;
-            return isNaN(w) ? self.$getContentBounds().width : w;
-        };
-        /**
-         * @private
-         */
-        BitmapText.prototype.$setWidth = function (value) {
-            var self = this;
-            if (value < 0 || value == self.$textFieldWidth) {
-                return false;
-            }
-            self.$textFieldWidth = value;
-            self.$invalidateContentBounds();
-            return true;
-        };
-        /**
-         * @private
-         */
-        BitmapText.prototype.$invalidateContentBounds = function () {
-            this.$renderDirty = true;
-            this.$textLinesChanged = true;
-            //todo lcj
-            this.$updateRenderNode();
-        };
-        /**
-         * @private
-         */
-        BitmapText.prototype.$getHeight = function () {
-            var self = this;
-            var h = self.$textFieldHeight;
-            return isNaN(h) ? self.$getContentBounds().height : h;
-        };
-        /**
-         * @private
-         */
-        BitmapText.prototype.$setHeight = function (value) {
-            var self = this;
-            if (value < 0 || value == self.$textFieldHeight) {
-                return false;
-            }
-            self.$textFieldHeight = value;
-            self.$invalidateContentBounds();
-            return true;
-        };
-        Object.defineProperty(BitmapText.prototype, "font", {
-            /**
-             * The name of the font to use, or a comma-separated list of font names, the type of value must be BitmapFont.
-             * @default null
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 要使用的字体的名称或用逗号分隔的字体名称列表，类型必须是 BitmapFont。
-             * @default null
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$font;
-            },
-            set: function (value) {
-                this.$setFont(value);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        BitmapText.prototype.$setFont = function (value) {
-            var self = this;
-            if (self.$font == value) {
-                return false;
-            }
-            self.$font = value;
-            self.$fontStringChanged = true;
-            this.$invalidateContentBounds();
-            return true;
-        };
-        Object.defineProperty(BitmapText.prototype, "lineSpacing", {
-            /**
-             /**
-             * An integer representing the amount of vertical space between lines.
-             * @default 0
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 一个整数，表示行与行之间的垂直间距量
-             * @default 0
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$lineSpacing;
-            },
-            set: function (value) {
-                this.$setLineSpacing(value);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        BitmapText.prototype.$setLineSpacing = function (value) {
-            var self = this;
-            if (self.$lineSpacing == value)
-                return false;
-            self.$lineSpacing = value;
-            self.$invalidateContentBounds();
-            return true;
-        };
-        Object.defineProperty(BitmapText.prototype, "letterSpacing", {
-            /**
-             * An integer representing the amount of distance between characters.
-             * @default 0
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 一个整数，表示字符之间的距离。
-             * @default 0
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$letterSpacing;
-            },
-            set: function (value) {
-                this.$setLetterSpacing(value);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        BitmapText.prototype.$setLetterSpacing = function (value) {
-            var self = this;
-            if (self.$letterSpacing == value) {
-                return false;
-            }
-            self.$letterSpacing = value;
-            self.$invalidateContentBounds();
-            return true;
-        };
-        Object.defineProperty(BitmapText.prototype, "textAlign", {
-            /**
-             * Horizontal alignment of text.
-             * @default：egret.HorizontalAlign.LEFT
-             * @version Egret 2.5.6
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 文本的水平对齐方式。
-             * @default：egret.HorizontalAlign.LEFT
-             * @version Egret 2.5.6
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$textAlign;
-            },
-            set: function (value) {
-                this.$setTextAlign(value);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        BitmapText.prototype.$setTextAlign = function (value) {
-            var self = this;
-            if (self.$textAlign == value) {
-                return false;
-            }
-            self.$textAlign = value;
-            self.$invalidateContentBounds();
-            return true;
-        };
-        Object.defineProperty(BitmapText.prototype, "verticalAlign", {
-            /**
-             * Vertical alignment of text.
-             * @default：egret.VerticalAlign.TOP
-             * @version Egret 2.5.6
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 文字的垂直对齐方式。
-             * @default：egret.VerticalAlign.TOP
-             * @version Egret 2.5.6
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                return this.$verticalAlign;
-            },
-            set: function (value) {
-                this.$setVerticalAlign(value);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        BitmapText.prototype.$setVerticalAlign = function (value) {
-            var self = this;
-            if (self.$verticalAlign == value) {
-                return false;
-            }
-            self.$verticalAlign = value;
-            self.$invalidateContentBounds();
-            return true;
-        };
-        /**
-         * @private
-         */
-        BitmapText.prototype.$updateRenderNode = function () {
-            var self = this;
-            var textLines = this.$getTextLines();
-            var length = textLines.length;
-            if (length == 0) {
-                if (egret.nativeRender && self.$font) {
-                    self.$nativeDisplayObject.setDataToBitmapNode(self.$nativeDisplayObject.id, self.$font.$texture, []);
-                    self.$nativeDisplayObject.setWidth(0);
-                    self.$nativeDisplayObject.setHeight(0);
-                }
-                return;
-            }
-            var drawArr = [];
-            var textLinesWidth = this.$textLinesWidth;
-            var bitmapFont = self.$font;
-            var node;
-            if (!egret.nativeRender) {
-                node = this.$renderNode;
-                if (bitmapFont.$texture) {
-                    node.image = bitmapFont.$texture.$bitmapData;
-                }
-                node.smoothing = self.$smoothing;
-            }
-            var emptyHeight = bitmapFont._getFirstCharHeight();
-            var emptyWidth = Math.ceil(emptyHeight * BitmapText.EMPTY_FACTOR);
-            var hasSetHeight = !isNaN(self.$textFieldHeight);
-            var textWidth = self.$textWidth;
-            var textFieldWidth = self.$textFieldWidth;
-            var textFieldHeight = self.$textFieldHeight;
-            var align = self.$textAlign;
-            var yPos = this.$textOffsetY + this.$textStartY;
-            var lineHeights = this.$lineHeights;
-            for (var i = 0; i < length; i++) {
-                var lineHeight = lineHeights[i];
-                if (hasSetHeight && i > 0 && yPos + lineHeight > textFieldHeight) {
-                    break;
-                }
-                var line = textLines[i];
-                var len = line.length;
-                var xPos = this.$textOffsetX;
-                if (align != egret.HorizontalAlign.LEFT) {
-                    var countWidth = textFieldWidth > textWidth ? textFieldWidth : textWidth;
-                    if (align == egret.HorizontalAlign.RIGHT) {
-                        xPos += countWidth - textLinesWidth[i];
-                    }
-                    else if (align == egret.HorizontalAlign.CENTER) {
-                        xPos += Math.floor((countWidth - textLinesWidth[i]) / 2);
-                    }
-                }
-                for (var j = 0; j < len; j++) {
-                    var character = line.charAt(j);
-                    var texture = bitmapFont.getTexture(character);
-                    if (!texture) {
-                        if (character == " ") {
-                            xPos += emptyWidth;
-                        }
-                        else {
-                            egret.$warn(1046, character);
-                        }
-                        continue;
-                    }
-                    var bitmapWidth = texture.$bitmapWidth;
-                    var bitmapHeight = texture.$bitmapHeight;
-                    if (egret.nativeRender) {
-                        drawArr.push(texture.$bitmapX, texture.$bitmapY, bitmapWidth, bitmapHeight, xPos + texture.$offsetX, yPos + texture.$offsetY, texture.$getScaleBitmapWidth(), texture.$getScaleBitmapHeight(), texture.$sourceWidth, texture.$sourceHeight);
-                    }
-                    else {
-                        node.imageWidth = texture.$sourceWidth;
-                        node.imageHeight = texture.$sourceHeight;
-                        node.drawImage(texture.$bitmapX, texture.$bitmapY, bitmapWidth, bitmapHeight, xPos + texture.$offsetX, yPos + texture.$offsetY, texture.$getScaleBitmapWidth(), texture.$getScaleBitmapHeight());
-                    }
-                    xPos += (bitmapFont.getConfig(character, "xadvance") || texture.$getTextureWidth()) + self.$letterSpacing;
-                }
-                yPos += lineHeight + self.$lineSpacing;
-            }
-            if (egret.nativeRender) {
-                self.$nativeDisplayObject.setDataToBitmapNode(self.$nativeDisplayObject.id, bitmapFont.$texture, drawArr);
-                var bounds = self.$getContentBounds();
-                self.$nativeDisplayObject.setWidth(bounds.width);
-                self.$nativeDisplayObject.setHeight(bounds.height);
-            }
-        };
-        /**
-         * @private
-         */
-        BitmapText.prototype.$measureContentBounds = function (bounds) {
-            var lines = this.$getTextLines();
-            if (lines.length == 0) {
-                bounds.setEmpty();
-            }
-            else {
-                bounds.setTo(this.$textOffsetX + this.$textStartX, this.$textOffsetY + this.$textStartY, this.$textWidth - this.$textOffsetX, this.$textHeight - this.$textOffsetY);
-            }
-        };
-        Object.defineProperty(BitmapText.prototype, "textWidth", {
-            /**
-             * Get the BitmapText measured width
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 获取位图文本测量宽度
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                this.$getTextLines();
-                return this.$textWidth;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(BitmapText.prototype, "textHeight", {
-            /**
-             * Get Text BitmapText height
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language en_US
-             */
-            /**
-             * 获取位图文本测量高度
-             * @version Egret 2.4
-             * @platform Web,Native
-             * @language zh_CN
-             */
-            get: function () {
-                this.$getTextLines();
-                return this.$textHeight;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        /**
-         * @private
-         *
-         * @returns
-         */
-        BitmapText.prototype.$getTextLines = function () {
-            var self = this;
-            if (!self.$textLinesChanged) {
-                return self.textLines;
-            }
-            var textLines = [];
-            self.textLines = textLines;
-            var textLinesWidth = [];
-            self.$textLinesWidth = textLinesWidth;
-            self.$textLinesChanged = false;
-            var lineHeights = [];
-            self.$lineHeights = lineHeights;
-            if (!self.$text || !self.$font) {
-                self.$textWidth = 0;
-                self.$textHeight = 0;
-                return textLines;
-            }
-            var lineSpacing = self.$lineSpacing;
-            var letterSpacing = self.$letterSpacing;
-            var textWidth = 0;
-            var textHeight = 0;
-            var textOffsetX = 0;
-            var textOffsetY = 0;
-            var hasWidthSet = !isNaN(self.$textFieldWidth);
-            var textFieldWidth = self.$textFieldWidth;
-            var textFieldHeight = self.$textFieldHeight;
-            var bitmapFont = self.$font;
-            var emptyHeight = bitmapFont._getFirstCharHeight();
-            var emptyWidth = Math.ceil(emptyHeight * BitmapText.EMPTY_FACTOR);
-            var text = self.$text;
-            var textArr = text.split(/(?:\r\n|\r|\n)/);
-            var length = textArr.length;
-            var isFirstLine = true;
-            var isFirstChar;
-            var isLastChar;
-            var lineHeight;
-            var xPos;
-            for (var i = 0; i < length; i++) {
-                var line = textArr[i];
-                var len = line.length;
-                lineHeight = 0;
-                xPos = 0;
-                isFirstChar = true;
-                isLastChar = false;
-                for (var j = 0; j < len; j++) {
-                    if (!isFirstChar) {
-                        xPos += letterSpacing;
-                    }
-                    var character = line.charAt(j);
-                    var texureWidth = void 0;
-                    var textureHeight = void 0;
-                    var offsetX = 0;
-                    var offsetY = 0;
-                    var texture = bitmapFont.getTexture(character);
-                    if (!texture) {
-                        if (character == " ") {
-                            texureWidth = emptyWidth;
-                            textureHeight = emptyHeight;
-                        }
-                        else {
-                            egret.$warn(1046, character);
-                            if (isFirstChar) {
-                                isFirstChar = false;
-                            }
-                            continue;
-                        }
-                    }
-                    else {
-                        texureWidth = texture.$getTextureWidth();
-                        textureHeight = texture.$getTextureHeight();
-                        offsetX = texture.$offsetX;
-                        offsetY = texture.$offsetY;
-                    }
-                    // if (isFirstChar) {
-                    //     isFirstChar = false;
-                    //     textOffsetX = Math.min(offsetX, textOffsetX);
-                    // }
-                    // if (isFirstLine) {
-                    //     isFirstLine = false;
-                    //     textOffsetY = Math.min(offsetY, textOffsetY);
-                    // }
-                    if (hasWidthSet && j > 0 && xPos + texureWidth > textFieldWidth) {
-                        if (!setLineData(line.substring(0, j)))
-                            break;
-                        line = line.substring(j);
-                        len = line.length;
-                        j = 0;
-                        //最后一个字符要计算纹理宽度，而不是xadvance
-                        if (j == len - 1) {
-                            xPos = texureWidth;
-                        }
-                        else {
-                            xPos = bitmapFont.getConfig(character, "xadvance") || texureWidth;
-                        }
-                        lineHeight = textureHeight;
-                        continue;
-                    }
-                    //最后一个字符要计算纹理宽度，而不是xadvance
-                    if (j == len - 1) {
-                        xPos += texureWidth;
-                    }
-                    else {
-                        xPos += bitmapFont.getConfig(character, "xadvance") || texureWidth;
-                    }
-                    lineHeight = Math.max(textureHeight, lineHeight);
-                }
-                if (textFieldHeight && i > 0 && textHeight > textFieldHeight) {
-                    break;
-                }
-                isLastChar = true;
-                if (!setLineData(line))
-                    break;
-            }
-            function setLineData(str) {
-                if (textFieldHeight && textLines.length > 0 && textHeight > textFieldHeight) {
-                    return false;
-                }
-                textHeight += lineHeight + lineSpacing;
-                if (!isFirstChar && !isLastChar) {
-                    xPos -= letterSpacing;
-                }
-                textLines.push(str);
-                lineHeights.push(lineHeight);
-                textLinesWidth.push(xPos);
-                textWidth = Math.max(xPos, textWidth);
-                return true;
-            }
-            textHeight -= lineSpacing;
-            self.$textWidth = textWidth;
-            self.$textHeight = textHeight;
-            this.$textOffsetX = textOffsetX;
-            this.$textOffsetY = textOffsetY;
-            this.$textStartX = 0;
-            this.$textStartY = 0;
-            var alignType;
-            if (textFieldWidth > textWidth) {
-                alignType = self.$textAlign;
-                if (alignType == egret.HorizontalAlign.RIGHT) {
-                    this.$textStartX = textFieldWidth - textWidth;
-                }
-                else if (alignType == egret.HorizontalAlign.CENTER) {
-                    this.$textStartX = Math.floor((textFieldWidth - textWidth) / 2);
-                }
-            }
-            if (textFieldHeight > textHeight) {
-                alignType = self.$verticalAlign;
-                if (alignType == egret.VerticalAlign.BOTTOM) {
-                    this.$textStartY = textFieldHeight - textHeight;
-                }
-                else if (alignType == egret.VerticalAlign.MIDDLE) {
-                    this.$textStartY = Math.floor((textFieldHeight - textHeight) / 2);
-                }
-            }
-            return textLines;
-        };
-        /**
-         * A ratio of the width of the space character. This value is multiplied by the height of the first character is the space character width.
-         * @default 0.33
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 一个空格字符的宽度比例。这个数值乘以第一个字符的高度即为空格字符的宽。
-         * @default 0.33
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        BitmapText.EMPTY_FACTOR = 0.33;
-        return BitmapText;
-    }(egret.DisplayObject));
-    egret.BitmapText = BitmapText;
-    __reflect(BitmapText.prototype, "egret.BitmapText");
-})(egret || (egret = {}));
-//////////////////////////////////////////////////////////////////////////////////////
-//
-//  Copyright (c) 2014-present, Egret Technology.
-//  All rights reserved.
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the Egret nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY EGRET AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
-//  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-//  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL EGRET AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;LOSS OF USE, DATA,
-//  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-//  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-//  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////////////
-var egret;
-(function (egret) {
-    /**
-     * The HorizontalAlign class defines the possible values for the horizontal alignment.
-     * @see egret.TextField#textAlign
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language en_US
-     */
-    /**
-     * HorizontalAlign 类为水平对齐方式定义可能的值。
-     * @see egret.TextField#textAlign
-     * @version Egret 2.4
-     * @platform Web,Native
-     * @language zh_CN
-     */
-    var HorizontalAlign = /** @class */ (function () {
-        function HorizontalAlign() {
-        }
-        /**
-         * Horizontally align content to the left of the container.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 将内容与容器的左侧对齐。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HorizontalAlign.LEFT = "left";
-        /**
-         * Horizontally align content to the right of the container.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 将内容与容器的右侧对齐。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HorizontalAlign.RIGHT = "right";
-        /**
-         * Horizontally align content in the center of the container.
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 在容器的水平中心对齐内容。
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HorizontalAlign.CENTER = "center";
-        /**
-         * Horizontal alignment with both edges.
-         * Note: TextFiled does not support this alignment method.
-         * @constant egret.HorizontalAlign.JUSTIFY
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 水平两端对齐。
-         * 注意：TextFiled不支持此对齐方式。
-         * @constant egret.HorizontalAlign.JUSTIFY
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HorizontalAlign.JUSTIFY = "justify";
-        /**
-         * Align the content of the child items, relative to the container. This operation will adjust uniformly the size of all the child items to be the Content Width \" of the container \".
-         * The Content Width \" of the container \" is the size of the max. child item. If the size of all child items are less than the width of the container, they will be adjusted to the width of the container.
-         * Note: TextFiled does not support this alignment method.
-         * @constant egret.HorizontalAlign.CONTENT_JUSTIFY
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language en_US
-         */
-        /**
-         * 相对于容器对子项进行内容对齐。这会将所有子项的大小统一调整为容器的"内容宽度"。
-         * 容器的"内容宽度"是最大子项的大小,如果所有子项都小于容器的宽度，则会将所有子项的大小调整为容器的宽度。
-         * 注意：TextFiled不支持此对齐方式。
-         * @constant egret.HorizontalAlign.CONTENT_JUSTIFY
-         * @version Egret 2.4
-         * @platform Web,Native
-         * @language zh_CN
-         */
-        HorizontalAlign.CONTENT_JUSTIFY = "contentJustify";
-        return HorizontalAlign;
-    }());
-    egret.HorizontalAlign = HorizontalAlign;
-    __reflect(HorizontalAlign.prototype, "egret.HorizontalAlign");
-})(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2014-present, Egret Technology.
@@ -19289,8 +16271,9 @@ var egret;
          */
         InputController.prototype.init = function (text) {
             this._text = text;
-            this.stageText = new egret.StageText();
-            this.stageText.$setTextField(this._text);
+            var stageText = new egret.StageText();
+            this.stageText = stageText;
+            stageText.$setTextField(this._text);
         };
         /**
          * @private
@@ -19300,15 +16283,16 @@ var egret;
             if (this.stageTextAdded) {
                 return;
             }
-            if (!this._text.$inputEnabled) {
-                this._text.$touchEnabled = true;
+            var _a = this, _text = _a._text, stageText = _a.stageText;
+            if (!_text.$inputEnabled) {
+                _text.$touchEnabled = true;
             }
-            this.tempStage = this._text.stage;
-            this.stageText.$addToStage();
-            this.stageText.addEventListener("updateText", this.updateTextHandler, this);
-            this._text.addEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onMouseDownHandler, this);
-            this.stageText.addEventListener("blur", this.blurHandler, this);
-            this.stageText.addEventListener("focus", this.focusHandler, this);
+            this.tempStage = _text.stage;
+            stageText.$addToStage();
+            stageText.on("updateText", this.updateTextHandler, this);
+            _text.on("touchBegin" /* TOUCH_BEGIN */, this.onMouseDownHandler, this);
+            stageText.on("blur", this.blurHandler, this);
+            stageText.on("focus", this.focusHandler, this);
             this.stageTextAdded = true;
         };
         /**
@@ -19319,15 +16303,16 @@ var egret;
             if (!this.stageTextAdded) {
                 return;
             }
-            if (!this._text.$inputEnabled) {
-                this._text.$touchEnabled = false;
+            var _a = this, _text = _a._text, stageText = _a.stageText;
+            if (!_text.$inputEnabled) {
+                _text.$touchEnabled = false;
             }
-            this.stageText.$removeFromStage();
-            this.stageText.removeEventListener("updateText", this.updateTextHandler, this);
-            this._text.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onMouseDownHandler, this);
-            this.tempStage.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onStageDownHandler, this);
-            this.stageText.removeEventListener("blur", this.blurHandler, this);
-            this.stageText.removeEventListener("focus", this.focusHandler, this);
+            stageText.$removeFromStage();
+            stageText.off("updateText", this.updateTextHandler, this);
+            _text.off("touchBegin" /* TOUCH_BEGIN */, this.onMouseDownHandler, this);
+            this.tempStage.off("touchBegin" /* TOUCH_BEGIN */, this.onStageDownHandler, this);
+            stageText.off("blur", this.blurHandler, this);
+            stageText.off("focus", this.focusHandler, this);
             this.stageTextAdded = false;
         };
         /**
@@ -19364,7 +16349,7 @@ var egret;
                 if (!event["showing"]) {
                     this._text.$setIsTyping(true);
                 }
-                this._text.dispatchEvent(new egret.FocusEvent(egret.FocusEvent.FOCUS_IN, true));
+                this._text.dispatchEventWith("focusIn" /* FOCUS_IN */, true);
             }
         };
         /**
@@ -19376,11 +16361,11 @@ var egret;
             if (this._isFocus) {
                 //不再显示竖线，并且输入框显示最开始
                 this._isFocus = false;
-                this.tempStage.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onStageDownHandler, this);
+                this.tempStage.off("touchBegin" /* TOUCH_BEGIN */, this.onStageDownHandler, this);
                 this._text.$setIsTyping(false);
                 //失去焦点后调用
                 this.stageText.$onBlur();
-                this._text.dispatchEvent(new egret.FocusEvent(egret.FocusEvent.FOCUS_OUT, true));
+                this._text.dispatchEventWith("focusOut" /* FOCUS_OUT */, true);
             }
         };
         //点中文本
@@ -19396,13 +16381,10 @@ var egret;
             if (this._isFocus) {
                 return;
             }
-            this.tempStage.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onStageDownHandler, this);
+            this.tempStage.off("touchBegin" /* TOUCH_BEGIN */, this.onStageDownHandler, this);
             egret.callLater(function () {
-                _this.tempStage.addEventListener(egret.TouchEvent.TOUCH_BEGIN, _this.onStageDownHandler, _this);
+                _this.tempStage.on("touchBegin" /* TOUCH_BEGIN */, _this.onStageDownHandler, _this);
             }, this);
-            if (egret.nativeRender) {
-                this.stageText.$setText(this._text.$TextField[13 /* text */]);
-            }
             //强制更新输入框位置
             this.stageText.$show();
         };
@@ -19450,7 +16432,7 @@ var egret;
             }
             this.resetText();
             //抛出change事件
-            this._text.dispatchEvent(new egret.Event(egret.Event.CHANGE, true));
+            this._text.dispatchEvent(new egret.Event("change" /* CHANGE */, true));
         };
         /**
          * @private
@@ -19575,7 +16557,7 @@ var egret;
      * If developers expect  no differences among all platforms, please use BitmapText
      * @see http://edn.egret.com/cn/docs/page/141 Create Text
      *
-     * @event egret.Event.CHANGE Dispatched when entering text user input。
+     * @event egret.EventType.CHANGE Dispatched when entering text user input。
      * @event egret.FocusEvent.FOCUS_IN Dispatched after the focus to enter text.
      * @event egret.FocusEvent.FOCUS_OUT Enter the text loses focus after dispatch.
      * @version Egret 2.4
@@ -19588,7 +16570,7 @@ var egret;
      * 如果开发者希望所有平台完全无差异，请使用BitmapText
      * @see http://edn.egret.com/cn/docs/page/141 创建文本
      *
-     * @event egret.Event.CHANGE 输入文本有用户输入时调度。
+     * @event egret.EventType.CHANGE 输入文本有用户输入时调度。
      * @event egret.FocusEvent.FOCUS_IN 聚焦输入文本后调度。
      * @event egret.FocusEvent.FOCUS_OUT 输入文本失去焦点后调度。
      * @version Egret 2.4
@@ -19676,9 +16658,6 @@ var egret;
             };
             return _this;
         }
-        TextField.prototype.createNativeDisplayObject = function () {
-            this.$nativeDisplayObject = new egret_native.NativeDisplayObject(7 /* TEXT */);
-        };
         /**
          * @private
          */
@@ -19722,9 +16701,6 @@ var egret;
             }
             values[8 /* fontFamily */] = value;
             this.invalidateFontString();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setFontFamily(value);
-            }
             return true;
         };
         Object.defineProperty(TextField.prototype, "size", {
@@ -19758,9 +16734,6 @@ var egret;
             }
             values[0 /* fontSize */] = value;
             this.invalidateFontString();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setFontSize(value);
-            }
             return true;
         };
         Object.defineProperty(TextField.prototype, "bold", {
@@ -19794,9 +16767,6 @@ var egret;
             }
             values[15 /* bold */] = value;
             this.invalidateFontString();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setBold(value);
-            }
             return true;
         };
         Object.defineProperty(TextField.prototype, "italic", {
@@ -19830,9 +16800,6 @@ var egret;
             }
             values[16 /* italic */] = value;
             this.invalidateFontString();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setItalic(value);
-            }
             return true;
         };
         /**
@@ -19874,9 +16841,6 @@ var egret;
             }
             values[9 /* textAlign */] = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setTextAlign(value);
-            }
             return true;
         };
         Object.defineProperty(TextField.prototype, "verticalAlign", {
@@ -19910,9 +16874,6 @@ var egret;
             }
             values[10 /* verticalAlign */] = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setVerticalAlign(value);
-            }
             return true;
         };
         Object.defineProperty(TextField.prototype, "lineSpacing", {
@@ -19946,9 +16907,6 @@ var egret;
             }
             values[1 /* lineSpacing */] = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setLineSpacing(value);
-            }
             return true;
         };
         Object.defineProperty(TextField.prototype, "textColor", {
@@ -19985,9 +16943,6 @@ var egret;
                 this.inputUtils._setColor(this.$TextField[2 /* textColor */]);
             }
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setTextColor(value);
-            }
             return true;
         };
         Object.defineProperty(TextField.prototype, "wordWrap", {
@@ -20026,9 +16981,6 @@ var egret;
             }
             values[19 /* wordWrap */] = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setWordWrap(value);
-            }
         };
         Object.defineProperty(TextField.prototype, "type", {
             /**
@@ -20065,9 +17017,6 @@ var egret;
             var values = this.$TextField;
             if (values[24 /* type */] != value) {
                 values[24 /* type */] = value;
-                if (egret.nativeRender) {
-                    this.$nativeDisplayObject.setType(value);
-                }
                 if (value == egret.TextFieldType.INPUT) { //input，如果没有设置过宽高，则设置默认值为100，30
                     if (isNaN(values[3 /* textFieldWidth */])) {
                         this.$setWidth(100);
@@ -20120,9 +17069,6 @@ var egret;
                     return;
                 }
                 this.$TextField[37 /* inputType */] = value;
-                if (egret.nativeRender) {
-                    this.$nativeDisplayObject.setInputType(value);
-                }
             },
             enumerable: true,
             configurable: true
@@ -20184,9 +17130,6 @@ var egret;
                 else {
                     text = value;
                 }
-                if (egret.nativeRender) {
-                    this.$nativeDisplayObject.setText(text);
-                }
                 this.setMiddleStyle([{ text: text }]);
                 return true;
             }
@@ -20246,9 +17189,6 @@ var egret;
                 else {
                     text = values[13 /* text */];
                 }
-                if (egret.nativeRender) {
-                    this.$nativeDisplayObject.setText(text);
-                }
                 this.setMiddleStyle([{ text: text }]);
                 return true;
             }
@@ -20290,9 +17230,6 @@ var egret;
             if (values[25 /* strokeColor */] != value) {
                 this.$invalidateTextField();
                 values[25 /* strokeColor */] = value;
-                if (egret.nativeRender) {
-                    this.$nativeDisplayObject.setStrokeColor(value);
-                }
                 values[26 /* strokeColorString */] = egret.toColorString(value);
                 return true;
             }
@@ -20333,9 +17270,6 @@ var egret;
             if (this.$TextField[27 /* stroke */] != value) {
                 this.$invalidateTextField();
                 this.$TextField[27 /* stroke */] = value;
-                if (egret.nativeRender) {
-                    this.$nativeDisplayObject.setStroke(value);
-                }
                 return true;
             }
             return false;
@@ -20370,9 +17304,6 @@ var egret;
         TextField.prototype.$setMaxChars = function (value) {
             if (this.$TextField[21 /* maxChars */] != value) {
                 this.$TextField[21 /* maxChars */] = value;
-                if (egret.nativeRender) {
-                    this.$nativeDisplayObject.setMaxChars(value);
-                }
                 return true;
             }
             return false;
@@ -20403,9 +17334,6 @@ var egret;
                     return;
                 }
                 this.$TextField[28 /* scrollV */] = value;
-                if (egret.nativeRender) {
-                    this.$nativeDisplayObject.setScrollV(value);
-                }
                 this.$invalidateTextField();
             },
             enumerable: true,
@@ -20537,9 +17465,6 @@ var egret;
             }
             this.$TextField[30 /* multiline */] = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setMultiline(value);
-            }
             return true;
         };
         Object.defineProperty(TextField.prototype, "restrict", {
@@ -20633,9 +17558,6 @@ var egret;
          * @param value
          */
         TextField.prototype.$setWidth = function (value) {
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setTextFieldWidth(value);
-            }
             var values = this.$TextField;
             if (isNaN(value)) {
                 if (isNaN(values[3 /* textFieldWidth */])) {
@@ -20662,9 +17584,6 @@ var egret;
          * @param value
          */
         TextField.prototype.$setHeight = function (value) {
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setTextFieldHeight(value);
-            }
             var values = this.$TextField;
             if (isNaN(value)) {
                 if (isNaN(values[4 /* textFieldHeight */])) {
@@ -20739,9 +17658,6 @@ var egret;
             }
             this.$TextField[31 /* border */] = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setBorder(value);
-            }
         };
         Object.defineProperty(TextField.prototype, "borderColor", {
             /**
@@ -20779,9 +17695,6 @@ var egret;
             }
             this.$TextField[32 /* borderColor */] = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setBorderColor(value);
-            }
         };
         Object.defineProperty(TextField.prototype, "background", {
             /**
@@ -20820,9 +17733,6 @@ var egret;
             }
             this.$TextField[33 /* background */] = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setBackground(value);
-            }
         };
         Object.defineProperty(TextField.prototype, "backgroundColor", {
             /**
@@ -20859,9 +17769,6 @@ var egret;
             }
             this.$TextField[34 /* backgroundColor */] = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setBackgroundColor(value);
-            }
         };
         /**
          * @private
@@ -20876,15 +17783,10 @@ var egret;
             if (values[33 /* background */] || values[31 /* border */] || (lines && lines.length > 0)) {
                 if (!graphics) {
                     graphics = this.$graphicsNode = new egret.sys.GraphicsNode();
-                    if (!egret.nativeRender) {
-                        var groupNode = new egret.sys.GroupNode();
-                        groupNode.addNode(graphics);
-                        groupNode.addNode(this.textNode);
-                        this.$renderNode = groupNode;
-                    }
-                    else {
-                        this.$renderNode = this.textNode;
-                    }
+                    var groupNode = new egret.sys.GroupNode();
+                    groupNode.addNode(graphics);
+                    groupNode.addNode(this.textNode);
+                    this.$renderNode = groupNode;
                 }
                 var fillPath = void 0;
                 var strokePath = void 0;
@@ -20903,8 +17805,8 @@ var egret;
                 if (lines && lines.length > 0) {
                     var textColor = values[2 /* textColor */];
                     var lastColor = -1;
-                    var length_7 = lines.length;
-                    for (var i = 0; i < length_7; i += 4) {
+                    var length_6 = lines.length;
+                    for (var i = 0; i < length_6; i += 4) {
                         var x = lines[i];
                         var y = lines[i + 1];
                         var w = lines[i + 2];
@@ -20956,9 +17858,6 @@ var egret;
             }
             if (this.textNode) {
                 this.textNode.clean();
-                if (egret.nativeRender) {
-                    egret_native.NativeDisplayObject.disposeTextData(this);
-                }
             }
         };
         /**
@@ -20979,21 +17878,7 @@ var egret;
             self.$renderDirty = true;
             self.$TextField[18 /* textLinesChanged */] = true;
             self.$TextField[38 /* textLinesChangedForNativeRender */] = true;
-            if (egret.nativeRender) {
-                // egret_native.dirtyTextField(this);
-            }
-            else {
-                var p = self.$parent;
-                if (p && !p.$cacheDirty) {
-                    p.$cacheDirty = true;
-                    p.$cacheDirtyUp();
-                }
-                var maskedObject = self.$maskedObject;
-                if (maskedObject && !maskedObject.$cacheDirty) {
-                    maskedObject.$cacheDirty = true;
-                    maskedObject.$cacheDirtyUp();
-                }
-            }
+            self.dirty();
         };
         TextField.prototype.$getRenderBounds = function () {
             var bounds = this.$getContentBounds();
@@ -21021,14 +17906,8 @@ var egret;
             this.$getLinesArr();
             var w = 0;
             var h = 0;
-            if (egret.nativeRender) {
-                w = egret_native.nrGetTextFieldWidth(this.$nativeDisplayObject.id);
-                h = egret_native.nrGetTextFieldHeight(this.$nativeDisplayObject.id);
-            }
-            else {
-                w = !isNaN(this.$TextField[3 /* textFieldWidth */]) ? this.$TextField[3 /* textFieldWidth */] : this.$TextField[5 /* textWidth */];
-                h = !isNaN(this.$TextField[4 /* textFieldHeight */]) ? this.$TextField[4 /* textFieldHeight */] : egret.TextFieldUtils.$getTextHeight(this);
-            }
+            w = !isNaN(this.$TextField[3 /* textFieldWidth */]) ? this.$TextField[3 /* textFieldWidth */] : this.$TextField[5 /* textWidth */];
+            h = !isNaN(this.$TextField[4 /* textFieldHeight */]) ? this.$TextField[4 /* textFieldHeight */] : egret.TextFieldUtils.$getTextHeight(this);
             bounds.setTo(0, 0, w, h);
         };
         TextField.prototype.$updateRenderNode = function () {
@@ -21089,9 +17968,6 @@ var egret;
                 else {
                     this.$TextField[13 /* text */] = text;
                     this.setMiddleStyle(textArr);
-                    if (egret.nativeRender) {
-                        this.$nativeDisplayObject.setTextFlow(textArr);
-                    }
                 }
             },
             enumerable: true,
@@ -21147,9 +18023,6 @@ var egret;
              */
             get: function () {
                 this.$getLinesArr();
-                if (egret.nativeRender) {
-                    return egret_native.nrGetTextWidth(this.$nativeDisplayObject.id);
-                }
                 return this.$TextField[5 /* textWidth */];
             },
             enumerable: true,
@@ -21170,9 +18043,6 @@ var egret;
              */
             get: function () {
                 this.$getLinesArr();
-                if (egret.nativeRender) {
-                    return egret_native.nrGetTextHeight(this.$nativeDisplayObject.id);
-                }
                 return egret.TextFieldUtils.$getTextHeight(this);
             },
             enumerable: true,
@@ -21195,14 +18065,6 @@ var egret;
          */
         TextField.prototype.appendElement = function (element) {
             var text = this.$TextField[13 /* text */] + element.text;
-            if (egret.nativeRender) {
-                this.textArr.push(element);
-                this.$TextField[13 /* text */] = text;
-                this.$TextField[18 /* textLinesChanged */] = true;
-                this.$TextField[38 /* textLinesChangedForNativeRender */] = true;
-                this.$nativeDisplayObject.setTextFlow(this.textArr);
-                return;
-            }
             if (this.$TextField[20 /* displayAsPassword */]) {
                 this.$setBaseText(text);
             }
@@ -21213,22 +18075,6 @@ var egret;
             }
         };
         TextField.prototype.$getLinesArr = function () {
-            var values = this.$TextField;
-            if (egret.nativeRender && values[38 /* textLinesChangedForNativeRender */]) {
-                egret_native.updateNativeRender();
-                values[38 /* textLinesChangedForNativeRender */] = false;
-                return;
-            }
-            else {
-                return this.$getLinesArr2();
-            }
-        };
-        /**
-         * @private
-         *
-         * @returns
-         */
-        TextField.prototype.$getLinesArr2 = function () {
             var values = this.$TextField;
             if (!values[18 /* textLinesChanged */]) {
                 return this.linesArr;
@@ -21456,9 +18302,6 @@ var egret;
         TextField.prototype.$setIsTyping = function (value) {
             this.$isTyping = value;
             this.$invalidateTextField();
-            if (egret.nativeRender) {
-                this.$nativeDisplayObject.setIsTyping(value);
-            }
         };
         /**
          * @private
@@ -21521,11 +18364,11 @@ var egret;
         };
         //增加点击事件
         TextField.prototype.addEvent = function () {
-            this.addEventListener(egret.TouchEvent.TOUCH_TAP, this.onTapHandler, this);
+            this.on("touchTap" /* TOUCH_TAP */, this.onTapHandler, this);
         };
         //释放点击事件
         TextField.prototype.removeEvent = function () {
-            this.removeEventListener(egret.TouchEvent.TOUCH_TAP, this.onTapHandler, this);
+            this.off("touchTap" /* TOUCH_TAP */, this.onTapHandler, this);
         };
         //处理富文本中有href的
         TextField.prototype.onTapHandler = function (e) {
@@ -21540,7 +18383,7 @@ var egret;
             if (style && style.href) {
                 if (style.href.match(/^event:/)) {
                     var type = style.href.match(/^event:/)[0];
-                    egret.TextEvent.dispatchTextEvent(this, egret.TextEvent.LINK, style.href.substring(type.length));
+                    egret.TextEvent.dispatchTextEvent(this, "link" /* LINK */, style.href.substring(type.length));
                 }
                 else {
                     open(style.href, style.target || "_blank");
@@ -21840,12 +18683,12 @@ var egret;
          * @private
          */
         TextFieldUtils.$getHalign = function (textfield) {
-            var lineArr = textfield.$getLinesArr2();
+            var lineArr = textfield.$getLinesArr();
             var halign = 0;
-            if (textfield.$TextField[9 /* textAlign */] == egret.HorizontalAlign.CENTER) {
+            if (textfield.$TextField[9 /* textAlign */] == "center" /* CENTER */) {
                 halign = 0.5;
             }
-            else if (textfield.$TextField[9 /* textAlign */] == egret.HorizontalAlign.RIGHT) {
+            else if (textfield.$TextField[9 /* textAlign */] == "right" /* RIGHT */) {
                 halign = 1;
             }
             if (textfield.$TextField[24 /* type */] == egret.TextFieldType.INPUT && !textfield.$TextField[30 /* multiline */] && lineArr.length > 1) {
@@ -21901,7 +18744,7 @@ var egret;
          */
         TextFieldUtils.$getTextElement = function (textfield, x, y) {
             var hitTextEle = TextFieldUtils.$getHit(textfield, x, y);
-            var lineArr = textfield.$getLinesArr2();
+            var lineArr = textfield.$getLinesArr();
             if (hitTextEle && lineArr[hitTextEle.lineIndex] && lineArr[hitTextEle.lineIndex].elements[hitTextEle.textElementIndex]) {
                 return lineArr[hitTextEle.lineIndex].elements[hitTextEle.textElementIndex];
             }
@@ -21916,7 +18759,7 @@ var egret;
          * @private
          */
         TextFieldUtils.$getHit = function (textfield, x, y) {
-            var lineArr = textfield.$getLinesArr2();
+            var lineArr = textfield.$getLinesArr();
             if (textfield.$TextField[3 /* textFieldWidth */] == 0) { //文本可点击区域
                 return null;
             }
@@ -23428,8 +20271,8 @@ var egret;
         }
         var superTypes = prototype.__types__;
         if (prototype.__types__) {
-            var length_8 = superTypes.length;
-            for (var i = 0; i < length_8; i++) {
+            var length_7 = superTypes.length;
+            for (var i = 0; i < length_7; i++) {
                 var name_1 = superTypes[i];
                 if (types.indexOf(name_1) == -1) {
                     types.push(name_1);
@@ -24033,10 +20876,10 @@ var egret;
             this.lastTimeStamp = timeStamp;
             this._currentCount++;
             var complete = (this.repeatCount > 0 && this._currentCount >= this.repeatCount);
-            egret.TimerEvent.dispatchTimerEvent(this, egret.TimerEvent.TIMER);
+            egret.TimerEvent.dispatchTimerEvent(this, "timer" /* TIMER */);
             if (complete) {
                 this.stop();
-                egret.TimerEvent.dispatchTimerEvent(this, egret.TimerEvent.TIMER_COMPLETE);
+                egret.TimerEvent.dispatchTimerEvent(this, "timerComplete" /* TIMER_COMPLETE */);
             }
             return false;
         };
@@ -25023,6 +21866,16 @@ var egret;
                 var gl = bitmapData.glContext;
                 if (gl) {
                     gl.deleteTexture(bitmapData);
+                }
+            }
+        };
+        WebGLUtils.updateEgretTexutre = function (bmd) {
+            var glTexture = bmd.webGLTexture;
+            if (glTexture) { //清理webgl纹理，让渲染可以重置
+                var gl = glTexture.glContext;
+                if (gl) {
+                    gl.bindTexture(gl.TEXTURE_2D, glTexture);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmd.source);
                 }
             }
         };
