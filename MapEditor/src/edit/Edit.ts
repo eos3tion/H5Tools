@@ -408,6 +408,7 @@ jy.on(AppEvent.CopyEffect, e => {
     data.y += 50;
     let dele = new AniDele(data);
     $engine.effs.pushOnce(dele);
+    refreshEffectList();
 });
 
 /**
