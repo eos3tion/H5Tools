@@ -825,7 +825,7 @@ class XLSXDecoder {
                 let type = isLocal << 1 | hasData;
                 let idx = def.checker.idx;
                 if (hasData) {
-                    if (idx == TypeCheckerIndex.String || idx == TypeCheckerIndex.Any) {//先看string是否可以优化成number
+                    if (idx == TypeCheckerIndex.Any) {//先看string是否可以优化成number
                         if (!def.def) {
                             let flag = true;
                             for (let v of def.dataRows.values()) {
