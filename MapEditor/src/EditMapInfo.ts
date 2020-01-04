@@ -177,21 +177,23 @@ function setData(map: MapInfo) {
         hasPic = false;
     }
     let ext: jy.Ext;
-    if (jpgCount && !pngCount) {
-        ext = jy.Ext.JPG;
-    } else if (!jpgCount && pngCount) {
-        ext = jy.Ext.PNG;
-    } else {
-        return alert(`地图底图中，既有png又有jpg，请检查`)
-    }
+    let ftype = 2;
+    if (hasPic) {
+        if (jpgCount && !pngCount) {
+            ext = jy.Ext.JPG;
+        } else if (!jpgCount && pngCount) {
+            ext = jy.Ext.PNG;
+        } else {
+            return alert(`地图底图中，既有png又有jpg，请检查`)
+        }
 
-    let ftype: number;
-    if (reg1Count && !reg2Count) {
-        ftype = 1;
-    } else if (reg2Count && !reg1Count) {
-        ftype = 2;
-    } else {
-        return alert(`地图底图中，有的图片是[0xx0yy]格式的，有的是[x_y]格式的，请检查`);
+        if (reg1Count && !reg2Count) {
+            ftype = 1;
+        } else if (reg2Count && !reg1Count) {
+            ftype = 2;
+        } else {
+            return alert(`地图底图中，有的图片是[0xx0yy]格式的，有的是[x_y]格式的，请检查`);
+        }
     }
     sizeNotMatch = false;
     //先将从配置中读取的数据复制到 mapInfo
