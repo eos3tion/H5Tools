@@ -44,9 +44,12 @@ export class DragDele extends egret.Sprite {
             let texes = datas[key];
             for (let texarr of texes) {
                 for (let tex of texarr) {
-                    tex.tx += dx;
-                    tex.ty += dy;
+                    if (tex) {
+                        tex.tx += dx;
+                        tex.ty += dy;
+                    }
                 }
+
             }
         }
         // 处理原始数据
@@ -57,8 +60,10 @@ export class DragDele extends egret.Sprite {
                 let dirData: any[] = actData[d];
                 for (let f = 0, flen = dirData.length; f < flen; f++) {
                     let fdata = dirData[f];
-                    fdata[2] += dx;
-                    fdata[3] += dy;
+                    if (fdata) {//为0时，是占位用的空帧
+                        fdata[2] += dx;
+                        fdata[3] += dy;
+                    }
                 }
             }
         }
