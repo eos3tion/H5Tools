@@ -6,9 +6,11 @@ import * as _fs from "fs";
 import * as _url from "url";
 import * as _http from "http";
 import ServerProxy2 from "ServerProxy2";
-import { checkCmdIsOK, exec, execAsync } from "./exec";
+import { checkCmdIsOK, execAsync } from "./exec";
 import { checkAndDownloadFile } from "./DownloadFile";
 
+const path: typeof _path = nodeRequire("path");
+const fs: typeof _fs = nodeRequire("fs");
 
 
 const enum Const {
@@ -58,8 +60,20 @@ let sPath = "";
 //使用git拉取gitlab wiki数据，进行生成
 export default class ServerProxy extends ServerProxy2 {
 
-    private _jarPath: string;
-    private _protocPath: string;
+    protected _jarPath: string;
+    protected _protocPath: string;
+    protected basePath: string;
+    protected javaPath: string;
+
+    constructor() {
+        super();
+        this.checkPath();
+    }
+
+    protected checkPath() {
+        this.basePath = path.join(this._appTmpPath, Const.TempPath);
+        this.javaPath = path.join(this.basePath, Const.JavaFileBase);
+    }
 
     protected async preCheck(cookieForPath: CookieForPath) {
         //检查
@@ -109,19 +123,15 @@ export default class ServerProxy extends ServerProxy2 {
             }
         }
 
+        this.resetBasePath();
 
-        const path: typeof _path = nodeRequire("path");
-        const fs: typeof _fs = nodeRequire("fs");
-        const basePath = path.join(this._appTmpPath, Const.TempPath);
-        //输出proto文件到临时目录
-        if (fs.existsSync(basePath)) {//先删除全部文件
-            FsExtra.remove(basePath);
-        }
-        FsExtra.mkdirs(basePath);
         let protoContent = ProtoFile.flush();
+
+        const { basePath, javaPath } = this;
+
         //将文件写入指定文件
         FsExtra.writeFileSync(path.join(basePath, Const.ProtoFilePath), protoContent);
-        let javaPath = path.join(basePath, Const.JavaFileBase);
+
         FsExtra.mkdirs(javaPath);
         //执行protoc编译成java文件
         await execAsync({ cmd: this._protocPath, cwd: basePath }, `--java_out=${Const.JavaFileBase}/`, Const.ProtoFilePath);
@@ -136,6 +146,8 @@ export default class ServerProxy extends ServerProxy2 {
         FsExtra.mkdirs(classesPath);
         //将java文件，编译成class
         await execAsync({ cmd: "javac", cwd: basePath }, "-encoding", "UTF-8", "-classpath", this._jarPath, "-d", Const.ClassFileBase, ...javaFiles);
+
+
         _progress.endTask();
 
         let jarOutput = path.join(sPath, Const.ProtoJarOutput);
@@ -162,7 +174,18 @@ export default class ServerProxy extends ServerProxy2 {
         _progress.endTask();
         return null
     }
+
+    resetBasePath() {
+        let basePath = this.basePath;
+        //输出proto文件到临时目录
+        if (fs.existsSync(basePath)) {//先删除全部文件
+            FsExtra.remove(basePath);
+        }
+        FsExtra.mkdirs(basePath);
+    }
+
 }
+
 
 module ProtoFile {
     const messages = [] as string[];

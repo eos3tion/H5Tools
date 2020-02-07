@@ -53,6 +53,9 @@ export default function getPageProto(content: string) {
 export function getJavaPageData(content: string, name: string) {
     let forJavaContent = [] as string[];
     let cmds: { [index: number]: Cmd } = {};
+    let impRefNames = [] as string[];
+    let refs = {} as ProtoRefDict;
+    let page = { rawName: name, rawContent: content, refs, impRefNames, cmds } as Page;
 
     let p: _proto.MetaProto;
     try {
@@ -61,9 +64,13 @@ export function getJavaPageData(content: string, name: string) {
         e.message = `页面${name}发生错误，message:${e.message}`;
         throw e;
     }
+
+    const { enums, messages } = p;
+
     let javaName = p.options[Options.JavaClass];
     let enumDict: { [index: string]: boolean } = {};
-    for (let e of p.enums) {
+    for (let e of enums) {
+        setProtoRef(page, e);
         let name = e.name;
         enumDict[name] = true;
         forJavaContent.push(`enum ${name} {`);
@@ -75,7 +82,8 @@ export function getJavaPageData(content: string, name: string) {
         forJavaContent.push(`}`);
     }
 
-    for (let msg of p.messages) {
+    for (let msg of messages) {
+        setProtoRef(page, msg);
         let { name, options, fields } = msg;
         let message = name;
         let reuseMsg: boolean;
@@ -122,20 +130,38 @@ export function getJavaPageData(content: string, name: string) {
             });
             forJavaContent.push(`}`);
         }
-
     }
+
+    //检查外部引用
+    for (let msg of messages) {
+        let fields = msg.fields;
+        for (let field of fields) {
+            let [, isMsg] = field2type(field);
+            if (isMsg) {
+                let type = field.type;
+                if (!refs[type]) {
+                    impRefNames.push(type);
+                }
+            }
+        }
+    }
+
     if (javaName) {
         name = javaName;
     } else {
         name = Pinyin.getFullChars(name).replace(/[^a-zA-Z]/g, "");
     }
-    // content = content.replace(/option[ ]*\([a-zA-Z]+\)[ ]*=.*?;/g, "");
 
-    // //匹配enum
-    // content = content.replace(/enum[ ]+([^{ ]+)[ ]*{[^}]+}/mg, (match, name, handler) => {
-    //     return match.replace(/([a-zA-Z0-9_$]+)([ ]*=[ ]*\d+[ ]*;)/g, `${name}_$1$2`);
-    // });
-    // content = content.replace(/(\s+)int32(\s+)/g, "$1sint32$2");
+    page.content = forJavaContent.join("\n");
+    page.name = name;
+    return page;
+}
 
-    return { name, content: forJavaContent.join("\n"), cmds } as Page;
+function setProtoRef(page: Page, proto: Proto) {
+    let name = proto.name;
+    let refs = page.refs;
+    if (name in refs) {
+        throw Error(`${page.rawName}的页面中message或者enum出现重名[${name}]`);
+    }
+    refs[name] = { name, page, proto };
 }
