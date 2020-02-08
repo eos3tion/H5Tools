@@ -632,7 +632,8 @@ async function getProtoFromHttp(url: string, gcfg?: ClientCfg) {
 }
 
 
-import ServerProxy from "ServerProxy3";
+import ServerProxy3 from "ServerProxy3";
+import ServerProxy4 from "ServerProxy4";
 import ClientProxy from "ClientProxy";
 import CookieForPath from "CookieForPath";
 
@@ -641,19 +642,33 @@ ready(() => {
 	const cookieForPath = new CookieForPath(projectKey);
 	cookieForPath.getPathCookie("txtClientPath");
 	cookieForPath.getPathCookie("txtServerHttp");
+	cookieForPath.getPathCookie("txtProtoPackage");
+	cookieForPath.getPathCookie("txtCmdClassFullPath");
 	cookieForPath.getPathCookie("txtServerWiki");
-	isOptMsg = !!cookie.getCookie("OptMsg");
+	isOptMsg = !!+cookie.getCookie(projectKey + "OptMsg");
 	let chkOptimizeMsg = $g("chkOptimizeMsg");
 	chkOptimizeMsg.checked = isOptMsg;
 	chkOptimizeMsg.addEventListener("change", () => {
 		isOptMsg = $g("chkOptimizeMsg").checked;
 		cookie.setCookie(projectKey + "OptMsg", +isOptMsg + "");
 	});
-	const serverProxy = new ServerProxy();
+	let chkSpliteProto = $g("chkSpliteProto");
+	chkSpliteProto.checked = !!+cookie.getCookie(projectKey + "chkSpliteProto");
+	chkSpliteProto.addEventListener("change", () => {
+		cookie.setCookie(projectKey + "chkSpliteProto", +$g("chkSpliteProto").checked + "");
+	});
+	const serverProxy3 = new ServerProxy3();
+	const serverProxy4 = new ServerProxy4();
 	const btnServer = $g("btnServer");
 	btnServer.addEventListener("click", async () => {
 		btnServer.disabled = true;
 		try {
+			let serverProxy: ServerProxy3;
+			if (chkSpliteProto.checked) {
+				serverProxy = serverProxy4;
+			} else {
+				serverProxy = serverProxy3;
+			}
 			let result = await serverProxy.request(cookieForPath);
 			if (result) {
 				if (result.alert) {
@@ -669,7 +684,7 @@ ready(() => {
 		} catch (e) {
 			error(e);
 		}
-		log("操作完成","#00ff00");
+		log("操作完成", "#00ff00");
 		btnServer.disabled = false;
 	});
 

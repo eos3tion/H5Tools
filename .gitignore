@@ -1,0 +1,3 @@
+app/*
+!app/main.js
+!app/package.json

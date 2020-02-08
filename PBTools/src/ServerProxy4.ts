@@ -14,44 +14,9 @@ const fs: typeof _fs = nodeRequire("fs");
 
 const enum Const {
     /**
-     * protoc文件下载路径
-     */
-    ProtocPath = "proto/protoc.exe",
-    /**
-     * protobuf的jar包路径
-     */
-    ProtocJarPath = "proto/protobuf-java-3.7.0.jar",
-
-    /**
-     * 基础路径
-     */
-    TempPath = "protoTmp",
-    /**
-     * proto文件的名字
-     */
-    ProtoFileName = "Game",
-    /**
      * proto文件路径
      */
     ProtoFilePath = "proto",
-    /**
-     * proto生成java的初始路径
-     */
-    JavaFileBase = "src",
-
-    ProtoJavaPackage = "com.wallan.protobuf",
-    /**
-     * 编译出的classes的基础路径
-     */
-    ClassFileBase = "classes",
-    /**
-     * 输出的jar包路径
-     */
-    ProtoJarOutput = "lib/proto.jar",
-
-    ClientCmdTypePath = "bus/com/junyou/bus/common/cmd/ClientCmdType.java",
-
-    ClientPBParserPath = "common/com/junyou/common/protobuf/ClientPbParser.java",
 }
 
 
@@ -63,11 +28,11 @@ export default class ServerProxy extends ServerProxy3 {
 
     protected async sovleData(linkDict: { [index: string]: Page }) {
         const _progress = this._progress;
-        _progress.addTask();
 
+        const { basePath, sPath, javaProtoPackage, cmdFullPath } = this;
         //1.遍历所有页面，得到完整引用字典
         const globalRefs = {} as ProtoRefDict;
-
+        let c = 0;
         for (let name in linkDict) {
             const page = linkDict[name];
             let refs = page.refs;
@@ -81,9 +46,11 @@ export default class ServerProxy extends ServerProxy3 {
                     globalRefs[refName] = ref;
                 }
             }
+            c++;
         }
+        _progress.addTask(c);
 
-        const protoSavePath = path.join(this.basePath, Const.ProtoFilePath);
+        const protoSavePath = path.join(basePath, Const.ProtoFilePath);
 
 
         //生成proto文件
@@ -112,23 +79,31 @@ export default class ServerProxy extends ServerProxy3 {
             }
 
             //将文件写入指定文件
-            FsExtra.writeFileSync(path.join(protoSavePath, page.name + ".proto"), ProtoFile.flush());
+            FsExtra.writeFileSync(path.join(protoSavePath, page.name + ".proto"), ProtoFile.flush(javaProtoPackage));
 
         }
         for (let name in linkDict) {
             //编译proto文件
             await this.compileProto(name);
+            _progress.endTask();
         }
+
+
+        //生成ClientCmdType.java
+        let { className: cmdClassName, packageName: cmdPackageName } = this.parseFullClassName(cmdFullPath);
+        let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
+        FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
+        window.log(`生成文件${javaFile}`)
 
         return null
     }
 
     private async compileProto(name: string) {
         let basePath = this.basePath;
-        let javaPath = path.join(basePath, Const.JavaFileBase);
+        let javaPath = this.sPath;
         FsExtra.mkdirs(javaPath);
         //执行protoc编译成java文件
-        await execAsync({ cmd: this._protocPath, cwd: basePath }, `--java_out=${Const.JavaFileBase}/`, `--proto_path=./${Const.ProtoFilePath}`, `${Const.ProtoFilePath}/${name}.proto`);
+        await execAsync({ cmd: this._protocPath, cwd: basePath }, `--java_out=${javaPath}/`, `--proto_path=./${Const.ProtoFilePath}`, `${Const.ProtoFilePath}/${name}.proto`);
     }
 }
 
@@ -148,7 +123,7 @@ module ProtoFile {
         messages.push(message);
     }
 
-    export function flush() {
+    export function flush(protoPakcage: string) {
         //         return `syntax = "proto2";
         // package ${Const.ProtoJavaPackage};
         // option java_package = "${Const.ProtoJavaPackage}";
@@ -160,9 +135,9 @@ module ProtoFile {
         // }
         // `+ messages.join("\n");
         return `syntax = "proto2";
-package ${Const.ProtoJavaPackage};
+package ${protoPakcage};
 ${imports.join(`\n`)}
-option java_package = "${Const.ProtoJavaPackage}";
+option java_package = "${protoPakcage}";
 
 ${messages.join("\n")}
 `
@@ -183,8 +158,8 @@ module ClientCmdType {
         lines.push(`\tpublic final static Integer ${name} = ${cmd};`);
     }
 
-    export function flush() {
-        return `package ${Const.ProtoJavaPackage};
+    export function flush(cmdPackage: string) {
+        return `package ${cmdPackage};
 public class ClientCmdType {
     /***debug gm command****/
     public final static Integer DebugCmd_C = 32767; 
