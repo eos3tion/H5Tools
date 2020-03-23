@@ -113,12 +113,56 @@ interface Cmd {
  * @interface Page
  */
 interface Page {
+	/**
+	 * 原始页面名字，一般为中文名字
+	 */
+	rawName: string;
+	/**
+	 * 原始内容
+	 */
+	rawContent: string;
 	name: string;
+	/**
+	 * 处理后的内容
+	 */
 	content: string;
 	cmds: {
 		[index: number]: Cmd
 	};
+	meta: import("protobufjs").MetaProto;
+	/**
+	 * 导出的引用
+	 */
+	refs: ProtoRefDict;
+
+	/**
+	 * 需要引入的名称
+	 */
+	impRefNames: string[];
 }
+
+/**
+ * proto引用
+ */
+interface ProtoRef {
+	/**
+	 * 名称
+	 */
+	name: string;
+	/**
+	 * 所在页面
+	 */
+	page: Page;
+	/**
+	 * 对应的proto
+	 */
+	proto: Proto;
+}
+
+declare type ProtoRefDict = { [name: string]: ProtoRef }
+
+declare type Proto = import("protobufjs").ProtoEnum | import("protobufjs").ProtoMessage;
+
 
 interface Window {
 	log(msg: string, color?: string);

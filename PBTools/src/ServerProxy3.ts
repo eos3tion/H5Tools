@@ -6,9 +6,11 @@ import * as _fs from "fs";
 import * as _url from "url";
 import * as _http from "http";
 import ServerProxy2 from "ServerProxy2";
-import { checkCmdIsOK, exec, execAsync } from "./exec";
+import { checkCmdIsOK, execAsync } from "./exec";
 import { checkAndDownloadFile } from "./DownloadFile";
 
+const path: typeof _path = nodeRequire("path");
+const fs: typeof _fs = nodeRequire("fs");
 
 
 const enum Const {
@@ -38,7 +40,6 @@ const enum Const {
      */
     JavaFileBase = "src",
 
-    ProtoJavaPackage = "com.wallan.protobuf",
     /**
      * 编译出的classes的基础路径
      */
@@ -48,22 +49,40 @@ const enum Const {
      */
     ProtoJarOutput = "lib/proto.jar",
 
-    ClientCmdTypePath = "bus/com/junyou/bus/common/cmd/ClientCmdType.java",
+    // ClientCmdTypePath = "bus/com/junyou/bus/common/cmd/ClientCmdType.java",
 
     ClientPBParserPath = "common/com/junyou/common/protobuf/ClientPbParser.java",
 }
 
 
-let sPath = "";
+
 //使用git拉取gitlab wiki数据，进行生成
 export default class ServerProxy extends ServerProxy2 {
 
-    private _jarPath: string;
-    private _protocPath: string;
+    protected _jarPath: string;
+    protected _protocPath: string;
+    protected basePath: string;
+    protected javaPath: string;
+    protected sPath: string;
+    protected javaProtoPackage: string;
+    protected cmdFullPath: string;
+
+    constructor() {
+        super();
+        this.checkPath();
+    }
+
+    protected checkPath() {
+        this.basePath = path.join(this._appTmpPath, Const.TempPath);
+        this.javaPath = path.join(this.basePath, Const.JavaFileBase);
+    }
 
     protected async preCheck(cookieForPath: CookieForPath) {
         //检查
-        sPath = cookieForPath.setPathCookie("txtServerHttp", false, false);
+        let sPath = cookieForPath.setPathCookie("txtServerHttp", false, false);
+        this.sPath = sPath;
+        this.javaProtoPackage = cookieForPath.setPathCookie("txtProtoPackage", false, false);
+        this.cmdFullPath = cookieForPath.setPathCookie("txtCmdClassFullPath", false, false);
         const fs: typeof _fs = nodeRequire("fs");
         if (!sPath || !fs.existsSync(sPath)) {
             return alert(`服务器端的源码基础路径[${sPath}]不存在`);
@@ -109,19 +128,16 @@ export default class ServerProxy extends ServerProxy2 {
             }
         }
 
+        this.resetBasePath();
 
-        const path: typeof _path = nodeRequire("path");
-        const fs: typeof _fs = nodeRequire("fs");
-        const basePath = path.join(this._appTmpPath, Const.TempPath);
-        //输出proto文件到临时目录
-        if (fs.existsSync(basePath)) {//先删除全部文件
-            FsExtra.remove(basePath);
-        }
-        FsExtra.mkdirs(basePath);
-        let protoContent = ProtoFile.flush();
+        const { basePath, javaPath, sPath, javaProtoPackage, cmdFullPath } = this;
+        let { className: cmdClassName, packageName: cmdPackageName } = this.parseFullClassName(cmdFullPath);
+        let protoContent = ProtoFile.flush(javaProtoPackage);
+
+
         //将文件写入指定文件
         FsExtra.writeFileSync(path.join(basePath, Const.ProtoFilePath), protoContent);
-        let javaPath = path.join(basePath, Const.JavaFileBase);
+
         FsExtra.mkdirs(javaPath);
         //执行protoc编译成java文件
         await execAsync({ cmd: this._protocPath, cwd: basePath }, `--java_out=${Const.JavaFileBase}/`, Const.ProtoFilePath);
@@ -136,6 +152,8 @@ export default class ServerProxy extends ServerProxy2 {
         FsExtra.mkdirs(classesPath);
         //将java文件，编译成class
         await execAsync({ cmd: "javac", cwd: basePath }, "-encoding", "UTF-8", "-classpath", this._jarPath, "-d", Const.ClassFileBase, ...javaFiles);
+
+
         _progress.endTask();
 
         let jarOutput = path.join(sPath, Const.ProtoJarOutput);
@@ -150,19 +168,36 @@ export default class ServerProxy extends ServerProxy2 {
         _progress.endTask();
 
         //生成ClientCmdType.java
-        let javaFile = path.join(sPath, Const.ClientCmdTypePath);
-        FsExtra.writeFileSync(javaFile, ClientCmdType.flush());
+        let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
+        FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
         window.log(`生成文件${javaFile}`)
         _progress.endTask();
 
         //生成ClientPBParser.java
-        javaFile = path.join(sPath, Const.ClientPBParserPath);
-        FsExtra.writeFileSync(javaFile, ClientPBParser.flush());
+        javaFile = path.join(sPath, Const.ClientPBParserPath);//这个地址暂时不处理，后面弃用
+        FsExtra.writeFileSync(javaFile, ClientPBParser.flush(javaProtoPackage, cmdFullPath));
         window.log(`生成文件${javaFile}`)
         _progress.endTask();
         return null
     }
+
+    resetBasePath() {
+        let basePath = this.basePath;
+        //输出proto文件到临时目录
+        if (fs.existsSync(basePath)) {//先删除全部文件
+            FsExtra.remove(basePath);
+        }
+        FsExtra.mkdirs(basePath);
+    }
+
+    parseFullClassName(fullClassName: string) {
+        let idx = fullClassName.lastIndexOf(".");
+        let className = fullClassName.substr(idx + 1);
+        let packageName = fullClassName.substr(0, idx);
+        return { className, packageName };
+    }
 }
+
 
 module ProtoFile {
     const messages = [] as string[];
@@ -174,7 +209,7 @@ module ProtoFile {
         messages.push(message);
     }
 
-    export function flush() {
+    export function flush(protoPakcage: string) {
         //         return `syntax = "proto2";
         // package ${Const.ProtoJavaPackage};
         // option java_package = "${Const.ProtoJavaPackage}";
@@ -186,8 +221,8 @@ module ProtoFile {
         // }
         // `+ messages.join("\n");
         return `syntax = "proto2";
-package ${Const.ProtoJavaPackage};
-option java_package = "${Const.ProtoJavaPackage}";
+package ${protoPakcage};
+option java_package = "${protoPakcage}";
 `
             + messages.join("\n");
     }
@@ -206,15 +241,15 @@ module ClientPBParser {
         CmdLines.push(`PB_PARSER.put(ClientCmdType.${name},${name}.PARSER);`);
     }
 
-    export function flush() {
-        return `package ${Const.ProtoJavaPackage};
-import com.junyou.bus.common.cmd.ClientCmdType;
+    export function flush(protoPakcage: string, cmdFullClassName: string) {
+        return `package ${protoPakcage};
+import ${cmdFullClassName};
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.HashMap;
 import java.util.Map;
 import com.google.protobuf.Parser;
 import com.junyou.analysis.ServerInfoConfigManager;
-import ${Const.ProtoJavaPackage}.Game.*;
+import ${protoPakcage}.Game.*;
 
 public class ClientPbParser {
     private static final Map<Integer, Parser<?>>PB_PARSER = new HashMap<>();
@@ -250,8 +285,8 @@ module ClientCmdType {
         lines.push(`\tpublic final static int ${name} = ${cmd};`);
     }
 
-    export function flush() {
-        return `package com.junyou.bus.common.cmd;
+    export function flush(cmdPackage: string) {
+        return `package ${cmdPackage};
 import java.util.HashMap;
 import java.util.Map;
 import java.lang.reflect.Field;

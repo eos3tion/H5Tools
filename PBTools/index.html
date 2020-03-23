@@ -39,18 +39,23 @@
         <input id="txtServerWiki" style="width:400px;" type="input" value="" />
     </div>
     <div style="background:#fee">
-        服务端解析服务地址：
-        <input id="txtServerHttp" style="width:400px;" type="input" value="" />
-        <br/>
+        服务端源码地址：
+        <input id="txtServerHttp" style="width:400px;" type="input" value="" /><br />
+        服务端proto包名：
+        <input id="txtProtoPackage" style="width:400px;" type="input" value="com.wallan.protobuf" /><br />
+        服务端Cmd完整类名：如(com.abc.ConstCMD)
+        <input id="txtCmdClassFullPath" style="width:400px;" type="input"
+            value="com.wallan.protobuf.constants.CmdConstans" /><br />
         <progress style="width:500px" id="progress" max="100" value="0"></progress>
-        <label id="lblProgress"></label>
+        <label id="lblProgress"></label><br />
+        <label> <input type="checkbox" id="chkSpliteProto" />是否拆分为一个页面一个Proto文件 </label>
         <input id="btnServer" type="button" value="生成服务端文件" />
     </div>
 
 
-    <div id = "c2s">
+    <div id="c2s">
         c2s&s2c匹配规则：
-        <label><input name="c2sradio" type="radio" value="_C#_S" checked = "true" />_C#_S </label>
+        <label><input name="c2sradio" type="radio" value="_C#_S" checked="true" />_C#_S </label>
         <label><input name="c2sradio" type="radio" value="_C2S#_S2C" />_C2S#_S2C </label>
     </div>
 
@@ -62,12 +67,13 @@
     <div style="border-top:solid 1px #ccc;padding-top:5px;background:#eef">wiki上proto的地址：
         <input id="txtUrl" style="width:400px;" type="input" value="" />
         <input id="btnGen" type="button" value="生成" />
-        <hr/>
+        <hr />
         <progress style="width:500px" id="progressClient" max="100" value="0"></progress>
         <label id="lblProgressClient"></label>
         <input id="btnClientAll" type="button" value="基于通信协议地址生成全部文件" />
     </div>
-    <textarea id="txtProto" style="width:49%;height:400px;margin-top:5px;border:#ccc solid 1px;overflow-y:auto;float:left;"></textarea>
+    <textarea id="txtProto"
+        style="width:49%;height:400px;margin-top:5px;border:#ccc solid 1px;overflow-y:auto;float:left;"></textarea>
     <div id="txtLog" style="width:49%;height:404px;margin-top:5px;border:#ccc solid 1px;overflow-y:auto;float:left;">
     </div>
     <div id="code">
