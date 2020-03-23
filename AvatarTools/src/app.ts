@@ -33,6 +33,7 @@ function dropHandler(e: JQueryEventObject) {
                 let item = pstDict[key];
                 let pst = new jy.PstInfo();
                 pst.init(key, item);
+                pst.extra = item[3];
                 pstData[key] = pst;
                 keys.push({ text: key, key: key, value: pst });
             }

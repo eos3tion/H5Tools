@@ -49,7 +49,38 @@ module jy {
     function getData(obj) {
         var data = {};
         for (let key in obj) {
-            data[key] = obj[key].toData();
+            data[key] = getActionData(obj[key]);
+        }
+        return data;
+    }
+
+    function getActionData({ frames }: ActionInfo) {
+        let data = [[]] as any;
+        let frameData = data[0];
+        if (frames) {
+            for (let i = 0; i < frames.length; i++) {
+                const frame = frames[i];
+                if (frame) {
+                    let { a, f, t, e, d } = frame;
+                    let dat = [a, f, t] as any[];
+                    frameData[i] = dat;
+                    if (e) {
+                        let d3 = e as any;
+                        if ((e as any) == +e) {
+                            d3 = +e;
+                        }
+                        dat[3] = d3;
+                    }
+                    if (d) {
+                        if (!dat[3]) {
+                            dat[3] = 0;
+                        }
+                        dat[4] = d;
+                    }
+                } else {
+                    frameData[i] = 0;
+                }
+            }
         }
         return data;
     }
@@ -66,7 +97,7 @@ module jy {
         extra: any;
     }
 
-    PstInfo.prototype.toData = function (this: PstInfo) {
+    PstInfo.prototype.toData = function toData(this: PstInfo) {
         let data = [this.type, this.rawSplitInfo, getData(this.frames)];
         if (this.extra) {
             data.push(this.extra);

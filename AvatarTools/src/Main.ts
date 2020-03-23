@@ -339,7 +339,10 @@ export class Main extends egret.DisplayObjectContainer {
         let headY = this.headShape.y;
         let hurtY = this.hurtShape.y;
         if (headY || hurtY || this.castPoints) {
-            extra = [headY, hurtY, this.castPoints];
+            extra = [~~headY, ~~hurtY];
+            if (this.castPoints) {
+                extra[2] = this.castPoints;
+            }
             pstInfo.extra = extra;
         }
         let dict = Data.pstDict;
