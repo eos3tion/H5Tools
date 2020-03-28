@@ -8,6 +8,7 @@ import * as _http from "http";
 import ServerProxy2 from "ServerProxy2";
 import { checkCmdIsOK, execAsync } from "./exec";
 import { checkAndDownloadFile } from "./DownloadFile";
+import { getTempPath, progress } from "./Helper";
 
 const path: typeof _path = nodeRequire("path");
 const fs: typeof _fs = nodeRequire("fs");
@@ -73,7 +74,7 @@ export default class ServerProxy extends ServerProxy2 {
     }
 
     protected checkPath() {
-        this.basePath = path.join(this._appTmpPath, Const.TempPath);
+        this.basePath = path.join(getTempPath(), Const.TempPath);
         this.javaPath = path.join(this.basePath, Const.JavaFileBase);
     }
 
@@ -109,8 +110,7 @@ export default class ServerProxy extends ServerProxy2 {
 
 
     protected async sovleData(linkDict: { [index: string]: Page }) {
-        const _progress = this._progress;
-        _progress.addTask();
+        progress.addTask();
         //生成proto文件
         ProtoFile.start();
         ClientPBParser.start();
@@ -141,7 +141,7 @@ export default class ServerProxy extends ServerProxy2 {
         FsExtra.mkdirs(javaPath);
         //执行protoc编译成java文件
         await execAsync({ cmd: this._protocPath, cwd: basePath }, `--java_out=${Const.JavaFileBase}/`, Const.ProtoFilePath);
-        _progress.endTask();
+        progress.endTask();
 
         //基于JavaFileBase 找到所有生成的java文件
         let javaFiles = [] as string[];
@@ -154,7 +154,7 @@ export default class ServerProxy extends ServerProxy2 {
         await execAsync({ cmd: "javac", cwd: basePath }, "-encoding", "UTF-8", "-classpath", this._jarPath, "-d", Const.ClassFileBase, ...javaFiles);
 
 
-        _progress.endTask();
+        progress.endTask();
 
         let jarOutput = path.join(sPath, Const.ProtoJarOutput);
         //检查文件夹路径是否存在
@@ -165,19 +165,19 @@ export default class ServerProxy extends ServerProxy2 {
 
         //将class文件打成jar包
         await execAsync({ cmd: "jar", cwd: classesPath }, "cf", jarOutput, ".");
-        _progress.endTask();
+        progress.endTask();
 
         //生成ClientCmdType.java
         let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
         FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
         window.log(`生成文件${javaFile}`)
-        _progress.endTask();
+        progress.endTask();
 
         //生成ClientPBParser.java
         javaFile = path.join(sPath, Const.ClientPBParserPath);//这个地址暂时不处理，后面弃用
         FsExtra.writeFileSync(javaFile, ClientPBParser.flush(javaProtoPackage, cmdFullPath));
         window.log(`生成文件${javaFile}`)
-        _progress.endTask();
+        progress.endTask();
         return null
     }
 

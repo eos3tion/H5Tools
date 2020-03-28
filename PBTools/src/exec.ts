@@ -1,4 +1,5 @@
 import * as _cp from "child_process";
+import { error, log } from "./Helper";
 export function exec(opt: string | { cmd?: string, cwd?: string, notThrowError?: boolean }, ...args) {
     if (typeof opt === "string") {
         cmd = opt;
@@ -11,14 +12,14 @@ export function exec(opt: string | { cmd?: string, cwd?: string, notThrowError?:
         option.cwd = cwd;
     }
     let cmdstring = `${cmd} ${args.join(" ")}`;
-    window.log(`开始执行：${cmdstring}`);
+    log(`开始执行：${cmdstring}`);
     let result = cp.spawnSync(cmd, args, option);
     if (result.status && !notThrowError) {
         throw Error(`status:${result.status},${result.stderr ? result.stderr.toString() : `执行失败：\t${cmdstring}`}`);
     }
-    window.log(`执行完成：${cmdstring}`);
+    log(`执行完成：${cmdstring}`);
     if (result.stdout) {
-        window.log(result.stdout.toString("utf8"));
+        log(result.stdout.toString("utf8"));
     }
     return result;
 }
@@ -35,19 +36,19 @@ export async function execAsync(opt: string | { cmd?: string, cwd?: string, notT
         option.cwd = cwd;
     }
     let cmdstring = `${cmd} ${args.join(" ")}`;
-    window.log(`开始执行：${cmdstring}`);
+    log(`开始执行：${cmdstring}`);
     let td = new TextDecoder(encoding || "utf8");
     return new Promise((resolve, reject) => {
         const cp: typeof _cp = nodeRequire("child_process");
         let child = cp.spawn(cmd, args, option);
         child.stderr.on("data", data => {
-            window.error(td.decode(data as Buffer));
+            error(td.decode(data as Buffer));
         })
         child.stdout.on("data", data => {
-            window.log(td.decode(data as Buffer));
+            log(td.decode(data as Buffer));
         })
         child.on("close", (code) => {
-            window.log(`执行完成：${cmdstring}`);
+            log(`执行完成：${cmdstring}`);
             if (!notThrowError && code !== 0) {
                 return reject();
             }

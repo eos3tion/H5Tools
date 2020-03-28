@@ -169,3 +169,12 @@ interface Window {
 
 	error(msg: string | Error, err?: Error);
 }
+
+declare const enum Const {
+
+	BasePath = "pbtool",
+	GitTempPath = "gittmp",
+
+	MarkDownExt = ".md",
+
+}

@@ -3,53 +3,6 @@ import * as _proto from "protobufjs";
 import * as _pbjs from "../lib/protobuf";
 const pbjs: typeof _proto = _pbjs;
 
-const escChars = { "&lt;": "<", "&gt;": ">", "&quot;": "\"", "&apos;": "\'", "&amp;": "&", "&nbsp;": " ", "&#x000A;": "\n" };
-function escapeHTML(content: string) {
-    return content.replace(/&lt;|&gt;|&quot;|&apos;|&amp;|&nbsp;|&#x000A;/g, substring => {
-        return escChars[substring];
-    });
-}
-
-
-const enum WikiType {
-    GitLab = 0,
-    DokuWiki = 1
-}
-
-export default function getPageProto(content: string) {
-    content = escapeHTML(content);
-    // 从HTML流中截取 message {} 或者 option (xxxx) = "xxxx" 这样的数据
-    let reg: RegExp;
-    let type: number;
-    if (~content.indexOf(`<meta content="GitLab"`)) {
-        // gitlab wiki
-        reg = /<pre[ ]class="code[ ]highlight[ ]js-syntax-highlight[ ](?:protobuf|plaintext)"[^>]*?><code>([^]*?)<\/code><\/pre>/mg;
-        type = WikiType.GitLab;
-    }
-    else if (~content.indexOf(`<meta name="generator" content="DokuWiki">`)) {
-        // dokuwiki
-        reg = /<pre class="code">([^>]*?message[ ]+[A-Z][a-zA-Z0-9_$]*[ ]*[{][^]*?[}][^]*?|[^>]*?option[ ]+[(]\w+[)][ ]*=[ ]*".*?";[^]*?)<\/pre>/mg;
-        type = WikiType.DokuWiki;
-    }
-    else {
-        throw Error("目前只支持GitLab的wiki以及DokuWiki！！");
-    }
-    let proto = "";
-    while (true) {
-        let result = reg.exec(content);
-        if (result) {
-            proto += result[1] + "\n";
-        } else {
-            break;
-        }
-    }
-    if (type == WikiType.GitLab) {
-        //清除格式
-        proto = proto.replace(/<span.*?>|<\/span>/g, "");
-    }
-    return proto;
-}
-
 export function getJavaPageData(content: string, name: string) {
     let forJavaContent = [] as string[];
     let cmds: { [index: number]: Cmd } = {};

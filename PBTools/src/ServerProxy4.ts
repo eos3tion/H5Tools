@@ -7,6 +7,7 @@ import * as _url from "url";
 import * as _http from "http";
 import ServerProxy3 from "ServerProxy3";
 import { execAsync } from "./exec";
+import { progress } from "./Helper";
 
 const path: typeof _path = nodeRequire("path");
 const fs: typeof _fs = nodeRequire("fs");
@@ -27,7 +28,6 @@ export default class ServerProxy extends ServerProxy3 {
 
 
     protected async sovleData(linkDict: { [index: string]: Page }) {
-        const _progress = this._progress;
 
         const { basePath, sPath, javaProtoPackage, cmdFullPath } = this;
         //1.遍历所有页面，得到完整引用字典
@@ -48,7 +48,7 @@ export default class ServerProxy extends ServerProxy3 {
             }
             c++;
         }
-        _progress.addTask(c);
+        progress.addTask(c);
 
         const protoSavePath = path.join(basePath, Const.ProtoFilePath);
 
@@ -85,7 +85,7 @@ export default class ServerProxy extends ServerProxy3 {
         for (let name in linkDict) {
             //编译proto文件
             await this.compileProto(name);
-            _progress.endTask();
+            progress.endTask();
         }
 
 
