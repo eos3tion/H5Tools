@@ -200,6 +200,41 @@ interface GlobalCfg {
     msgCode: MsgCodeCfg[];
 }
 
+interface FileConfig {
+    /**
+     * 客户端包名
+     */
+    cfilePackage: string;
+    /**
+     * 服务端包名
+     */
+    sfilePackage: string;
+    /**
+     * 客户端接口列表
+     */
+    cInterfaces: string[];
+    /**
+     * 服务端接口列表
+     */
+    sInterfaces: string[];
+    /**
+     * 客户端主键
+     */
+    clientMainKey: string;
+    /**
+     * 客户端数据集类型
+     */
+    cTableType: number;
+    /**
+     * 客户端实例类型
+     */
+    cInstanceType: number;
+    /**
+     * 客户端指定的行范围
+     */
+    cLineRange: [number, number][];
+}
+
 interface MsgCodeCfg {
     type: string;
     path?: string;

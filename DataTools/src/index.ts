@@ -649,6 +649,16 @@ class XLSXDecoder {
             let array2DChecker = checkers[TypeCheckerKey.Array2D];
             cLineRange = array2DChecker.check(strCLineRange);
         }
+        let fileCfg = {
+            cfilePackage,
+            sfilePackage,
+            cInterfaces,
+            sInterfaces,
+            clientMainKey,
+            cTableType,
+            cInstanceType,
+            cLineRange,
+        }
         /**
          * 检查行是否在范围内
          * 
