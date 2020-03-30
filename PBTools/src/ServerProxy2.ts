@@ -6,7 +6,7 @@ import * as _fs from "fs";
 import { postHttpData } from "./getHttpData";
 import { getJavaPageData } from "./getPageProto";
 import { git, checkCmdIsOK } from "./exec";
-import { analyseUrl, updateWithGit, checkIndexPage } from "./gitlabHelper";
+import { analyseUrl, updateWithGit, checkIndexPage } from "./GitlabHelper";
 import { progress, getTempPath } from "./Helper";
 
 /**
