@@ -194,7 +194,7 @@ class BooleanChecker extends AbsTypeChecker {
 class ArrayCheker extends AbsTypeChecker {
     type = "any[]";
 
-    javaType = "String";
+    javaType = "Object[]";
 
     def = undefined;
     idx = TypeCheckerIndex.Array;
@@ -227,7 +227,7 @@ class ArrayCheker extends AbsTypeChecker {
 class Array2DCheker extends AbsTypeChecker {
     type = "any[][]";
 
-    javaType = "String";
+    javaType = "Object[][]";
 
     def = undefined;
     idx = TypeCheckerIndex.Array2D;
