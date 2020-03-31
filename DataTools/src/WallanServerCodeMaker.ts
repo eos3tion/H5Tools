@@ -36,21 +36,23 @@ function flash() {
         return {
             code:
                 `${packageStr ? `package ${packageStr};` : ""}
+${genManualAreaCode("$area1", sdict)}
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-${genManualAreaCode("$area1", sdict)}
+
+${genManualAreaCode("$area2", sdict)}
 
 /**
  * 由[H5Tools](https://github.com/eos3tion/H5Tools)数据工具生成，从"${_fcfg.path}"生成
  * 创建时间：${createTime}
  */
 @JsonDeserialize(builder = ${className}.Builder.class)
-public class ${className}${sSuper ? " extends " + sSuper : ""}${sInterfaces.length ? " implements " + sInterfaces.join(",") : ""}
+public class ${className}${sSuper ? " extends " + sSuper : ""}${sInterfaces.length ? " implements " + sInterfaces.join(",") : ""} {
 \t${getPros.join(`\n\t`)}
-\t${genManualAreaCode("$area2", sdict, `\t`)}
+\t${genManualAreaCode("$area3", sdict, `\t`)}
 \t@JsonPOJOBuilder(withPrefix = "set")
 \tpublic static class Builder {
-\t\t${genManualAreaCode("$area3", sdict, `\t\t`)}
+\t\t${genManualAreaCode("$area4", sdict, `\t\t`)}
 \t\t${className} instance = new ${className}();
 \t\t${setPros.join(`\n\t`)}
 \t\tpublic ${className} build(){
