@@ -1,21 +1,17 @@
-import $path = require("path");
-import $fs = require("fs");
-import $XLSX = require("xlsx");
+import * as $XLSX from "xlsx";
 declare var XLSX: typeof $XLSX;
-const path: typeof $path = nodeRequire("path");
-const fs: typeof $fs = nodeRequire("fs");
+const path: typeof import("path") = nodeRequire("path");
+const fs: typeof import("fs") = nodeRequire("fs");
 const clipboard = nodeRequire('electron').clipboard;
-import { PluginErrorType } from "./PluginErrorType";
-import { writeJSONData, writeAMFData, readAMFData, writeCommonBinData } from "./DataReadWrite";
-import { saveData as saveXmlData } from "./solvers/lingyu/XmlDataJavaServerSolver";
-import { TypeCheckers } from "./TypeCheckers";
-import { genManualAreaCode, getManualCodeInfo, hasManualAreaCode, getRawManualAreaCode } from "./MenualCodeHelper";
-import ClientRegTemplate from "ClientRegTemplate";
-import PluginLoader from "PluginLoader";
-import asyncFileLoad from "asyncFileLoad";
-import $vm = require("vm");
-import $http = require("http");
-import $URL = require("url");
+import { PluginErrorType } from "./PluginErrorType.js";
+import { writeJSONData, writeAMFData, readAMFData, writeCommonBinData } from "./DataReadWrite.js";
+import { saveData as saveXmlData } from "./solvers/lingyu/XmlDataJavaServerSolver.js";
+import { TypeCheckers } from "./TypeCheckers.js";
+import { genManualAreaCode, getManualCodeInfo, hasManualAreaCode, getRawManualAreaCode } from "./MenualCodeHelper.js";
+import ClientRegTemplate from "./ClientRegTemplate.js";
+import PluginLoader from "./PluginLoader.js";
+import asyncFileLoad from "./asyncFileLoad.js";
+
 
 hljs.loadLanguage("typescript");
 hljs.loadLanguage("java");
@@ -24,13 +20,6 @@ hljs.loadLanguage("java");
  */
 const Extra = "extra";
 
-/**
- * 文件后缀
- */
-const Suffix = {
-    Client: "Cfg",
-    Server: "Config"
-}
 
 
 /**
@@ -310,7 +299,7 @@ export class ExcelDataSaver {
                         }
                         if (data) {
                             let script = data.toString();
-                            let vm: typeof $vm = nodeRequire("vm");
+                            let vm: typeof import("vm") = nodeRequire("vm");
                             let endScript = vm.createContext({ require: nodeRequire, console: console, writeJSONData: writeJSONData, readAMFData: readAMFData, writeAMFData: writeAMFData, gcfg: gcfg });
                             try {
                                 vm.runInContext(script, endScript);
@@ -321,7 +310,7 @@ export class ExcelDataSaver {
                     });
                 }
                 if (gcfg.endAction) {
-                    var http: typeof $http = nodeRequire("http");
+                    var http: typeof import("http") = nodeRequire("http");
                     http.get(gcfg.endAction, res => {
                         let chunks: Buffer[] = [];
                         res.on("data", chunk => {
@@ -608,9 +597,9 @@ class XLSXDecoder {
             return;// cb(file, true, hasExtra);
         }
 
-        let cfilePackage = cfgRow[~~cfgCols.cfilePackage] || "";
+        let cfilePackage: string = cfgRow[~~cfgCols.cfilePackage] || "";
         if (cfilePackage) cfilePackage = cfilePackage.trim();
-        let sfilePackage = cfgRow[~~cfgCols.sfilePackage] || "";
+        let sfilePackage: string = cfgRow[~~cfgCols.sfilePackage] || "";
         if (sfilePackage) sfilePackage = sfilePackage.trim();
         let cSuper = cfgRow[~~cfgCols.cSuper] || ""; //前端基类
         let sSuper = cfgRow[~~cfgCols.sSuper] || ""; //后端基类
@@ -639,7 +628,7 @@ class XLSXDecoder {
             cTableType = CfgDataType.Dictionary;
         }
         //判断配置类型
-        let cInstanceType = cfgRow[~~cfgCols.cInstanceType];
+        let cInstanceType = ~~cfgRow[~~cfgCols.cInstanceType];
 
         newSForbidden[fname] = !!cfgRow[~~cfgCols.sForbidden];
         let strCLineRange: string = cfgRow[~~cfgCols.cLineRange];
@@ -650,6 +639,8 @@ class XLSXDecoder {
             cLineRange = array2DChecker.check(strCLineRange);
         }
         let fileCfg = {
+            sSuper,
+            cSuper,
             cfilePackage,
             sfilePackage,
             cInterfaces,
@@ -658,7 +649,11 @@ class XLSXDecoder {
             cTableType,
             cInstanceType,
             cLineRange,
-        }
+            name: fname,
+            path: file.path,
+            cPath,
+            sPath
+        } as FileConfig
         /**
          * 检查行是否在范围内
          * 
@@ -1068,8 +1063,14 @@ class XLSXDecoder {
                 tryDeleteFile(fname, gcfg.serverPath, Ext.ServerData);
             }
 
+            const serverCodeMaker = window.serverCodeMaker;
+
+            if (serverCodeMaker) {
+                serverCodeMaker.init(fileCfg, gcfg);
+            }
+
             let cPros: string[] = [];
-            let sPros: string[] = [];
+            // let sPros: string[] = [];
             let cout: string = "", sout: string = "";
             let cFlag: boolean;
             let cLocal: string[] = [];
@@ -1110,19 +1111,20 @@ class XLSXDecoder {
                 }
 
                 let server = define.server;
-                if (server == ProType.Common) {//如果设置为2则不自动生成代码，但是会存储数据
-                    sPros.push(`private ${checker.javaType} ${define.name};`);
-                    sPros.push(`/**`);
-                    descs.forEach(line => {
-                        sPros.push(` * ${line}  `);
-                    });
-                    sPros.push(` */`);
-                    sPros.push(`public ${checker.javaType} get${getJavaName(define.name)}() {`);
-                    sPros.push(`\treturn ${define.name};`);
-                    sPros.push(`}`);
-                    sPros.push(`public void set${getJavaName(define.name)}(${checker.javaType} ${define.name}) {`);
-                    sPros.push(`\tthis.${define.name} = ${define.name};`);
-                    sPros.push(`}`);
+                if (serverCodeMaker && server == ProType.Common) {//如果设置为2则不自动生成代码，但是会存储数据
+                    serverCodeMaker.addProperty(define, checker, descs);
+                    // sPros.push(`private ${checker.javaType} ${define.name};`);
+                    // sPros.push(`/**`);
+                    // descs.forEach(line => {
+                    //     sPros.push(` * ${line}  `);
+                    // });
+                    // sPros.push(` */`);
+                    // sPros.push(`public ${checker.javaType} get${getJavaName(define.name)}() {`);
+                    // sPros.push(`\treturn ${define.name};`);
+                    // sPros.push(`}`);
+                    // sPros.push(`public void set${getJavaName(define.name)}(${checker.javaType} ${define.name}) {`);
+                    // sPros.push(`\tthis.${define.name} = ${define.name};`);
+                    // sPros.push(`}`);
                 }
             }
 
@@ -1310,46 +1312,36 @@ class XLSXDecoder {
             }
             if (sfilePackage != undefined) {
                 if (sNeedGen) {
-                    let pathSPackage = sfilePackage.replace(".", "/");
-                    let packageStr = sfilePackage.replace(/\/|\\/g, ".");
-                    let className = `${fname}${Suffix.Server}`
                     // 生成服务端代码
-                    let sdict = getManualCodeInfo([path.join(sPath, pathSPackage, `${className}${Ext.ServerCode}`)]);
-                    if (sPros) {
-                        sout = `${packageStr ? `package ${packageStr};` : ""}
-${genManualAreaCode("$area1", sdict)}
- /**
- * 由junyouH5数据生成工具，从"${file.path}"生成
- * 创建时间：${createTime}
- **/
-public class ${className}${sSuper ? " extends " + sSuper : ""}${sInterfaces.length ? " implements " + sInterfaces.join(",") : ""} {
-\t${sPros.join(`\n\t`)}
-\t${genManualAreaCode("$area2", sdict, `\t`)}
-}
-${genManualAreaCode("$area3", sdict)}`;
+                    if (serverCodeMaker) {
+                        let result = serverCodeMaker.flash();
+                        if (result) {
+                            let { code, packagePath, className } = result;
+                            sout = code;
+                            saveCodeFile(sPath, packagePath, sout, className, Ext.ServerCode);
+                        } else {
+                            log(`服务端没有任何字段有输出，无需生成${fname}${Ext.ServerCode}`, `#0a0`);
+                        }
                     }
-                    saveCodeFile(sPath, pathSPackage, sout, className, Ext.ServerCode);
                 } else {
-                    log(`服务端没有任何字段有输出，无需生成${fname}${Ext.ServerCode}`, `#0a0`);
+                    log(`服务端没有配置[后端包结构]，无需生成${fname}${Ext.ServerCode}`, `#0a0`);
                 }
-            } else {
-                log(`服务端没有配置[后端包结构]，无需生成${fname}${Ext.ServerCode}`, `#0a0`);
-            }
-            createContent($g("code"), fname, idx++, cout, sout);
-            // 尝试生成注册文件
-            if (cFlag && cPath && gcfg.clientRegClass) {
-                let setting = {} as ConfigKeyBin;
-                setting.isClass = cIsClass;
-                setting.mainKey = clientMainKey;
-                setting.type = cTableType;
-                setting.fname = fname;
-                if (hasExtra.hasClient) {
-                    setting.hasExtra = true;
+                createContent($g("code"), fname, idx++, cout, sout);
+                // 尝试生成注册文件
+                if (cFlag && cPath && gcfg.clientRegClass) {
+                    let setting = {} as ConfigKeyBin;
+                    setting.isClass = cIsClass;
+                    setting.mainKey = clientMainKey;
+                    setting.type = cTableType;
+                    setting.fname = fname;
+                    if (hasExtra.hasClient) {
+                        setting.hasExtra = true;
+                    }
+                    configKeyInfo.cFileNames.set(fname, setting);
                 }
-                configKeyInfo.cFileNames.set(fname, setting);
-            }
 
-            cb(file, false, hasExtra);
+                cb(file, false, hasExtra);
+            }
         }
     }
 
@@ -1663,9 +1655,9 @@ function checkProName(name: string, gcfg: GlobalCfg, errPrefix = "") {
  */
 function postHttpData(url: string, post?: any) {
     return new Promise<string>((resolve, reject) => {
-        let http: typeof $http = nodeRequire("http");
-        let URL: typeof $URL = nodeRequire("url");
-        let opt = (<any>URL.parse(url)) as $http.RequestOptions;
+        let http: typeof import("http") = nodeRequire("http");
+        let URL: typeof import("url") = nodeRequire("url");
+        let opt = (<any>URL.parse(url)) as import("http").RequestOptions;
         let postData = post ? JSON.stringify(post) : "";
         opt.headers = {
             'Content-Type': 'text/json',

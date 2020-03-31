@@ -1,12 +1,10 @@
+import { AMF3Bytes } from "./structure/AMF3Bytes.js";
+import { ByteArray } from "./structure/ByteArray.js";
+import { PBUtils } from "./structure/PBUtils.js";
 
-import { AMF3Bytes } from "./structure/AMF3Bytes";
-import { ByteArray } from "./structure/ByteArray";
-import * as _fs from "fs";
-import * as _zlib from "zlib";
-import * as _path from "path";
-import { PBUtils } from "./structure/PBUtils";
-import { Buffer } from "buffer";
-import { debug } from "util";
+const path: typeof import("path") = nodeRequire("path");
+const fs: typeof import("fs") = nodeRequire("fs");
+const zlib: typeof import("zlib") = nodeRequire("zlib");
 
 const CfgHeadStruct: PBStruct = {
     1: [0, PBFieldType.Required, PBType.String]/*必有 属性名字*/,
@@ -18,8 +16,8 @@ const CfgHeadStruct: PBStruct = {
 }
 
 function writeCommonBinData(fname: string, directory: string, data: any[]) {
-    const path: typeof _path = nodeRequire("path");
-    const fs: typeof _fs = nodeRequire("fs");
+    const path: typeof import("path") = nodeRequire("path");
+    const fs: typeof import("fs") = nodeRequire("fs");
     if (fs.existsSync(directory)) {
         let stat = fs.statSync(directory);
         if (stat.isDirectory()) {
@@ -154,9 +152,6 @@ function writeCommonBinData(fname: string, directory: string, data: any[]) {
  *                     存储失败返回null
  */
 function writeAMFData(fname: string, directory: string, data: any, ext = ".jat", compress?: boolean): string {
-    const path: typeof _path = nodeRequire("path");
-    const fs: typeof _fs = nodeRequire("fs");
-    const zlib: typeof _zlib = nodeRequire("zlib");
     if (fs.existsSync(directory)) {
         let stat = fs.statSync(directory);
         if (stat.isDirectory()) {
@@ -185,8 +180,6 @@ function writeAMFData(fname: string, directory: string, data: any, ext = ".jat",
  *                     存储失败返回null
  */
 function writeJSONData(fname: string, directory: string, data: any): string {
-    const path: typeof _path = nodeRequire("path");
-    const fs: typeof _fs = nodeRequire("fs");
     if (fs.existsSync(directory)) {
         let stat = fs.statSync(directory);
         if (stat.isDirectory()) {
@@ -207,9 +200,6 @@ function writeJSONData(fname: string, directory: string, data: any): string {
  * @returns
  */
 function readAMFData(filePath: string, compress?: boolean) {
-    const path: typeof _path = nodeRequire("path");
-    const fs: typeof _fs = nodeRequire("fs");
-    const zlib: typeof _zlib = nodeRequire("zlib");
     let ba = new AMF3Bytes();
     let buffer = fs.readFileSync(filePath);
     if (compress) {

@@ -31,6 +31,10 @@ const ManualCodeDefaultComment = {
 	 * 处理函数提示
 	 */
     $cdata: "//这里填写方法中的手写内容",
+    /**
+	 * 处理函数提示
+	 */
+    $handler: "//这里填写方法中的手写内容",
 }
 
 /**
@@ -68,7 +72,7 @@ function genManualAreaCode(key: string, cinfo: { [index: string]: string }, inde
         if (key in ManualCodeDefaultComment) {
             manual = "\n" + indent + ManualCodeDefaultComment[key];
         } else {
-            throw Error(`错误的区域标识${key}`);
+            manual = "\n" + indent + ManualCodeDefaultComment.$handler;
         }
     }
     return `/*-*begin ${key}*-*/${manual}

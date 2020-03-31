@@ -1,7 +1,5 @@
-import $fs = require("fs");
-const fs: typeof $fs = nodeRequire("fs");
-import $path = require("path");
-const path: typeof $path = nodeRequire("path");
+const fs: typeof import("fs") = nodeRequire("fs");
+const path: typeof import("path") = nodeRequire("path");
 /**
  * 处理数据
  * 

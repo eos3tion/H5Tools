@@ -210,6 +210,14 @@ interface FileConfig {
      */
     sfilePackage: string;
     /**
+     * 客户端基类
+     */
+    cSuper: string;
+    /**
+     * 服务端基类
+     */
+    sSuper: string;
+    /**
      * 客户端接口列表
      */
     cInterfaces: string[];
@@ -232,7 +240,23 @@ interface FileConfig {
     /**
      * 客户端指定的行范围
      */
-    cLineRange: [number, number][];
+    cLineRange: { 0: number, 1: number }[];
+    /**
+     * 加载的配置的文件名称
+     */
+    name: string;
+    /**
+     * 加载配置的文件路径
+     */
+    path: string;
+    /**
+     * 客户端代码导出路径
+     */
+    cPath: string;
+    /**
+     * 服务端代码导出路径
+     */
+    sPath: string;
 }
 
 interface MsgCodeCfg {
@@ -865,3 +889,54 @@ declare const enum Ext {
      */
     ServerCode = ".java"
 }
+
+interface CodeFlashResult {
+    /**
+     * 输出路径
+     */
+    path: string;
+    /**
+     * 代码
+     */
+    code: string;
+    /**
+     * 包路径
+     */
+    packagePath: string;
+    /**
+     * 类名字
+     */
+    className: string;
+}
+
+/**
+ * 服务端代码生成器
+ */
+interface ServerCodeMaker {
+    /**
+     * 添加要导出的属性定义
+     * @param define 
+     */
+    addProperty(define: ProDefine, checker: TypeChecker, descs: string[]);
+    /**
+     * 输出字符串
+     */
+    flash(): CodeFlashResult;
+    /**
+     * 初始化
+     */
+    init(fcfg: FileConfig, cfg: GlobalCfg);
+}
+
+
+declare var serverCodeMaker: ServerCodeMaker
+
+/**
+ * 文件后缀
+ */
+declare const enum Suffix {
+    Client = "Cfg",
+    Server = "Config"
+}
+
+declare var XLSX: typeof import("xlsx");

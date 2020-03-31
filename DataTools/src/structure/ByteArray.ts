@@ -1,4 +1,4 @@
-import { Int64 } from './Int64';
+import { Int64 } from './Int64.js';
 /**
  * 
  * ByteArray 类提供用于优化读取、写入以及处理二进制数据的方法和属性。

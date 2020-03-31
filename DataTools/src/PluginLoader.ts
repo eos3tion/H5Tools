@@ -1,6 +1,5 @@
-import { PluginErrorType } from "./PluginErrorType";
-import asyncFileLoad from "./asyncFileLoad";
-import $vm = require("vm");
+import { PluginErrorType } from "./PluginErrorType.js";
+import asyncFileLoad from "./asyncFileLoad.js";
 export default class PluginLoader {
     private plugin: IPlugin;
     private callback: { (data: IPluginLoaderCallback) };
@@ -11,7 +10,7 @@ export default class PluginLoader {
                 this.sendError(PluginErrorType.LoadFailed, err);
                 return;
             }
-            var vm: typeof $vm = nodeRequire("vm");
+            var vm: typeof import("vm") = nodeRequire("vm");
             let str = data.toString();
             let plugin = <IPlugin>vm.createContext({ require: nodeRequire, console: console });
             try {

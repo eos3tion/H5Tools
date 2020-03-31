@@ -1,6 +1,6 @@
 const regCfg = /rP[(]"([a-zA-Z_0-9]+)"\s*,\s*([a-zA-Z_0-9.]+)(?:\s*,\s*("[a-zA-Z_0-9.]*"|0))?(?:\s*,\s*([0-9]))?[)];/g;
 // const extCfg = /rE[(]C[.]([a-zA-Z_0-9]+)[)];/g
-var fs = nodeRequire("fs");
+const fs: typeof import("fs") = nodeRequire("fs");
 
 export default class ClientRegTemplate {
     /**

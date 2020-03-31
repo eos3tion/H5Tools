@@ -1,4 +1,4 @@
-import { ByteArray } from "./ByteArray";
+import { ByteArray } from "./ByteArray.js";
 const DEBUG = true;
 function ThrowError(msg) {
     console.error(msg);

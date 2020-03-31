@@ -29,16 +29,17 @@
             font: 14px "Microsoft YaHei";
         }
     </style>
-    <script data-main="dist/index" type="text/javascript" src="../helpers/require.js"></script>
-    <script type="text/javascript" src="../helpers/cookie.js"></script>
+    <script src="../helpers/cookie.js"></script>
+    <script src="dist/WallanServerCodeMaker.js" type="module"></script>
+    <script src="dist/index.js" type="module"></script>
 </head>
 
 <body>
     <div>
-        客户端项目根目录：<input id="txtClientPath" style="width:400px;" type="input" value="" /> 生成代码:<input id="chkClientPath" type="checkbox"
-            checked="checked" />  使用 es module:<input id="chkESModule" type="checkbox" /><br/> 服务端项目根目录：
-        <input id="txtServerPath" style="width:400px;" type="input" value="" /> 生成代码:<input id="chkServerPath" type="checkbox"
-            checked="checked" />
+        客户端项目根目录：<input id="txtClientPath" style="width:400px;" type="input" value="" /> 生成代码:<input id="chkClientPath"
+            type="checkbox" checked="checked" /> 使用 es module:<input id="chkESModule" type="checkbox" /><br /> 服务端项目根目录：
+        <input id="txtServerPath" style="width:400px;" type="input" value="" /> 生成代码:<input id="chkServerPath"
+            type="checkbox" checked="checked" />
     </div>
     <div id="txtLog" style="width:100%;height:50%;margin-top:5px;border:#ccc solid 1px;overflow-y:auto; ">
     </div>

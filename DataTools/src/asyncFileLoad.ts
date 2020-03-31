@@ -1,8 +1,6 @@
-import $fs = require("fs");
-import $http = require("http");
 export default function asyncFileLoad(url: string, callback: { (err: Error, data?: Buffer) }) {
     if (/^http:\/\//.test(url)) {
-        var http: typeof $http = nodeRequire("http");
+        var http: typeof import("http") = nodeRequire("http");
         http.get(url, res => {
             let chunks: Buffer[] = [];
             res.on("data", chunk => {
@@ -15,7 +13,7 @@ export default function asyncFileLoad(url: string, callback: { (err: Error, data
             callback(e);
         })
     } else {
-        var fs: typeof $fs = nodeRequire("fs");
+        var fs: typeof import("fs") = nodeRequire("fs");
         fs.exists(url, exists => {
             if (exists) {
                 fs.readFile(url, callback);
