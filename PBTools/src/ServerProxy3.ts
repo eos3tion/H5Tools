@@ -8,7 +8,7 @@ import * as _http from "http";
 import ServerProxy2 from "ServerProxy2";
 import { checkCmdIsOK, execAsync } from "./exec";
 import { checkAndDownloadFile } from "./DownloadFile";
-import { getTempPath, progress } from "./Helper";
+import { getTempPath, progress, log } from "./Helper";
 
 const path: typeof _path = nodeRequire("path");
 const fs: typeof _fs = nodeRequire("fs");
@@ -170,13 +170,13 @@ export default class ServerProxy extends ServerProxy2 {
         //生成ClientCmdType.java
         let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
         FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
-        window.log(`生成文件${javaFile}`)
+        log(`生成文件${javaFile}`)
         progress.endTask();
 
         //生成ClientPBParser.java
         javaFile = path.join(sPath, Const.ClientPBParserPath);//这个地址暂时不处理，后面弃用
         FsExtra.writeFileSync(javaFile, ClientPBParser.flush(javaProtoPackage, cmdFullPath));
-        window.log(`生成文件${javaFile}`)
+        log(`生成文件${javaFile}`)
         progress.endTask();
         return null
     }

@@ -1,4 +1,3 @@
-import CookieForPath from "./CookieForPath";
 import * as _cp from "child_process";
 import * as _electron from "electron";
 import * as _path from "path";
@@ -7,7 +6,7 @@ import * as _url from "url";
 import * as _http from "http";
 import ServerProxy3 from "ServerProxy3";
 import { execAsync } from "./exec";
-import { progress } from "./Helper";
+import { progress, log } from "./Helper";
 
 const path: typeof _path = nodeRequire("path");
 const fs: typeof _fs = nodeRequire("fs");
@@ -93,7 +92,7 @@ export default class ServerProxy extends ServerProxy3 {
         let { className: cmdClassName, packageName: cmdPackageName } = this.parseFullClassName(cmdFullPath);
         let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
         FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
-        window.log(`生成文件${javaFile}`)
+        log(`生成文件${javaFile}`)
 
         return null
     }
