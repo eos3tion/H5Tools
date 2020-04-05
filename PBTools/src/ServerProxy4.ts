@@ -7,6 +7,7 @@ import * as _http from "http";
 import ServerProxy3 from "ServerProxy3";
 import { execAsync } from "./exec";
 import { progress, log } from "./Helper";
+import { IndexResult } from "./GitlabHelper";
 
 const path: typeof _path = nodeRequire("path");
 const fs: typeof _fs = nodeRequire("fs");
@@ -26,28 +27,11 @@ export default class ServerProxy extends ServerProxy3 {
 
 
 
-    protected async sovleData(linkDict: { [index: string]: Page }) {
+    protected async sovleData({ pages: linkDict, globalRefs }: IndexResult) {
 
         const { basePath, sPath, javaProtoPackage, cmdFullPath } = this;
         //1.遍历所有页面，得到完整引用字典
-        const globalRefs = {} as ProtoRefDict;
-        let c = 0;
-        for (let name in linkDict) {
-            const page = linkDict[name];
-            let refs = page.refs;
-            if (refs) {
-                for (let refName in refs) {
-                    const ref = refs[refName];
-                    let tester = globalRefs[refName];
-                    if (tester) {
-                        throw Error(`页面[${tester.page.rawName}]和[${page.rawName}]出现了相同的message名称[${refName}]`)
-                    }
-                    globalRefs[refName] = ref;
-                }
-            }
-            c++;
-        }
-        progress.addTask(c);
+
 
         const protoSavePath = path.join(basePath, Const.ProtoFilePath);
 

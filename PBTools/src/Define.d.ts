@@ -101,7 +101,7 @@ interface ServerReturn {
  */
 interface Cmd {
 	name: string;
-	type: number;
+	type: number | string;
 	smodule?: string;
 	message?: string;
 }
@@ -121,15 +121,32 @@ interface Page {
 	 * 原始内容
 	 */
 	rawContent: string;
+
+	/**
+	 * 文件路径
+	 */
+	path: string;
+
+	/**
+	 * 原始内容提取的proto内容
+	 */
+	protoContent: string;
+
 	name: string;
 	/**
-	 * 处理后的内容
+	 * 所有的message,enum名称经过全局唯一处理后的内容
 	 */
 	content: string;
+	/**
+	 * 页面的option
+	 */
+	options: {
+		[key: string]: any;
+	};
+
 	cmds: {
 		[index: number]: Cmd
 	};
-	meta: import("protobufjs").MetaProto;
 	/**
 	 * 导出的引用
 	 */
@@ -157,6 +174,8 @@ interface ProtoRef {
 	 * 对应的proto
 	 */
 	proto: Proto;
+
+	type: ProtoType;
 }
 
 declare type ProtoRefDict = { [name: string]: ProtoRef }
@@ -177,4 +196,9 @@ declare const enum Const {
 
 	MarkDownExt = ".md",
 
+}
+
+declare const enum ProtoType {
+	Message = "message",
+	Enum = "enum",
 }

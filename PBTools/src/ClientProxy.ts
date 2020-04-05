@@ -5,30 +5,15 @@ import "../lib/hanzi2pinyin";
 import _proto = require("protobufjs");
 import * as _pbjs from "../lib/protobuf";
 import PBMsgDictTemplate from "./PBMsgDictTemplate";
-import { createContent, writeFile, log, error, progress, getTempPath } from "./Helper";
+import { createContent, writeFile, log, error, progress, getTempPath, CmdSuffix } from "./Helper";
 import ServiceNameTemplate from "./ServiceNameTemplate";
 import { addCmds } from "./CmdTemplate";
 import { checkCmdIsOK } from "./exec";
-import { analyseUrl, updateWithGit, checkIndexPage, getProtoFromMD } from "./GitlabHelper";
+import { analyseUrl, updateWithGit, checkIndexPage, getProtoFromMD, checkGitIsOK } from "./GitlabHelper";
 const pbjs: typeof _proto = _pbjs;
 const fs: typeof import("fs") = nodeRequire("fs");
 const path: typeof import("path") = nodeRequire("path");
 
-let c2sType: string;
-let s2cType: string;
-
-
-function setCSType() {
-    let value = (document.querySelector("input[name=c2sradio]:checked") as HTMLInputElement).value;
-    let arr = value.split("#");
-    c2sType = arr[0];
-    s2cType = arr[1];
-}
-setCSType();
-
-document.querySelectorAll("input[name=c2sradio]").forEach(radio => {
-    radio.addEventListener("change", setCSType)
-})
 
 interface Func {
 	/**
@@ -76,8 +61,8 @@ export async function requestAll(cookieForPath: CookieForPath, gcfg: ClientCfg) 
     if (!wikiUrl) {
         return alert("解析服务的地址不能为空");
     }
-    if (!checkCmdIsOK("git", ["--version"])) {
-        return alert("请先安装git");
+    if (!checkGitIsOK()) {
+        return;
     }
     const { page, gitUrl, project, baseWikiUrl } = analyseUrl(wikiUrl);
     let dist = path.join(getTempPath(), Const.GitTempPath, project);
@@ -86,20 +71,20 @@ export async function requestAll(cookieForPath: CookieForPath, gcfg: ClientCfg) 
     const pageDict = await checkIndexPage(dist, page);
     if (pageDict) {
         for (let name in pageDict) {
-            const proto = pageDict[name];
+            const { proto } = pageDict[name];
             parseProto(proto, gcfg, getWikiUrl(name, baseWikiUrl));
         }
     }
 }
 
 export async function request(url: string, gcfg: ClientCfg) {
-    if (!checkCmdIsOK("git", ["--version"])) {
-        return alert("请先安装git");
+    if (!checkGitIsOK()) {
+        return;
     }
     const { page: name, gitUrl, project, baseWikiUrl } = analyseUrl(url);
     let dist = path.join(getTempPath(), Const.GitTempPath, project);
     await updateWithGit(dist, gitUrl);
-    let proto = await getProtoFromMD(dist, name)
+    let { proto } = await getProtoFromMD(dist, name)
     parseProto(proto, gcfg, getWikiUrl(name, baseWikiUrl));
 }
 
@@ -122,6 +107,7 @@ export function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         error(e);
         return;
     }
+    const { c2s, s2c } = CmdSuffix;
     let options = p.options;
     // 处理文件级的Option
     let fcpath: string = options[Options.ClientPath];
@@ -230,10 +216,10 @@ export function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         // 2. 消息中 field 为 1个，但是数据为 repeated
         // 3. 消息为非 S2C 或者 C2S 的情况
         // let type = className.substr(-3);
-        let ctype = className.substr(-1 * c2sType.length);
-        let stype = className.substr(-1 * s2cType.length);
-        let c = ctype == c2sType;
-        let s = stype == s2cType;
+        let ctype = className.substr(-1 * c2s.length);
+        let stype = className.substr(-1 * s2c.length);
+        let c = ctype == c2s;
+        let s = stype == s2c;
         // let type = c ? ctype : s ? stype : "";
         if (c || s) {
             let fleng = fieldDatas.length;
@@ -285,7 +271,7 @@ export function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let crout = path.join(cprefix, ConstString.PBCmdName + ".d.ts");
         let out: string;
         try {
-            out = addCmds(crout, cmdDict, c2sType, error);
+            out = addCmds(crout, cmdDict, c2s, error);
         } catch (e) {
             error(e);
         }

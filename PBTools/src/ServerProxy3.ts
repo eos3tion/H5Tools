@@ -9,6 +9,7 @@ import ServerProxy2 from "ServerProxy2";
 import { checkCmdIsOK, execAsync } from "./exec";
 import { checkAndDownloadFile } from "./DownloadFile";
 import { getTempPath, progress, log } from "./Helper";
+import { IndexResult } from "./GitlabHelper";
 
 const path: typeof _path = nodeRequire("path");
 const fs: typeof _fs = nodeRequire("fs");
@@ -109,7 +110,7 @@ export default class ServerProxy extends ServerProxy2 {
     }
 
 
-    protected async sovleData(linkDict: { [index: string]: Page }) {
+    protected async sovleData({ pages: linkDict }: IndexResult) {
         progress.addTask();
         //生成proto文件
         ProtoFile.start();

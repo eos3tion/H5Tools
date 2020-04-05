@@ -20,9 +20,9 @@ const enum Options {
 	 */
     ClientLimit = "(climit)",
     /**
-     * Java类名称
+     * 页面名称
      */
-    JavaClass = "(java)",
+    Name = "(name)",
     /**
      * Java使用的模块标识
      */

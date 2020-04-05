@@ -1,7 +1,8 @@
-import { git } from "./exec";
+import { git, checkCmdIsOK } from "./exec";
 import * as _path from "path";
 import * as _fs from "fs";
-import { log, progress } from "./Helper";
+import { log, progress, getTempPath } from "./Helper";
+import { getPageData } from "./getPageProto";
 const path: typeof _path = nodeRequire("path");
 const fs: typeof _fs = nodeRequire("fs");
 /**
@@ -27,7 +28,16 @@ export function analyseUrl(wikiUrl: string) {
     let group = paths[len - 4];
     return { page, gitUrl, project, group, baseWikiUrl: protocal + paths.slice(0, len - 1).join("/") }
 }
-
+/**
+ * 检查是否能正常执行git
+ */
+export function checkGitIsOK() {
+    let flag = checkCmdIsOK("git", ["--version"]);
+    if (!flag) {
+        alert("请先安装git");
+    }
+    return flag;
+}
 
 /**
  * 使用git更新项目
@@ -66,6 +76,7 @@ export function getProtoFromMD(basePath: string, name: string) {
     let file = path.join(basePath, name + Const.MarkDownExt);
     if (fs.existsSync(file)) {
         let content = fs.readFileSync(file, "utf8");
+        let rawContent = content;
         let reg = /```\s*protobuf([^]*?)```/mg;
         let proto = "";
         while (true) {
@@ -76,7 +87,7 @@ export function getProtoFromMD(basePath: string, name: string) {
                 break;
             }
         }
-        return proto;
+        return { proto, rawContent, path: file };
     }
 }
 
@@ -88,7 +99,7 @@ export function getProtoFromMD(basePath: string, name: string) {
 export async function checkIndexPage(dist: string, page: string) {
     //开始检查文件
     let indexMD = path.join(dist, page + ".md");
-    let linkDict: { [index: string]: string } = {};
+    let linkDict: { [index: string]: GetMDResult } = {};
     if (fs.existsSync(indexMD)) {
         log(`开始解析文件${indexMD}`);
         progress.addTask();
@@ -101,9 +112,9 @@ export async function checkIndexPage(dist: string, page: string) {
             if (ret) {
                 let [, name] = ret;
                 progress.addTask();
-                let proto = await getProtoFromMD(dist, name);
-                if (proto) {
-                    linkDict[name] = proto;
+                let result = await getProtoFromMD(dist, name);
+                if (result) {
+                    linkDict[name] = result;
                 }
                 progress.endTask();
             } else {
@@ -114,3 +125,65 @@ export async function checkIndexPage(dist: string, page: string) {
         return linkDict;
     }
 }
+
+export function getDist(project: string) {
+    return path.join(getTempPath(), Const.GitTempPath, project);
+}
+
+/**
+ * 分析索引页面
+ * @param indexUrl 索引页面地址
+ */
+export async function analyseIndex(indexUrl: string) {
+    if (!indexUrl) {
+        alert(`索引页地址不能为空`);
+        return null
+    }
+
+    if (!checkGitIsOK()) {
+        return null
+    }
+    const urlResult = analyseUrl(indexUrl);
+    const { page, gitUrl, project } = urlResult;
+    let dist = getDist(project);
+    await updateWithGit(dist, gitUrl);
+    //开始检查文件
+    const pageDict = await checkIndexPage(dist, page);
+    const globalRefs = {} as ProtoRefDict;
+    if (pageDict) {
+        const pages: { [index: string]: Page } = {};
+        for (let name in pageDict) {
+            const { proto, rawContent, path } = pageDict[name];
+            let page = getPageData(proto, name);
+            page.rawContent = rawContent;
+            page.path = path;
+            pages[page.name] = page;
+
+            let refs = page.refs;
+            if (refs) {
+                for (let refName in refs) {
+                    const ref = refs[refName];
+                    let tester = globalRefs[refName];
+                    if (tester) {
+                        throw Error(`页面[${tester.page.rawName}]和[${page.rawName}]出现了相同的message名称[${refName}]`)
+                    }
+                    globalRefs[refName] = ref;
+                }
+            }
+        }
+        return { pages, globalRefs, urlResult };
+    }
+}
+
+export async function commitGitToOrigin(dist: string, pages: string[], message: string) {
+    await git("add", dist, ...pages);
+    await git("commit", dist, "-m", message);
+    await git("push", dist, "origin");
+}
+
+
+type PromiseFunction<T> = T extends (...args: any) => Promise<infer U> ? U : T;
+
+export type IndexResult = PromiseFunction<typeof analyseIndex>;
+
+type GetMDResult = ReturnType<typeof getProtoFromMD>;

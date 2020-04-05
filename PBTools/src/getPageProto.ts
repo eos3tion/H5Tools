@@ -3,8 +3,8 @@ import * as _proto from "protobufjs";
 import * as _pbjs from "../lib/protobuf";
 const pbjs: typeof _proto = _pbjs;
 
-export function getJavaPageData(content: string, name: string) {
-    let forJavaContent = [] as string[];
+export function getPageData(content: string, name: string) {
+    let globalIdentityContent = [] as string[];
     let cmds: { [index: number]: Cmd } = {};
     let impRefNames = [] as string[];
     let refs = {} as ProtoRefDict;
@@ -18,25 +18,25 @@ export function getJavaPageData(content: string, name: string) {
         throw e;
     }
 
-    const { enums, messages } = p;
-
-    let javaName = p.options[Options.JavaClass];
+    const { enums, messages, options } = p;
+    page.options = options;
+    let outName = options[Options.Name];
     let enumDict: { [index: string]: boolean } = {};
     for (let e of enums) {
-        setProtoRef(page, e);
+        setProtoRef(page, e, ProtoType.Enum);
         let name = e.name;
         enumDict[name] = true;
-        forJavaContent.push(`enum ${name} {`);
+        globalIdentityContent.push(`enum ${name} {`);
         e.values.forEach(v => {
             let comment = v.comment;
             comment = comment ? "//" + comment : "";
-            forJavaContent.push(`\t${name}_${v.name}=${v.id};${comment}`);
+            globalIdentityContent.push(`\t${name}_${v.name}=${v.id};${comment}`);
         });
-        forJavaContent.push(`}`);
+        globalIdentityContent.push(`}`);
     }
 
     for (let msg of messages) {
-        setProtoRef(page, msg);
+        setProtoRef(page, msg, ProtoType.Message);
         let { name, options, fields } = msg;
         let message = name;
         let reuseMsg: boolean;
@@ -44,7 +44,7 @@ export function getJavaPageData(content: string, name: string) {
         if (cmddata != undefined) {
             let smodule = options[Options.ServerModule];
             let cs: number[] = Array.isArray(cmddata) ? cmddata : [cmddata];
-            let type: number;
+            let type: number | string;
             let fLen = fields.length;
             if (fLen == 0) {
                 type = NSType.Null;
@@ -65,7 +65,7 @@ export function getJavaPageData(content: string, name: string) {
                             name = fieldType;
                         }
                     } else {
-                        type = tType as number;
+                        type = tType;
                     }
                 }
             }
@@ -73,15 +73,15 @@ export function getJavaPageData(content: string, name: string) {
         }
 
         if (!reuseMsg) {
-            forJavaContent.push(`message ${name} {`);
+            globalIdentityContent.push(`message ${name} {`);
             fields.forEach(v => {
                 let comment = v.comment;
                 comment = comment ? "//" + comment : "";
                 let def = v.options.default;
                 def = def ? `[default=${def}]` : "";
-                forJavaContent.push(`\t${v.rule} ${v.type} ${v.name} = ${v.id} ${def};${comment}`);
+                globalIdentityContent.push(`\t${v.rule} ${v.type} ${v.name} = ${v.id} ${def};${comment}`);
             });
-            forJavaContent.push(`}`);
+            globalIdentityContent.push(`}`);
         }
     }
 
@@ -99,22 +99,22 @@ export function getJavaPageData(content: string, name: string) {
         }
     }
 
-    if (javaName) {
-        name = javaName;
+    if (outName) {
+        name = outName;
     } else {
         name = Pinyin.getFullChars(name).replace(/[^a-zA-Z]/g, "");
     }
 
-    page.content = forJavaContent.join("\n");
+    page.content = globalIdentityContent.join("\n");
     page.name = name;
     return page;
 }
 
-function setProtoRef(page: Page, proto: Proto) {
+function setProtoRef(page: Page, proto: Proto, type: ProtoType) {
     let name = proto.name;
     let refs = page.refs;
     if (name in refs) {
         throw Error(`${page.rawName}的页面中message或者enum出现重名[${name}]`);
     }
-    refs[name] = { name, page, proto };
+    refs[name] = { name, page, proto, type };
 }

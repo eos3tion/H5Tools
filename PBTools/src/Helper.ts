@@ -99,3 +99,30 @@ export function getTempPath() {
 
 export const progress = new Progress()
 progress.bindProgress($g("progress") as HTMLProgressElement).bindLabel($g("lblProgress"))
+
+
+export const CmdSuffix = function () {
+    let c2sType: string;
+    let s2cType: string;
+
+
+    function setCSType() {
+        let value = (document.querySelector("input[name=c2sradio]:checked") as HTMLInputElement).value;
+        let arr = value.split("#");
+        c2sType = arr[0];
+        s2cType = arr[1];
+    }
+    setCSType();
+
+    document.querySelectorAll("input[name=c2sradio]").forEach(radio => {
+        radio.addEventListener("change", setCSType)
+    })
+    return {
+        get c2s() {
+            return c2sType;
+        },
+        get s2c() {
+            return s2cType;
+        }
+    }
+}()

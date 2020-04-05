@@ -1,13 +1,10 @@
-import Progress from "./Progress";
 import CookieForPath from "./CookieForPath";
 import * as _electron from "electron";
 import * as _path from "path";
 import * as _fs from "fs";
 import { postHttpData } from "./getHttpData";
-import { getJavaPageData } from "./getPageProto";
-import { git, checkCmdIsOK } from "./exec";
-import { analyseUrl, updateWithGit, checkIndexPage } from "./GitlabHelper";
-import { progress, getTempPath } from "./Helper";
+import { checkGitIsOK, analyseIndex, IndexResult } from "./GitlabHelper";
+import { progress } from "./Helper";
 
 /**
  * 远程路径
@@ -23,27 +20,14 @@ export default class ServerProxy {
         if (!await this.preCheck(cookieForPath)) {
             return
         }
-        if (!checkCmdIsOK("git", ["--version"])) {
-            return alert("请先安装git");
+        if (!checkGitIsOK()) {
+            return;
         }
 
-        let wikiUrl = decodeURIComponent(cookieForPath.setPathCookie("txtServerWiki", false, false));
-        //检查项目下临时git目录
-        //解析地址，得到git路径和索引页内容
-        const { page, gitUrl, project } = analyseUrl(wikiUrl);
-        const path: typeof _path = nodeRequire("path");
-        let dist = path.join(getTempPath(), Const.GitTempPath, project);
-        await updateWithGit(dist, gitUrl);
-        //开始检查文件
-        const pageDict = await checkIndexPage(dist, page);
-        if (pageDict) {
-            const linkDict: { [index: string]: Page } = {};
-            for (let name in pageDict) {
-                const proto = pageDict[name];
-                let page = getJavaPageData(proto, name);
-                linkDict[page.name] = page;
-            }
-            return this.sovleData(linkDict);
+        let wikiUrl = cookieForPath.setPathCookie("txtServerWiki", false, false);
+        let result = await analyseIndex(wikiUrl);
+        if (result) {
+            return this.sovleData(result);
         }
     }
 
@@ -60,9 +44,9 @@ export default class ServerProxy {
      * @param cookieForPath 
      * @param linkDict 
      */
-    protected async sovleData(linkDict: { [index: string]: Page }) {
+    protected async sovleData(result: IndexResult) {
         progress.addTask();
-        let cnt = await postHttpData(sPath, linkDict);
+        let cnt = await postHttpData(sPath, result.pages);
         if (cnt) {
             let result: ServerReturn;
             try {

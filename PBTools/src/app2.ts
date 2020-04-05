@@ -14,6 +14,7 @@ import ServerProxy4 from "ServerProxy4";
 import { requestAll, parseProto, request } from "ClientProxy";
 import CookieForPath from "CookieForPath";
 import { error, log } from "Helper";
+import { createTest } from "./CreateTest";
 
 
 ready(() => {
@@ -66,6 +67,12 @@ ready(() => {
 		btnServer.disabled = false;
 	});
 
+
+	//得到所有数据的注册
+	$g("btnCreateTest").addEventListener("click", () => {
+		let wikiUrl = cookieForPath.setPathCookie("txtServerWiki", false, false);
+		createTest(wikiUrl);
+	})
 
 	$g("btnGen").addEventListener("click", () => {
 		let cPath = cookieForPath.setPathCookie("txtClientPath");
