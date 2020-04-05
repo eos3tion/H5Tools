@@ -4,7 +4,7 @@ import * as _path from "path";
 import * as _fs from "fs";
 import { postHttpData } from "./getHttpData";
 import { checkGitIsOK, analyseIndex, IndexResult } from "./GitlabHelper";
-import { progress } from "./Helper";
+import { progress, error } from "./Helper";
 
 /**
  * 远程路径
@@ -25,9 +25,13 @@ export default class ServerProxy {
         }
 
         let wikiUrl = cookieForPath.setPathCookie("txtServerWiki", false, false);
-        let result = await analyseIndex(wikiUrl);
-        if (result) {
-            return this.sovleData(result);
+        try {
+            let result = await analyseIndex(wikiUrl);
+            if (result) {
+                return this.sovleData(result);
+            }
+        } catch (e) {
+            error("", e)
         }
     }
 

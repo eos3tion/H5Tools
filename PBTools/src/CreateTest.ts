@@ -1,13 +1,18 @@
 //用于创建测试用的gm指令
 
-import { analyseIndex, commitGitToOrigin, getDist } from "./GitlabHelper";
+import { analyseIndex, commitGitToOrigin, getDist, IndexResult } from "./GitlabHelper";
 import { log, CmdSuffix, error } from "./Helper";
 
 import type { ProtoMessage, ProtoEnum } from "protobufjs"
 
 
 export async function createTest(indexUrl: string) {
-    let result = await analyseIndex(indexUrl);
+    let result: IndexResult;
+    try {
+        result = await analyseIndex(indexUrl);
+    } catch (e) {
+        error("", e)
+    }
     if (result) {
         let gitChanged = [];
         const { c2s, s2c } = CmdSuffix;
