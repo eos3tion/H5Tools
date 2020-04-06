@@ -48,13 +48,13 @@ export async function createTest(indexUrl: string) {
                     let testStr = "## 自动生成的测试样例\n```js\n" + pageTest.join("\n") + "\n```";
                     //检查md文件，附加到文件结尾
                     //检查rawContent中是否已经有测试样例
-                    const reg = /## 自动生成的测试样例\n```js.*?```/;
+                    const reg = /## 自动生成的测试样例\s+```js.*?```/gs;
                     let newContent = rawContent;
-                    if (rawContent.search(reg) > -1) {
-                        newContent = rawContent.replace(reg, testStr);
-                    } else {
-                        newContent = rawContent + "\n\n" + testStr;
-                    }
+
+                    newContent = rawContent.replace(reg, "");
+
+                    newContent = newContent + "\n\n" + testStr;
+
                     //将数据存入页面
                     const fs: typeof import("fs") = nodeRequire("fs");
                     fs.writeFileSync(path, newContent);
