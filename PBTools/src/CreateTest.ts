@@ -79,7 +79,7 @@ function getMessageSample(msg: ProtoRef, globalRefs: ProtoRefDict, level = 0) {
         let output = "{\n";
         let flen_1 = fields.length - 1;
         for (let i = 0; i <= flen_1; i++) {
-            const { type, comment, name } = fields[i];
+            const { type, comment, name, rule } = fields[i];
             let value = "";
             switch (type) {
                 case "double":
@@ -117,7 +117,8 @@ function getMessageSample(msg: ProtoRef, globalRefs: ProtoRefDict, level = 0) {
                     }
             }
             if (value) {
-                output += `${getIdent(level + 1)}${name} : ${value}${i == flen_1 ? "" : ","}${comment ? `//${comment}` : ""}\n`;
+                let isRepeated = rule == "repeated";
+                output += `${getIdent(level + 1)}${name} : ${isRepeated ? "[" : ""}${value}${isRepeated ? "]" : ""}${i == flen_1 ? "" : ","}${comment ? `//${comment}` : ""}\n`;
             }
         }
         output += "}";
