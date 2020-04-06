@@ -33,10 +33,10 @@ export async function createTest(indexUrl: string) {
                             let service = options[Options.ServiceName];
                             let handlerName = name[0].toLowerCase() + name.substring(1);
                             if (isC2S) {
-                                pageTest.push(`//S2C指令${name}，cmd:${cmd}`,
+                                pageTest.push(`//C2S指令${name}，cmd:${cmd}`,
                                     `$gm.$.${service}.${handlerName}(${testStr})`);
                             } else {
-                                pageTest.push(`//C2S指令${name}，cmd:${cmd}`,
+                                pageTest.push(`//S2C指令${name}，cmd:${cmd}`,
                                     `$gm.route(${cmd}, ${testStr})`);
                             }
                         }
