@@ -72,7 +72,7 @@ function getMessageSample(msg: ProtoRef, globalRefs: ProtoRefDict, level = 0) {
     if (msg.type == ProtoType.Enum) {
         const { values } = msg.proto as ProtoEnum;
         if (values.length) {
-            return `"${values[0]}"`
+            return `"${values[0].id}"`
         }
     } else {
         const { fields } = msg.proto as ProtoMessage;
