@@ -289,7 +289,6 @@ export class ExcelDataSaver {
                 if (cregout) {
                     createContent($g("code"), "字典", idx++, cregout);
                 }
-
                 //检查是否有完结处理
                 if (gcfg.endScript) {
                     asyncFileLoad(gcfg.endScript, (er, data) => {
@@ -322,6 +321,12 @@ export class ExcelDataSaver {
                             log(result);
                         })
                     })
+                }
+                if (gcfg.clientEndCheck) {
+                    solveCheck(gcfg.clientEndCheck, "客户端数据检测");
+                }
+                if (gcfg.serverEndCheck) {
+                    solveCheck(gcfg.serverEndCheck, "服务端数据检测");
                 }
             }
         }
@@ -928,49 +933,11 @@ class XLSXDecoder {
         }
 
         if (gcfg.clientPreCheck) {
-            let content = await postHttpData(gcfg.clientPreCheck, pData);
-            if (content) {
-                let result: PreCheckResponse;
-                try {
-                    result = JSON.parse(content);
-                } catch (e) {
-                    throw Error(`执行客户端预检测${gcfg.clientPreCheck}有误,${e.message}`);
-                }
-                if (result) {
-                    switch (result.type) {
-                        case PreCheckResponseType.Success:
-                            break;
-                        case PreCheckResponseType.Warn:
-                            error(result.msg);
-                            break;
-                        case PreCheckResponseType.Error:
-                            throw Error(`执行客户端预检测${gcfg.serverPreCheck}发现问题,${result.msg}`);
-                    }
-                }
-            }
+            await solveCheck(gcfg.clientPreCheck, "客户端预检测", pData);
         }
 
         if (gcfg.serverPreCheck) {
-            let content = await postHttpData(gcfg.serverPreCheck, pData);
-            if (content) {
-                let result: PreCheckResponse;
-                try {
-                    result = JSON.parse(content);
-                } catch (e) {
-                    throw Error(`执行服务端预检测${gcfg.serverPreCheck}有误,${e.message}`);
-                }
-                if (result) {
-                    switch (result.type) {
-                        case PreCheckResponseType.Success:
-                            break;
-                        case PreCheckResponseType.Warn:
-                            error(result.msg);
-                            break;
-                        case PreCheckResponseType.Error:
-                            throw Error(`执行服务端预检测${gcfg.serverPreCheck}发现问题,${result.msg}`);
-                    }
-                }
-            }
+            await solveCheck(gcfg.clientPreCheck, "服务端预检测", pData);
         }
 
         if (plugin) {
@@ -1008,7 +975,7 @@ class XLSXDecoder {
         }
 
         writeData(cOut, sdatas, gcfg, true);
-
+        return
         /**
          * 
          * 写最终数据
@@ -1646,6 +1613,30 @@ function checkProName(name: string, gcfg: GlobalCfg, errPrefix = "") {
     }
 }
 
+async function solveCheck(url: string, desc: string, pData?: any) {
+    let content = await postHttpData(url, pData);
+    if (content) {
+        let result: PreCheckResponse;
+        try {
+            result = JSON.parse(content);
+        } catch (e) {
+            throw Error(`执行${desc}[${url}]有误,${e.message}`);
+        }
+        if (result) {
+            const { type, msg } = result;
+            switch (type) {
+                case PreCheckResponseType.Success:
+                    break;
+                case PreCheckResponseType.Warn:
+                    error(msg);
+                    break;
+                case PreCheckResponseType.Error:
+                    alert(msg);
+                    throw Error(`执行${desc}[${url}]发现问题,${msg}`);
+            }
+        }
+    }
+}
 /**
  * 获取http数据
  * 

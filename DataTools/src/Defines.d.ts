@@ -138,7 +138,6 @@ interface GlobalCfg {
      * 验证成功后，等待服务器发送返回  
      * {PreCheckResponse} 类型的信息  
      * 如果返回错误，将不再执行后续处理  
-     * 详情参考：http://192.168.0.205:1234/h5Tools/DataTools/issues/8  
      */
     clientPreCheck?: string;
 
@@ -151,7 +150,18 @@ interface GlobalCfg {
      * 详情参考：http://192.168.0.205:1234/h5Tools/DataTools/issues/8  
      */
     serverPreCheck?: string;
-
+    /**
+     * 服务端最终检测的http地址  
+     * 当配置文件生成后，想服务端发起请求
+     * {PreCheckResponse} 类型的信息  
+     */
+    serverEndCheck?: string;
+    /**
+     * 服务端最终检测的http地址  
+     * 当配置文件生成后，想服务端发起请求
+     * {PreCheckResponse} 类型的信息  
+     */
+    clientEndCheck?: string;
     /**
      * 语言用关键字，禁止`属性名称`使用的字符串  
      * Key  {string}    语言说明，如"AS3关键字"，"java关键字"，"typescript关键字"  
