@@ -423,11 +423,15 @@ export class Main extends egret.DisplayObjectContainer {
         }
     };
 
-    onRenderFrame(now: number) {
+    onRenderFrame() {
 
     }
 
-    playComplete(now: number) {
+    playComplete() {
+
+    }
+
+    fire() {
 
     }
 
