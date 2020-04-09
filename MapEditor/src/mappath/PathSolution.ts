@@ -48,6 +48,12 @@ export interface PathSolution<T extends MapInfo> {
     onLoad(map: T, cfg: Partial<T>, sizeNotMatch?: boolean);
 
     /**
+     * 编辑前的处理
+     * @param map 
+     */
+    onBeforeEdit?(map: T);
+
+    /**
      * 存储前调用的函数
      * @param out 要存储的数据
      * @param current 当前地图信息
@@ -160,5 +166,11 @@ export const PathSolution = {
         return current;
     },
     showGroups,
-    initType
+    initType,
+    onBeforeEdit(map: MapInfo) {
+        map.pathType = current.type;
+        if (current.onBeforeEdit) {
+            current.onBeforeEdit(map);
+        }
+    }
 } 

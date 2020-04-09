@@ -11,6 +11,13 @@ import { Core } from "../Core";
 import { PathSolution } from "../mappath/PathSolution";
 import { PB } from "../pb/PB";
 
+const enum CtrlName {
+    MapPathCtrl = "divMapPath",
+    EffectList = "divEffList",
+}
+
+let curCtrl: string;
+
 function mapPathCtrlInit() {
     const drawMapPathControl = PathSolution.current.drawMapPathControl;
     $("#divMapPath").append(drawMapPathControl.view);
@@ -23,12 +30,15 @@ function mapPathCtrlInit() {
     function checkSelect() {
         let select = $("#accControl").accordion("getSelected");
         let flag = false;
+        let ctxId: string;
         if (select) {
             let ctx = select.context;
             if (ctx && ctx.id == "divMapPath") {
                 flag = true;
             }
+            ctxId = ctx.id;
         }
+        curCtrl = ctxId;
         drawMapPathControl.onToggle(flag);
         $engine.invalidate();
     }
@@ -296,7 +306,7 @@ function dragMove(e: MouseEvent) {
         let camera = $engine.camera;
         let rect = camera.rect;
         camera.moveTo(rect.x + rect.width * .5 + dx, rect.y + rect.height * .5 + dy);
-    } else if (dragState == 0 && !_effDragging) {
+    } else if (curCtrl == CtrlName.EffectList && dragState == 0 && !_effDragging) {
         let layer = $engine.getLayer(jy.GameLayerID.TopEffect) as jy.BaseLayer;
         let g = layer.graphics;
         g.clear();
@@ -307,22 +317,24 @@ function dragMove(e: MouseEvent) {
 }
 
 function dragEnd(e: MouseEvent) {
-    if (dragState == 0) {//拉框操作        
-        let layer = $engine.getLayer(jy.GameLayerID.TopEffect) as jy.BaseLayer;
-        let g = layer.graphics;
-        g.clear();
+    if (curCtrl == CtrlName.EffectList) {
+        if (dragState == 0) { //拉框操作        
+            let layer = $engine.getLayer(jy.GameLayerID.TopEffect) as jy.BaseLayer;
+            let g = layer.graphics;
+            g.clear();
 
-        let { clientX, clientY } = e;
-        let { x, y } = dragStartPt;
-        let width = clientX - x;
-        let height = clientY - y;
+            let { clientX, clientY } = e;
+            let { x, y } = dragStartPt;
+            let width = clientX - x;
+            let height = clientY - y;
 
-        let now = getNow();
+            let now = getNow();
 
-        if (now - dragSt > 200 && width * width + height * height >= 100) {
-            let pt = $engine._bg.globalToLocal(x, y);
-            //计算框选到的效果
-            checkSelect(pt.x, pt.y, width, height);
+            if (now - dragSt > 200 && width * width + height * height >= 100) {
+                let pt = $engine._bg.globalToLocal(x, y);
+                //计算框选到的效果
+                checkSelect(pt.x, pt.y, width, height);
+            }
         }
     }
     view.removeEventListener("mousemove", dragMove);

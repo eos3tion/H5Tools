@@ -2,13 +2,14 @@
 import { Core, setMapBit } from "./Core";
 import { addRes } from "./res/Res";
 import { PathSolution } from "./mappath/PathSolution";
-import { GridMapPath } from "./mappath/GridMapPath";
+import { GridMapPath } from "./mappath/grid/GridMapPath";
+import { NavMeshPath } from "./mappath/navmesh/NavMeshPath";
+import { StaggeredMapPath } from "./mappath/staggered/StaggeredMapPath";
 import * as $path from "path";
 const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
 import * as $electron from "electron";
-import { NavMeshPath } from "./mappath/navmesh/NavMeshPath";
 import MapInfo = jy.MapInfo;
 
 const electron: typeof $electron = nodeRequire("electron");
@@ -16,6 +17,7 @@ const electron: typeof $electron = nodeRequire("electron");
 //注册路径处理器
 PathSolution.regMapPath(jy.MapPathType.Grid, new GridMapPath);
 PathSolution.regMapPath(jy.MapPathType.NavMesh, new NavMeshPath);
+PathSolution.regMapPath(jy.MapPathType.Staggered, new StaggeredMapPath)
 
 const view = $g("StateEditMapInfo");
 const lblPath = $g("lblPath") as HTMLLabelElement;
@@ -71,6 +73,8 @@ btnRefreshPath.addEventListener("click", _ => {
     setData(Core.selectMap);
 });
 btnDoEdit.addEventListener("click", _ => {
+    let map = Core.selectMap;
+    PathSolution.onBeforeEdit(map);
     jy.dispatch(AppEvent.StateChange, [AppState.Edit, Core.selectMap]);
 });
 
