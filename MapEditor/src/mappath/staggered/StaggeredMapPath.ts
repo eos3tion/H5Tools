@@ -314,6 +314,7 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         out.gridWidth = current.gridWidth;
         out.columns = current.columns;
         out.rows = current.rows;
+        out.pdatabit = current.pdatabit;
         let pathdata = current.pathdata;
         if (pathdata) {
             out.pathdataB64 = getDataB64(pathdata);
@@ -340,6 +341,7 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         pb.gridHeight = map.gridHeight;
         pb.columns = map.columns;
         pb.rows = map.rows;
+        pb.pdatabit = map.pdatabit;
         let data = map.pathdata;
         if (data) {
             pb.pathdata = new jy.ByteArray(data.buffer);

@@ -56,6 +56,7 @@ message GridMapInfoPB {
    required int32 gridHeight=4;//格子高度
    optional bytes pathdata=5;//格子是否可走的数据
    optional bytes alphadata=6;//格子透明度数据
+   optional int32 pdatabit=7;//格子中路径占用的位数(1bit,2bit,4bit,8bit)
 }
 
 message PolyPointIdxPB {
