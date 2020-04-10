@@ -1,13 +1,14 @@
 import { PathSolution, OnSaveOption } from "../PathSolution";
 import { Core, createRadio } from "../../Core";
 import { PB } from "../../pb/PB";
-import MapInfo = jy.StaggeredMapInfo;
 import getMapDataHelper = jy.getMapDataHelper;
 
 const enum Const {
     radioName = "radMapPath",
 }
-
+interface MapInfo extends jy.StaggeredMapInfo {
+    gridLevel: number;
+}
 
 let txtGridWidth: HTMLInputElement;
 let txtGridHeight: HTMLInputElement;
@@ -236,6 +237,7 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         map.gridHeight = cfg.gridHeight;
         map.pathdataB64 = cfg.pathdataB64;
         map.pdatabit = cfg.pdatabit || 1;
+        map.gridLevel = cfg.gridLevel || 1;
     }
     map: MapInfo;
     setMapData(map: MapInfo) {
@@ -257,12 +259,15 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         let gridWidth = 60;
         let gridHeight = 30;
         let map = this.map;
+        let gridLevel = 1;
         if (map) {
             gridWidth = map.gridWidth || 60;
             gridHeight = map.gridHeight || 30;
+            gridLevel = map.gridLevel || 1;
         }
         txtGridWidth.value = gridWidth + "";
         txtGridHeight.value = gridHeight + "";
+        txtGridLevel.value = gridLevel + "";
     }
 
     readonly drawMapPathControl = new DrawMapPathControl();
@@ -315,6 +320,7 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         out.columns = current.columns;
         out.rows = current.rows;
         out.pdatabit = current.pdatabit;
+        out.gridLevel = gridLevel || 1;
         let pathdata = current.pathdata;
         if (pathdata) {
             out.pathdataB64 = getDataB64(pathdata);
