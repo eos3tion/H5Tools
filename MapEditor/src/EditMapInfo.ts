@@ -110,7 +110,7 @@ function setData(map: MapInfo) {
     let list = fs.readdirSync(fullPath);
     let reg1 = /^(\d{3})(\d{3}).(jpg|png)$/, reg2 = /(\d+)_(\d+).(jpg|png)$/;
     let reg1Count = 0, reg2Count = 0, jpgCount = 0, pngCount = 0;
-    let hPicCount = 0, vPicCount = 0;
+    let hPicMaxIdx = 0, vPicMaxIdx = 0;
     let sizes = new jy.ArraySet<string[]>();
     hasPicDat = {};
     let pWidth: number, pHeight: number;
@@ -132,11 +132,11 @@ function setData(map: MapInfo) {
                 let y = +RegExp.$1;
                 let x = +RegExp.$2;
                 let ext = RegExp.$3;
-                if (x > hPicCount) {
-                    hPicCount = x;
+                if (x > hPicMaxIdx) {
+                    hPicMaxIdx = x;
                 }
-                if (y > vPicCount) {
-                    vPicCount = y;
+                if (y > vPicMaxIdx) {
+                    vPicMaxIdx = y;
                 }
                 if (ext == "jpg") {
                     jpgCount++;
@@ -206,8 +206,8 @@ function setData(map: MapInfo) {
         let cfgPHeight = cfg.pHeight || ConstNum.PicSize;
         //检查地图大小是否匹配
         let { maxPicX, maxPicY } = cfg;
-        maxPicX = maxPicX ? maxPicX + 1 : cfg.width / cfgPWidth;
-        maxPicY = maxPicY ? maxPicY + 1 : cfg.height / cfgPHeight;
+        maxPicX = maxPicX ? maxPicX : Math.ceil(cfg.width / cfgPWidth);
+        maxPicY = maxPicY ? maxPicY : Math.ceil(cfg.height / cfgPHeight);
         let sizeNotMatch = false;
         let changeSize = false;
         if (cfgPHeight != pHeight || cfgPWidth != pWidth) {
@@ -220,11 +220,11 @@ function setData(map: MapInfo) {
                 pHeight = cfgPHeight;
             }
         }
-        if (maxPicX != hPicCount || maxPicY != vPicCount) {
+        if (maxPicX != hPicMaxIdx || maxPicY != vPicMaxIdx) {
             sizeNotMatch = true;
             if (!changeSize) {
-                hPicCount = maxPicX;
-                vPicCount = maxPicY;
+                hPicMaxIdx = maxPicX;
+                vPicMaxIdx = maxPicY;
             }
         }
         map.effs = cfg.effs;
@@ -252,14 +252,16 @@ function setData(map: MapInfo) {
     map.ftype = ftype;
     lblPath.innerText = map.path;
 
-    resizeMap(map, pWidth, pHeight, hPicCount, vPicCount);
+    resizeMap(map, pWidth, pHeight, hPicMaxIdx, vPicMaxIdx);
 }
 
-function resizeMap(map: MapInfo, pWidth: number, pHeight: number, hPicCount: number, vPicCount: number) {
+function resizeMap(map: MapInfo, pWidth: number, pHeight: number, maxPicX: number, maxPicY: number) {
     map.pWidth = pWidth;
     map.pHeight = pHeight;
-    map.maxPicX = hPicCount - 1;
-    map.maxPicY = vPicCount - 1;
+    let hPicCount = maxPicX + 1;
+    let vPicCount = maxPicY + 1;
+    map.maxPicX = maxPicX;
+    map.maxPicY = maxPicY;
     map.width = hPicCount * pWidth;
     map.height = vPicCount * pHeight;
     lblMapWidth.innerText = map.width + "";

@@ -66,8 +66,8 @@ function calGrids() {
 
     gridLevel = _gridLevel;
     let hh = gridHeight >> 1;
-    let columns = width / gridWidth | 0;//向下取整，减少一个格子，避免走出边界
-    let rows = height / hh | 0;
+    let columns = Math.ceil(width / gridWidth);
+    let rows = Math.ceil(height / hh);
     currentMap.columns = columns;
     currentMap.rows = rows;
     currentMap.pdatabit = bit;
@@ -164,11 +164,11 @@ function onMove(e: MouseEvent) {
 function onEnd() {
     view.removeEventListener("mousemove", onMove);
     view.removeEventListener("mouseup", onEnd);
-    view.removeEventListener("mousemove", showCoord);
 }
 
 function hideMapGrid() {
     onEnd();
+    view.removeEventListener("mousemove", showCoord);
     $gm.$showMapGrid = false;
 }
 
@@ -359,6 +359,9 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         return PB.writeTo(pb, jy.MapPBDictKey.GridMapInfoPB);
     }
 
+    onEditShow() {
+        calGrids();
+    }
 }
 
 function getDataB64(pathdata: Uint8Array) {

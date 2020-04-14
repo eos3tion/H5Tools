@@ -45,8 +45,8 @@ function calGrids() {
         txtGridHeight.focus;
         return alert("请重新设置格子高度！");
     }
-    let columns = width / gridWidth | 0;//向下取整，减少一个格子，避免走出边界
-    let rows = height / gridHeight | 0;
+    let columns = Math.ceil(width / gridWidth);
+    let rows = Math.ceil(height / gridHeight);
     currentMap.columns = columns;
     currentMap.rows = rows;
     lblColumns.innerText = columns + "";
@@ -94,20 +94,6 @@ function fillGrids(val: number) {
     }
 }
 
-/**
- * 屏幕像素坐标转为地图坐标
- * 如果没有设置out，则会直接改变point
- * @export
- * @param {Point} point
- * @param {Point} [out]
- */
-function screen2Map(point: jy.Point, out?: jy.Point) {
-    out = out || point;
-    const map = getMap();
-    out.x = Math.round(point.x / map.gridWidth);
-    out.y = Math.round(point.y / map.gridHeight);
-}
-
 // /**
 //  * 地图坐标转换为屏幕像素坐标
 //  * 如果没有设置out，则会直接改变point
@@ -147,7 +133,7 @@ function onMove(e: MouseEvent) {
     //转换成格位坐标
     let dpr = window.devicePixelRatio;
     let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-    screen2Map(pt);
+    pt = getMap().screen2Map(pt.x, pt.y);
     //设置可走/不可走
     setWalk(pt.x, pt.y, +$(`input[name=${Const.radioName}]:checked`).val(), getMap());
     $engine.invalidate();
@@ -156,11 +142,11 @@ function onMove(e: MouseEvent) {
 function onEnd() {
     view.removeEventListener("mousemove", onMove);
     view.removeEventListener("mouseup", onEnd);
-    view.removeEventListener("mousemove", showCoord);
 }
 
 function hideMapGrid() {
     onEnd();
+    view.removeEventListener("mousemove", showCoord);
     $gm.$showMapGrid = false;
 }
 
@@ -172,7 +158,7 @@ function showCoord(e: MouseEvent) {
     let dpr = window.devicePixelRatio;
     let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
     lblPixelPoint.innerText = `像素坐标：${pt.x},${pt.y}`;
-    screen2Map(pt);
+    pt = getMap().screen2Map(pt.x, pt.y);
     lblGridPoint.innerText = `格位坐标：${pt.x},${pt.y}`;
 }
 
