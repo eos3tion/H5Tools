@@ -188,8 +188,7 @@ function getMousePT(e: MouseEvent) {
         const { width, height } = $engine.currentMap;
         x = Math.clamp(x, 0, width);
         y = Math.clamp(y, 0, height);
-        pt.setTo(x, y);
-        return pt;
+        return new Point(x, y);
     }
 }
 

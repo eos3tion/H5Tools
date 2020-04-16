@@ -230,7 +230,7 @@ export class Polygon {
      * @param y 
      * @param epsilon 
      */
-    find(tpt: Point) {
+    find(tpt: jy.Point) {
         return this.points.find(pt => pt.equals(tpt))
     }
 
@@ -291,7 +291,7 @@ export class Polygon {
      * 是否包含点
      * @param pt 
      */
-    contain(pt: Point) {
+    contain(pt: jy.Point) {
         let { x, y } = pt;
         let inside = false;
         let vs = this.points;
