@@ -342,7 +342,6 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         out.gridLevel = gridLevel || 1;
         let pathdata = current.pathdata;
         if (pathdata) {
-            out.pathdata = pathdata;
             out.pathdataB64 = getDataB64(pathdata);
         }
     }

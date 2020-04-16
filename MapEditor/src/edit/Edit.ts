@@ -455,7 +455,7 @@ function saveMap() {
     }
     let pb = getMapInfoPB(currentMap);
     pb.type = solution.type | 0;
-    pb.data = solution.getMapBytes(out);
+    pb.data = solution.getMapBytes(currentMap);
     let mapBytes = PB.writeTo(pb, jy.MapPBDictKey.MapInfoPB);
     out.mapBytesB64 = egret.Base64Util.encode(mapBytes.buffer);
     fs.writeFileSync(mapCfgFile, JSON.stringify(out));
