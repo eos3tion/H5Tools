@@ -184,6 +184,25 @@ function showCoord(e: MouseEvent) {
     lblGridPoint.innerText = `格位坐标：${pt.x},${pt.y}`;
 }
 
+const BitMask = {
+    1: 0xff,
+    2: 0b01010101,
+    4: 0b00010001,
+    8: 0b1
+}
+
+function getCurMapWalkableMask() {
+    let mask = BitMask[getMap().pdatabit];
+    if (!mask) {
+        mask = 0xff;
+    }
+    return mask;
+}
+
+function fillWalkable() {
+    fillGrids(getCurMapWalkableMask())
+}
+
 class DrawMapPathControl {
 
 
@@ -193,7 +212,7 @@ class DrawMapPathControl {
         btnEmpty = document.createElement("input");
         btnEmpty.type = "button";
         btnEmpty.value = "全部可走";
-        btnEmpty.addEventListener("click", fillGrids(0xff));
+        btnEmpty.addEventListener("click", fillWalkable);
         div.appendChild(btnEmpty);
         div.appendChild(document.createTextNode("  "));
         btnFull = document.createElement("input");
@@ -323,6 +342,7 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         out.gridLevel = gridLevel || 1;
         let pathdata = current.pathdata;
         if (pathdata) {
+            out.pathdata = pathdata;
             out.pathdataB64 = getDataB64(pathdata);
         }
     }
@@ -365,7 +385,8 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
 }
 
 function getDataB64(pathdata: Uint8Array) {
-    let v = pathdata.find(v => v != 0);
+    let mask = getCurMapWalkableMask();
+    let v = pathdata.find(v => v != mask);
     if (v != undefined) {//检查pathdata中的数据,如果全部可走，则返回空
         return egret.Base64Util.encode(pathdata.buffer);
     }
