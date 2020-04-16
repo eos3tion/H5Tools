@@ -22,6 +22,8 @@ export interface OnSaveOption {
 export interface PathSolution<T extends MapInfo> {
     readonly name: string;
 
+    loaded?: boolean;
+
     /** 
      * 控件，用于注入到`EditMapInfo`状态的控件
      */
@@ -130,7 +132,7 @@ function setType(type: any) {
         if (currentMapEditCtrl) {
             tdPathDetail.appendChild(currentMapEditCtrl);
         }
-        if (current && current.onEditShow) {
+        if (current && current.loaded && current.onEditShow) {
             current.onEditShow();
         }
     }
@@ -160,10 +162,15 @@ function initType(value: number) {
     setType(value);
 }
 
+
 export const PathSolution = {
     regMapPath,
     get current() {
         return current;
+    },
+    onLoad<T extends MapInfo>(map: T, cfg: Partial<T>, sizeNotMatch?: boolean) {
+        current.loaded = true;
+        current.onLoad(map, cfg, sizeNotMatch);
     },
     showGroups,
     initType,

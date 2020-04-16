@@ -228,7 +228,7 @@ function setData(map: MapInfo) {
             }
         }
         map.effs = cfg.effs;
-        solution.onLoad(map, cfg, sizeNotMatch);
+        PathSolution.onLoad(map, cfg, sizeNotMatch);
     }
 
 
