@@ -183,8 +183,7 @@ function writeJSONData(fname: string, directory: string, data: any): string {
     if (fs.existsSync(directory)) {
         let stat = fs.statSync(directory);
         if (stat.isDirectory()) {
-            let len = data.length;
-            let outpath = path.join(directory, fname + ".json");
+            let outpath = path.join(directory, fname + Ext.Json);
             fs.writeFileSync(outpath, JSON.stringify(data));
             return outpath;
         }

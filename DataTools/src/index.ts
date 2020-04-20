@@ -644,6 +644,10 @@ class XLSXDecoder {
         let defines: ProDefine[] = [];
 
         let sdatas = [];
+        /**
+         * 原始的数据
+         */
+        let cRawDatas = [];
 
         let genPluginData = plugin && !useRaw ? [] : undefined;
         /**
@@ -733,7 +737,9 @@ class XLSXDecoder {
                         genPluginData.push(pluginData);
                     }
                     let sRow = {};
+                    let cRawRow = {};
                     let hasServer = false;
+                    let hasClientRaw = false;
                     let $cData = null;
                     for (let col = 1; col <= max; col++) {
                         let cell = rowData[col];
@@ -747,6 +753,14 @@ class XLSXDecoder {
                                     sRow[def.name] = dat;
                                 }
                                 hasServer = true;
+                            }
+                            if (client) {
+                                let ccell = cell == undefined ? def.def : cell;
+                                if (ccell) {
+                                    let dat = def.checker.check(cell || "");
+                                    cRawRow[def.name] = dat;
+                                }
+                                hasClientRaw = true;
                             }
                             if (cell != undefined) {
                                 let checker = def.checker;
@@ -782,6 +796,9 @@ class XLSXDecoder {
                     }
                     if (hasServer) {
                         sdatas.push(sRow);
+                    }
+                    if (hasClientRaw) {
+                        cRawDatas.push(cRawRow);
                     }
                 }
             }
@@ -940,7 +957,7 @@ class XLSXDecoder {
             return;
         }
 
-        writeData(cOut, sdatas, gcfg, true);
+        writeData(cOut, sdatas, gcfg, true, cRawDatas);
         return
         /**
          * 
@@ -948,52 +965,58 @@ class XLSXDecoder {
          * @param {any[]} cdatas
          * @param {any[]} sdatas
          */
-        function writeData(cdatas: any[], sdatas: any[], gcfg: GlobalCfg, makeBin?: boolean) {
+        function writeData(cdatas: any[], sdatas: any[], gcfg: GlobalCfg, makeBin?: boolean, cRawDatas?: any[]) {
+            const { clientDataType, serverDataType } = gcfg;
+            let cext: string;
+            if (clientDataType == ClientDataType.Json) {
+                cext = Ext.Json;
+            } else if (clientDataType == ClientDataType.PBBin) {
+                cext = Ext.Bin;
+            }
             // 导出客户端数据
-            if (makeBin && cdatas.length > 1 || !makeBin && cdatas.length) {
+            if (cdatas.length > 1) {
                 let cpath: string;
-                if (!makeBin || gcfg.clientDataType == ClientDataType.Json) {
-                    cpath = writeJSONData(fname, gcfg.clientPath, cdatas);
-                    if (cpath) {
-                        log(`文件${file.name}，将客户端数据保存至：${cpath}`);
+                if (clientDataType == ClientDataType.Json) {
+                    cpath = writeJSONData(fname, gcfg.clientPath, cRawDatas);
+                } else if (clientDataType == ClientDataType.PBBin) {
+                    if (!makeBin) {
+                        //先将数据还原
+                        cpath = writeJSONData(fname, gcfg.clientPath, cdatas);
                     } else {
-                        log(`文件${file.name}，未将客户端数据保存到${cpath}，请检查`)
+                        cpath = writeCommonBinData(fname, gcfg.clientPath, cdatas);
                     }
                 }
-                if (makeBin) {
-                    cpath = writeCommonBinData(fname, gcfg.clientPath, cdatas);
-                    if (cpath) {
-                        log(`文件${fname}，将客户端附加数据保存至：${cpath}`);
-                    } else {
-                        log(`文件${fname}，未将客户端附加数据保存到${cpath}，请检查`)
-                    }
+                if (cpath) {
+                    log(`文件${file.name}，将客户端数据保存至：${cpath}`);
+                } else {
+                    log(`文件${file.name}，未将客户端数据保存到${cpath}，请检查`)
                 }
             } else {
                 tryDeleteFile(fname, gcfg.clientPath);
-                if (makeBin) {
-                    tryDeleteFile(fname, gcfg.clientPath, Ext.Bin);
-                }
+                tryDeleteFile(fname, gcfg.clientPath, cext);
             }
 
+            let sext: string;
+            if (serverDataType == ServerDataType.Json) {
+                sext = Ext.Json;
+            } else if (serverDataType == ServerDataType.Jat) {
+                sext = Ext.ServerData;
+            }
             // 导出服务端数据
             if (sdatas.length) {
-                let xmlDataPath = gcfg.xmlDataPath;
-                if (xmlDataPath) {
-                    try {
-                        let spath = saveXmlData(sdatas, fname, xmlDataPath);
-                        log(`文件${file.name}，将服务端数据保存至：${spath}`, `#0c0`);
-                    } catch (e) {
-                        error(e);
-                    }
+                let spath: string;
+                if (serverDataType == ServerDataType.Json) {
+                    spath = writeJSONData(fname, gcfg.serverPath, sdatas);
+                } else if (serverDataType == ServerDataType.Jat) {
+                    spath = writeAMFData(fname, gcfg.serverPath, sdatas);
                 }
-                let spath = writeAMFData(fname, gcfg.serverPath, sdatas);
                 if (spath) {
                     log(`文件${file.name}，将服务端数据保存至：${spath}`, `#0c0`);
                 } else {
                     log(`文件${file.name}，未将服务端数据保存到${gcfg.serverPath}，请检查`)
                 }
             } else {
-                tryDeleteFile(fname, gcfg.serverPath, Ext.ServerData);
+                tryDeleteFile(fname, gcfg.serverPath, sext);
             }
 
             const serverCodeMaker = window.serverCodeMaker;
@@ -1394,7 +1417,7 @@ class XLSXDecoder {
  * @param {string} dir
  * @param {string} [ext=Ext.Json]
  */
-function tryDeleteFile(fname: string, dir: string, ext = Ext.Json) {
+function tryDeleteFile(fname: string, dir: string, ext: string = Ext.Json) {
     let fullPath = path.join(dir, fname + ext);
     if (fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);

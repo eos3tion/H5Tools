@@ -183,12 +183,9 @@ interface GlobalCfg {
     serverExportAll?: boolean;
 
     /**
-     * 服务端打包路径
-     * 
-     * @type {string}
-     * @memberof GlobalCfg
+     * 服务端数据类型
      */
-    xmlDataPath?: string;
+    serverDataType?: ServerDataType;
 
     /**
      * 客户端数据类型  
@@ -270,6 +267,11 @@ interface MsgCodeCfg {
 declare const enum ClientDataType {
     Json = 0,
     PBBin = 1,
+}
+
+declare const enum ServerDataType {
+    Json = 0,
+    Jat = 1,
 }
 
 interface PreCheckResponse {
