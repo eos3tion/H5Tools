@@ -238,40 +238,6 @@ export class ExcelDataSaver {
                 if (cout) {
                     createContent($g("code"), "ExtraData", idx++, cout);
                 }
-                //检查服务端功能下载的配置数据
-                if (gcfg.serverCfgDownload) {
-                    //尝试加载原始配置
-                    let p = path.join(gcfg.serverPath, gcfg.serverCfgDownload + Ext.ServerData);
-                    // id	isopen	configfilename
-                    let data: { id: string, isopen: number, configfilename: string }[]
-                    if (fs.existsSync(p)) {
-                        data = readAMFData(p);
-                    }
-                    if (data) {
-                        data.forEach(v => {
-                            let forbidden = newSForbidden[v.id];
-                            delete newSForbidden[v.id];
-                            v.isopen = forbidden ? 1 : 0;
-                        });
-                    }
-                    else {
-                        data = [];
-                    }
-                    for (let id in newSForbidden) {
-                        let v = { id, isopen: +newSForbidden[id], configfilename: id + Ext.ServerData };
-                        data.push(v);
-                    }
-                    if (data.length) {
-                        let spath = writeAMFData(gcfg.serverCfgDownload, gcfg.serverPath, data);
-                        if (spath) {
-                            log(`文件${file.name}，将服务端数据保存至：${spath}`, `#0c0`);
-                        } else {
-                            log(`文件${file.name}，未将服务端数据保存到${p + Ext.ServerData}，请检查`)
-                        }
-                    } else {
-                        tryDeleteFile(gcfg.serverCfgDownload, gcfg.serverPath, Ext.ServerData);
-                    }
-                }
                 let cregout = "";
                 // 尝试生成注册文件
                 if (cPath && gcfg.clientRegClass) {

@@ -86,13 +86,6 @@ interface GlobalCfg {
      */
     serverExtra: string;
     /**
-     * 服务器功能下载的配置
-     * 
-     * @type {string}
-     * @memberOf GlobalCfg
-     */
-    serverCfgDownload: string;
-    /**
      * 服务端用于注册常量和引用的类
      *  ///ts:import=DataLocator
         import DataLocator = require('./junyou/common/configs/DataLocator'); ///ts:import:generated
