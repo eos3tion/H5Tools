@@ -32,6 +32,10 @@ interface GlobalCfg {
      */
     lan?: string;
     /**
+     * 分支版本
+     */
+    version?: string;
+    /**
      * 远程的配置路径
      * 
      * @type {string}

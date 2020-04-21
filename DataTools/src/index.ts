@@ -5,7 +5,6 @@ const fs: typeof import("fs") = nodeRequire("fs");
 const clipboard = nodeRequire('electron').clipboard;
 import { PluginErrorType } from "./PluginErrorType.js";
 import { writeJSONData, writeAMFData, readAMFData, writeCommonBinData } from "./DataReadWrite.js";
-import { saveData as saveXmlData } from "./solvers/lingyu/XmlDataJavaServerSolver.js";
 import { TypeCheckers } from "./TypeCheckers.js";
 import { genManualAreaCode, getManualCodeInfo, hasManualAreaCode, getRawManualAreaCode } from "./MenualCodeHelper.js";
 import ClientRegTemplate from "./ClientRegTemplate.js";
@@ -335,7 +334,7 @@ export class ExcelDataSaver {
                     return cfg;
                 }
                 //可替换的配置内容的key
-                let replacableKeys = ["clientPath", "serverPath", "serverRegClass", "clientRegClass", "endScript", "endAction", "clientModule", "xmlDataPath", "msgCode"];
+                let replacableKeys = ["clientPath", "serverPath", "serverRegClass", "clientRegClass", "endScript", "endAction", "clientModule", "clientPreCheck", "serverPreCheck", "clientEndCheck", "serverEndCheck", "msgCode"];
                 let replacer = cfg.replacer;
                 if (!replacer) {
                     replacer = {};
@@ -348,6 +347,11 @@ export class ExcelDataSaver {
                 if (cfg.project) {
                     if (!("project" in replacer)) {
                         replacer["project"] = cfg.project;
+                    }
+                }
+                if (cfg.version) {
+                    if (!("project" in replacer)) {
+                        replacer["version"] = cfg.version;
                     }
                 }
                 replacableKeys.forEach(key => {
