@@ -339,21 +339,9 @@ export class ExcelDataSaver {
                 if (!replacer) {
                     replacer = {};
                 }
-                if (cfg.lan) {
-                    if (!("lan" in replacer)) {
-                        replacer["lan"] = cfg.lan;
-                    }
-                }
-                if (cfg.project) {
-                    if (!("project" in replacer)) {
-                        replacer["project"] = cfg.project;
-                    }
-                }
-                if (cfg.version) {
-                    if (!("project" in replacer)) {
-                        replacer["version"] = cfg.version;
-                    }
-                }
+                checkReplacer(cfg, "lan", replacer);
+                checkReplacer(cfg, "project", replacer);
+                checkReplacer(cfg, "version", replacer);
                 replacableKeys.forEach(key => {
                     if (key in cfg) {
                         let v = cfg[key];
@@ -383,6 +371,14 @@ export class ExcelDataSaver {
                 let value = replacer[subkey];
                 return value !== undefined ? "" + value : match;
             });
+        }
+        function checkReplacer(cfg: any, key: string, replacer: { [index: string]: string }) {
+            let v = cfg[key];
+            if (v != undefined) {
+                if (!(key in replacer)) {
+                    replacer[key] = v;
+                }
+            }
         }
     }
 }
