@@ -207,7 +207,7 @@ export class ExcelParser implements DataBaseParser {
 }
 
 function parseReturn(msg: string) {
-    return msg.replace(/&#10;/g, "\n").replace(/&#13;/g, "\r").replace(/(\r|\n)+/g, "\n");
+    return msg ? msg.replace(/&#10;/g, "\n").replace(/&#13;/g, "\r").replace(/(\r|\n)+/g, "\n") : "";
 }
 
 /**
