@@ -137,8 +137,7 @@ function addRender(aniRender: AniRender) {
         old.onRecycle();
     }
     currentRender = aniRender;
-    //@ts-ignore
-    let pst = aniRender._aniInfo;
+    let pst = aniRender.aniInfo;
     let dg = $('#dg');
     dg["datagrid"]('loadData', pst.frames[0].frames);
 }
