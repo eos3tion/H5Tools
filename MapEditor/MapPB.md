@@ -1,5 +1,5 @@
 ## 地图信息
-```proto
+```protobuf
 message MapInfoPB {
    required int32 id=1;//地图唯一标识
    required int32 extType=2;//扩展名存储类型
@@ -57,6 +57,12 @@ message GridMapInfoPB {
    optional bytes pathdata=5;//格子是否可走的数据
    optional bytes alphadata=6;//格子透明度数据
    optional int32 pdatabit=7;//格子中路径占用的位数(1bit,2bit,4bit,8bit)
+   repeated PointGroupPB points=8;//点集数据
+}
+
+message PointGroupPB {
+   required string id=1;//点集标识
+   repeated MapPointPB points=2;//有序点集
 }
 
 message PolyPointIdxPB {

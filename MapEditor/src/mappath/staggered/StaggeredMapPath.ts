@@ -8,6 +8,14 @@ const enum Const {
 }
 interface MapInfo extends jy.StaggeredMapInfo {
     gridLevel: number;
+
+
+    /**
+     * 点集
+     */
+    points: jy.PointGroupPB[];
+
+    map2Screen(x: number, y: number, isCenter?: boolean);
 }
 
 let txtGridWidth: HTMLInputElement;
@@ -257,6 +265,7 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         map.pathdataB64 = cfg.pathdataB64;
         map.pdatabit = cfg.pdatabit || 1;
         map.gridLevel = cfg.gridLevel || 1;
+        map.points = cfg.points || [];
     }
     map: MapInfo;
     setMapData(map: MapInfo) {
@@ -342,6 +351,7 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         out.rows = current.rows;
         out.pdatabit = current.pdatabit;
         out.gridLevel = gridLevel || 1;
+        out.points = current.points;
         let pathdata = current.pathdata;
         if (pathdata) {
             out.pathdataB64 = getDataB64(pathdata);
@@ -369,6 +379,7 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         pb.columns = map.columns;
         pb.rows = map.rows;
         pb.pdatabit = map.pdatabit;
+        pb.points = map.points;
         let data = map.pathdata;
         if (data) {
             pb.pathdata = new jy.ByteArray(data.buffer);
@@ -411,7 +422,7 @@ function getDataForJava(map: MapInfo) {//为了避免服务端数据结构变更
     return bytes;
 }
 
-function getAreaGroupControl(view: HTMLElement) {
+function getAreaGroupControl(view: HTMLElement): EditMapControl {
     const div = document.createElement("div");
     let btnNew = document.createElement("input");
     btnNew.type = "button";
@@ -423,43 +434,90 @@ function getAreaGroupControl(view: HTMLElement) {
     let groups = new jy.ArraySet<AreaGroupItem>();
     let $tree = $(tree);
     let curSel: JQuery;
+    let graphics: egret.Graphics
     $tree.accordion({
-        data: groups.rawList,
         onSelect: onPanelSelect
     })
+
+    let isShow: boolean;
 
     return {
         get view() {
             return div;
         },
-        onToggle
+        onToggle,
+        onSave(map: MapInfo) {
+            let rawList = groups.rawList;
+            let points = [];
+            for (let i = 0; i < rawList.length; i++) {
+                const group = rawList[i];
+                let pts = group.points;
+                if (pts.length) {
+                    let point = {
+                        id: group.id,
+                        points: pts.concat()
+                    }
+                    points.push(point);
+                }
+            }
+            map.points = points;
+        },
+        onInit(map: MapInfo) {
+            let layer = $engine.getLayer(jy.GameLayerID.CeilEffect) as jy.BaseLayer;
+            graphics = layer.graphics;
+            let points = map.points;
+            if (points) {
+                for (let i = 0; i < points.length; i++) {
+                    const point = points[i];
+                    addGroup(point.id, point.points);
+                }
+            }
+        }
     }
 
     function createNewGroup() {
         $["messager"].prompt("", "添加分组标识", groupId => {
+            if (!groupId) {
+                return
+            }
+            groupId = groupId.trim();
             let data = groups.get(groupId);
             if (!data) {
-                let group = { id: groupId, children: [] } as AreaGroupItem;
-                groups.set(groupId, group)
-                $tree.accordion('add', {
-                    title: groupId,
-                    selected: true
-                });
-                let panel = $tree.accordion('getPanel', groupId);
-                if (panel) {
-                    group.panel = panel;
-                    initPanel(panel, group);
-                }
+                addGroup(groupId, []);
             }
         });
     }
 
+    function addGroup(groupId: string, points: jy.Point[]) {
+        let group = { id: groupId, points: points.map(pt => getPoint(pt.x, pt.y)) } as AreaGroupItem;
+        groups.set(groupId, group)
+        $tree.accordion('add', {
+            title: groupId,
+            selected: true
+        });
+        let panel = $tree.accordion('getPanel', groupId);
+        if (panel) {
+            group.panel = panel;
+            initPanel(panel, group);
+        }
+    }
+
     function onPanelSelect(groupId: string) {
         //检查当前选中
-        curSel = $tree.accordion('getPanel', groupId);
+        let nSel = $tree.accordion('getPanel', groupId);
+        if (curSel != nSel) {
+            if (curSel) {
+                clearPoints();
+            }
+            curSel = nSel;
+            if (curSel) {
+                refreshPoints();
+            }
+        }
     }
 
     function onToggle(flag: boolean) {
+        isShow = flag;
         if (flag) {
             showMapGrid();
         } else {
@@ -473,6 +531,7 @@ function getAreaGroupControl(view: HTMLElement) {
         view.addEventListener("mousedown", onBegin);
         view.addEventListener("mousemove", showCoord);
         $engine.invalidate();
+        refreshPoints();
     }
 
     function onBegin(e: MouseEvent) {
@@ -497,21 +556,68 @@ function getAreaGroupControl(view: HTMLElement) {
         let dpr = window.devicePixelRatio;
         let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
         pt = getMap().screen2Map(pt.x, pt.y);
-        let flag = curSel.find(`input[name=${getGroupRadioName(group.id)}]:checked`).val();
+        let flag = +curSel.find(`input[name=${getGroupRadioName(group.id)}]:checked`).val();
         if (flag) {
-            addPoint(pt.x, pt.y);
+            addPoint(pt.x, pt.y, group);
         }
         $engine.invalidate();
     }
 
-    function addPoint(x: number, y: number) {
+    function onEnd() {
+        if (!curSel) {
+            return
+        }
+        view.removeEventListener("mousemove", onMove);
+        view.removeEventListener("mouseup", onEnd);
+    }
 
+    function addPoint(x: number, y: number, group: AreaGroupItem) {
+        //数据添加到children中
+        let children = group.points
+        if (!children.find(pt => pt.x == x && pt.y == y)) {
+            children.push(getPoint(x, y))
+            //在地图上显示
+            refreshPoints();
+        }
+    }
+
+    function getPoint(x: number, y: number): Point {
+        let pt = { x, y };
+        Object.setPrototypeOf(pt, {
+            get text() {
+                return `x:${this.x},y:${this.y}`
+            }
+        })
+        return pt;
+    }
+
+    function clearPoints() {
+        graphics.clear();
+    }
+
+    function refreshPoints() {
+        clearPoints();
+        let group = getGroup();
+        if (group) {
+            let map = getMap();
+            if (map && isShow) {
+                let children = group.points;
+                for (let i = 0; i < children.length; i++) {
+                    let pt = children[i];
+                    graphics.beginFill(pt.selected ? 0xffff00 : 0xffff);
+                    pt = map.map2Screen(pt.x, pt.y, true);
+                    graphics.drawCircle(pt.x, pt.y, 5);
+                    graphics.endFill();
+                }
+            }
+            group.list.datalist({ data: group.points });
+        }
     }
 
     function getGroup(panel?: JQuery) {
         panel = panel || curSel;
         if (panel) {
-            let groupId = panel.option.title;
+            let groupId = panel.panel("options").title;
             let group = groups.get(groupId);
             return group;
         }
@@ -522,6 +628,7 @@ function getAreaGroupControl(view: HTMLElement) {
         view.removeEventListener("mousemove", showCoord);
         view.addEventListener("mousedown", onBegin);
         $gm.$showMapGrid = false;
+        clearPoints();
     }
 
     function initPanel(panel: JQuery, group: AreaGroupItem) {
@@ -535,12 +642,15 @@ function getAreaGroupControl(view: HTMLElement) {
         panel.append(btnClear);
 
         //创建列表
-        let list = document.createElement("ul");
+        let list = document.createElement("div");
+        list.style.height = "100px";
+        panel.append(list);
         let $list = $(list).datalist({
-            data: group.children
+            data: group.points,
+            onSelect: onPointSelect,
+            textField: "text"
         });
 
-        panel.append($list);
 
         let panelEle = panel.get(0);
 
@@ -548,6 +658,13 @@ function getAreaGroupControl(view: HTMLElement) {
 
         createRadio("不添加新坐标", 0, radioName, panelEle, false);
         createRadio("添加新坐标", 1, radioName, panelEle, true);
+
+        let btnDel = document.createElement("input");
+        btnDel.type = "button";
+        btnDel.value = "删除";
+        btnDel.setAttribute("groupId", id);
+        btnDel.addEventListener("click", delPoint);
+        panel.append(btnDel);
 
         group.list = $list;
     }
@@ -560,15 +677,49 @@ function getAreaGroupControl(view: HTMLElement) {
         let btn = e.currentTarget as HTMLInputElement;
         let id = btn.getAttribute("groupId");
         let group = groups.get(id);
-        group.children.length = 0;
-        group.list.datalist("reload")
+        group.points.length = 0;
+        refreshPoints();
     }
 
+    function onPointSelect(idx: number, point: jy.Point) {
+        let group = getGroup();
+        if (group) {
+            const points = group.points;
+            if (points[idx] == point) {
+                for (let i = 0; i < points.length; i++) {
+                    const pt = points[i];
+                    pt.selected = pt == point;
+                }
+            }
+            refreshPoints();
+        }
+    }
+
+    function delPoint() {
+        let group = getGroup();
+        if (group) {
+            let select = group.list.datalist("getSelected");
+            if (select) {
+                const points = group.points;
+                let j = 0;
+                for (let i = 0; i < points.length; i++) {
+                    const pt = points[i];
+                    if (pt != select) {
+                        points[j++] = pt;
+                    }
+                }
+                points.length = j;
+                refreshPoints();
+            }
+        }
+    }
 }
 
+
+type Point = jy.Point & { selected?: boolean }
 interface AreaGroupItem {
     id: string;
     panel?: JQuery;
-    children: jy.Point[];
+    points: Point[];
     list?: JQuery;
 }

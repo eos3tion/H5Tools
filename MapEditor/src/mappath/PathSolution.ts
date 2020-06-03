@@ -9,6 +9,18 @@ export interface EditMapControl {
      *  false 关闭
      */
     onToggle(flag: boolean);
+
+    /**
+     * 存储地图之前调度
+     * @param map 
+     */
+    onSave?(map: MapInfo);
+
+    /**
+     * 加载完地图，初始时
+     * @param map 
+     */
+    onInit?(map: MapInfo);
 }
 export interface OnSaveOption {
     map: MapInfo,

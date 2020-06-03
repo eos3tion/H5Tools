@@ -484,6 +484,10 @@ class LingYuArrayChecker extends AbsTypeChecker {
     }
 }
 
+class ConditionChecker extends AbsTypeChecker {
+    type = "CoditionNode";
+}
+
 /**
  * ValueTypeError
  */
@@ -508,6 +512,7 @@ checkers[TypeCheckerKey.Date] = new DateChecker;
 checkers[TypeCheckerKey.Time] = new TimeChecker;
 checkers[TypeCheckerKey.DateTime] = new DateTimeChecker;
 checkers[TypeCheckerKey.Int] = new Int32Checker;
+checkers[TypeCheckerKey.Condition] = new ConditionChecker;
 
 checkers[TypeCheckerKey.LingYuArray] = new LingYuArrayChecker;
 

@@ -17,11 +17,12 @@ const enum CtrlName {
 }
 
 let curCtrl: string;
+const ctrlDict = {} as { [id: string]: EditMapControl };
 
 function mapPathCtrlInit() {
     const current = PathSolution.current;
 
-    const ctrlDict = {} as { [id: string]: EditMapControl };
+
     const drawMapPathControl = current.drawMapPathControl;
     $("#divMapPath").append(drawMapPathControl.view);
     ctrlDict["divMapPath"] = drawMapPathControl;
@@ -36,6 +37,15 @@ function mapPathCtrlInit() {
         onUnselect: checkSelect,
         onSelect: checkSelect
     });
+
+    for (let id in ctrlDict) {
+        const ctrl = ctrlDict[id];
+        if (ctrl.onInit) {
+            ctrl.onInit(currentMap);
+        }
+    }
+
+    return
 
     function checkSelect() {
         jy.Global.callLater($checkSelect, 0)
@@ -118,6 +128,9 @@ btnEditGroup.on("click", editGroup);
 
 function editGroup() {
     $["messager"].prompt("", "添加分组标识", groupId => {
+        if (!groupId) {
+            return
+        }
         groupId = groupId.trim();
         const effs = $engine.effs;
         for (let i = 0; i < effs.length; i++) {
@@ -451,6 +464,12 @@ jy.on(AppEvent.CopyEffect, e => {
 function saveMap() {
     if (!currentMap) {
         return;
+    }
+    for (let id in ctrlDict) {
+        const ctrl = ctrlDict[id];
+        if (ctrl.onSave) {
+            ctrl.onSave(currentMap);
+        }
     }
     const mapCfgFile = path.join(Core.basePath, currentMap.path, ConstString.MapCfgFileName);
 
