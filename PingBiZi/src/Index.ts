@@ -1,0 +1,3 @@
+function preCheck(willChecked: string) {
+    
+}

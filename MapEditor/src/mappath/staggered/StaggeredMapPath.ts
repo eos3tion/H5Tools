@@ -1,4 +1,4 @@
-import { PathSolution, OnSaveOption } from "../PathSolution";
+import { PathSolution, OnSaveOption, EditMapControl } from "../PathSolution";
 import { Core, createRadio } from "../../Core";
 import { PB } from "../../pb/PB";
 import getMapDataHelper = jy.getMapDataHelper;
@@ -291,6 +291,8 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
 
     readonly drawMapPathControl = new DrawMapPathControl();
 
+    readonly areaGroupControl = getAreaGroupControl(view);
+
     readonly name = "等角（交错）路径";
 
     @jy.d_memoize
@@ -407,4 +409,166 @@ function getDataForJava(map: MapInfo) {//为了避免服务端数据结构变更
     }
     //存储"path.mm"
     return bytes;
+}
+
+function getAreaGroupControl(view: HTMLElement) {
+    const div = document.createElement("div");
+    let btnNew = document.createElement("input");
+    btnNew.type = "button";
+    btnNew.value = "新建分组";
+    btnNew.addEventListener("click", createNewGroup);
+    div.appendChild(btnNew);
+    let tree = document.createElement("div");
+    div.appendChild(tree);
+    let groups = new jy.ArraySet<AreaGroupItem>();
+    let $tree = $(tree);
+    let curSel: JQuery;
+    $tree.accordion({
+        data: groups.rawList,
+        onSelect: onPanelSelect
+    })
+
+    return {
+        get view() {
+            return div;
+        },
+        onToggle
+    }
+
+    function createNewGroup() {
+        $["messager"].prompt("", "添加分组标识", groupId => {
+            let data = groups.get(groupId);
+            if (!data) {
+                let group = { id: groupId, children: [] } as AreaGroupItem;
+                groups.set(groupId, group)
+                $tree.accordion('add', {
+                    title: groupId,
+                    selected: true
+                });
+                let panel = $tree.accordion('getPanel', groupId);
+                if (panel) {
+                    group.panel = panel;
+                    initPanel(panel, group);
+                }
+            }
+        });
+    }
+
+    function onPanelSelect(groupId: string) {
+        //检查当前选中
+        curSel = $tree.accordion('getPanel', groupId);
+    }
+
+    function onToggle(flag: boolean) {
+        if (flag) {
+            showMapGrid();
+        } else {
+            hideMapGrid();
+        }
+    }
+
+    function showMapGrid() {
+        $gm.$showMapGrid = true;
+        //监听鼠标事件
+        view.addEventListener("mousedown", onBegin);
+        view.addEventListener("mousemove", showCoord);
+        $engine.invalidate();
+    }
+
+    function onBegin(e: MouseEvent) {
+        if (!curSel || (e.target as HTMLElement).tagName.toLowerCase() !== "canvas") {
+            return
+        }
+
+        if (e.button == 0) {
+            view.addEventListener("mousemove", onMove);
+            view.addEventListener("mouseup", onEnd);
+            onMove(e);
+        }
+    }
+
+    function onMove(e: MouseEvent) {
+        let group = getGroup();
+        if (!group) {
+            return;
+        }
+        const { clientX, clientY } = e;
+        //转换成格位坐标
+        let dpr = window.devicePixelRatio;
+        let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
+        pt = getMap().screen2Map(pt.x, pt.y);
+        let flag = curSel.find(`input[name=${getGroupRadioName(group.id)}]:checked`).val();
+        if (flag) {
+            addPoint(pt.x, pt.y);
+        }
+        $engine.invalidate();
+    }
+
+    function addPoint(x: number, y: number) {
+
+    }
+
+    function getGroup(panel?: JQuery) {
+        panel = panel || curSel;
+        if (panel) {
+            let groupId = panel.option.title;
+            let group = groups.get(groupId);
+            return group;
+        }
+    }
+
+    function hideMapGrid() {
+        onEnd();
+        view.removeEventListener("mousemove", showCoord);
+        view.addEventListener("mousedown", onBegin);
+        $gm.$showMapGrid = false;
+    }
+
+    function initPanel(panel: JQuery, group: AreaGroupItem) {
+        let id = group.id;
+        //创建控件
+        let btnClear = document.createElement("input");
+        btnClear.type = "button";
+        btnClear.value = "全部清理";
+        btnClear.setAttribute("groupId", id);
+        btnClear.addEventListener("click", clearAll);
+        panel.append(btnClear);
+
+        //创建列表
+        let list = document.createElement("ul");
+        let $list = $(list).datalist({
+            data: group.children
+        });
+
+        panel.append($list);
+
+        let panelEle = panel.get(0);
+
+        let radioName = getGroupRadioName(id);
+
+        createRadio("不添加新坐标", 0, radioName, panelEle, false);
+        createRadio("添加新坐标", 1, radioName, panelEle, true);
+
+        group.list = $list;
+    }
+
+    function getGroupRadioName(id: string) {
+        return `AreaGroup${id}`
+    }
+
+    function clearAll(e: MouseEvent) {
+        let btn = e.currentTarget as HTMLInputElement;
+        let id = btn.getAttribute("groupId");
+        let group = groups.get(id);
+        group.children.length = 0;
+        group.list.datalist("reload")
+    }
+
+}
+
+interface AreaGroupItem {
+    id: string;
+    panel?: JQuery;
+    children: jy.Point[];
+    list?: JQuery;
 }

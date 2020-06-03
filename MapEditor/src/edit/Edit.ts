@@ -8,7 +8,7 @@ import * as $http from "http";
 import { HGameEngine } from "./HGameEngine";
 import { AniDele } from "./AniDele";
 import { Core } from "../Core";
-import { PathSolution } from "../mappath/PathSolution";
+import { PathSolution, EditMapControl } from "../mappath/PathSolution";
 import { PB } from "../pb/PB";
 
 const enum CtrlName {
@@ -19,8 +19,18 @@ const enum CtrlName {
 let curCtrl: string;
 
 function mapPathCtrlInit() {
-    const drawMapPathControl = PathSolution.current.drawMapPathControl;
+    const current = PathSolution.current;
+
+    const ctrlDict = {} as { [id: string]: EditMapControl };
+    const drawMapPathControl = current.drawMapPathControl;
     $("#divMapPath").append(drawMapPathControl.view);
+    ctrlDict["divMapPath"] = drawMapPathControl;
+
+    const areaGroupControl = current.areaGroupControl;
+    if (areaGroupControl) {
+        $("#divAreaGroup").append(areaGroupControl.view);
+        ctrlDict["divAreaGroup"] = areaGroupControl;
+    }
 
     $("#accControl").accordion({
         onUnselect: checkSelect,
@@ -28,6 +38,9 @@ function mapPathCtrlInit() {
     });
 
     function checkSelect() {
+        jy.Global.callLater($checkSelect, 0)
+    }
+    function $checkSelect() {
         let select = $("#accControl").accordion("getSelected");
         let flag = false;
         let ctxId: string;
@@ -38,9 +51,18 @@ function mapPathCtrlInit() {
             }
             ctxId = ctx.id;
         }
-        curCtrl = ctxId;
-        drawMapPathControl.onToggle(flag);
-        $engine.invalidate();
+        if (curCtrl != ctxId) {
+            let old = ctrlDict[curCtrl];
+            if (old) {
+                old.onToggle(false);
+            }
+            curCtrl = ctxId;
+            let ctrl = ctrlDict[curCtrl];
+            if (ctrl) {
+                ctrl.onToggle(true);
+            }
+            $engine.invalidate();
+        }
     }
     checkSelect();
 }
