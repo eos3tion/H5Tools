@@ -23,8 +23,7 @@ let txtGridHeight: HTMLInputElement;
 let txtGridLevel: HTMLInputElement;
 let lblColumns: HTMLLabelElement;
 let lblRows: HTMLLabelElement;
-let btnEmpty: HTMLInputElement;
-let btnFull: HTMLInputElement;
+
 
 let pathData: jy.MapDataHelper;
 
@@ -116,82 +115,12 @@ function setWalk(x: number, y: number, flag: any) {
 }
 
 function fillGrids(val: number) {
-    return function () {
-        let pathdata = getMap().pathdata;
-        pathdata.fill(val);
-        $engine.invalidate();
-    }
+    let pathdata = getMap().pathdata;
+    pathdata.fill(val);
+    $engine.invalidate();
 }
 
-
-// /**
-//  * 地图坐标转换为屏幕像素坐标
-//  * 如果没有设置out，则会直接改变point
-//  * @export
-//  * @param {Point} point
-//  * @param {Point} [out]  
-//  */
-// function map2Screen(point: jy.Point, out?: jy.Point) {
-//     out = out || point;
-//     const map = getMap();
-//     out.x = point.x * map.gridWidth + map.gridWidth * .5;
-//     out.y = point.y * map.gridHeight + map.gridHeight * .5;
-// }
 const view = $g("StateEdit");
-
-function showMapGrid() {
-    $gm.$showMapGrid = true;
-    //监听鼠标事件
-    view.addEventListener("mousedown", onBegin);
-    view.addEventListener("mousemove", showCoord);
-    $engine.invalidate();
-}
-
-function onBegin(e: MouseEvent) {
-    if ((e.target as HTMLElement).tagName.toLowerCase() !== "canvas") {
-        return
-    }
-    if (e.button == 0) {
-        view.addEventListener("mousemove", onMove);
-        view.addEventListener("mouseup", onEnd);
-        onMove(e);
-    }
-}
-
-function onMove(e: MouseEvent) {
-    const { clientX, clientY } = e;
-    //转换成格位坐标
-    let dpr = window.devicePixelRatio;
-    let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-    pt = getMap().screen2Map(pt.x, pt.y);
-    //设置可走/不可走
-    setWalk(pt.x, pt.y, +$(`input[name=${Const.radioName}]:checked`).val());
-    $engine.invalidate();
-}
-
-function onEnd() {
-    view.removeEventListener("mousedown", onBegin);
-    view.removeEventListener("mousemove", onMove);
-    view.removeEventListener("mouseup", onEnd);
-}
-
-function hideMapGrid() {
-    onEnd();
-    view.removeEventListener("mousemove", showCoord);
-    $gm.$showMapGrid = false;
-}
-
-let lblPixelPoint: HTMLLabelElement;
-let lblGridPoint: HTMLLabelElement;
-
-function showCoord(e: MouseEvent) {
-    const { clientX, clientY } = e;
-    let dpr = window.devicePixelRatio;
-    let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-    lblPixelPoint.innerText = `像素坐标：${pt.x},${pt.y}`;
-    pt = getMap().screen2Map(pt.x, pt.y);
-    lblGridPoint.innerText = `格位坐标：${pt.x},${pt.y}`;
-}
 
 const BitMask = {
     1: 0xff,
@@ -206,59 +135,6 @@ function getCurMapWalkableMask() {
         mask = 0xff;
     }
     return mask;
-}
-
-function fillWalkable() {
-    fillGrids(getCurMapWalkableMask())
-}
-
-class DrawMapPathControl {
-
-
-    @jy.d_memoize
-    get view() {
-        const div = document.createElement("div");
-        btnEmpty = document.createElement("input");
-        btnEmpty.type = "button";
-        btnEmpty.value = "全部可走";
-        btnEmpty.addEventListener("click", function () {
-            if (confirm(`确定全部可走？`)) {
-                fillWalkable();
-            }
-        });
-        div.appendChild(btnEmpty);
-        div.appendChild(document.createTextNode("  "));
-        btnFull = document.createElement("input");
-        btnFull.type = "button";
-        btnFull.value = "全部不可走";
-        btnFull.addEventListener("click", function () {
-            if (confirm(`确定全部不可走？`)) {
-                fillGrids(0);
-            }
-        });
-        div.appendChild(btnFull);
-        div.appendChild(document.createElement("br"));
-        lblPixelPoint = document.createElement("label");
-        div.appendChild(lblPixelPoint);
-        div.appendChild(document.createElement("br"));
-        lblGridPoint = document.createElement("label");
-        div.appendChild(lblGridPoint);
-        div.appendChild(document.createElement("br"));
-        createRadio("不可走", 0, Const.radioName, div, false);
-        createRadio("可走", 1, Const.radioName, div, true);
-        for (let i = 2; i <= gridLevel; i++) {
-            createRadio(`可走${i}`, i, Const.radioName, div, true);
-        }
-        return div;
-    };
-
-    onToggle(flag: boolean) {
-        if (flag) {
-            showMapGrid();
-        } else {
-            hideMapGrid();
-        }
-    }
 }
 
 function getMap() {
@@ -307,7 +183,7 @@ export class StaggeredMapPath implements PathSolution<MapInfo> {
         txtGridLevel.value = gridLevel + "";
     }
 
-    readonly drawMapPathControl = new DrawMapPathControl();
+    readonly drawMapPathControl = getDrawMapPathControl(view);
 
     readonly areaGroupControl = getAreaGroupControl(view);
 
@@ -431,6 +307,112 @@ function getDataForJava(map: MapInfo) {//为了避免服务端数据结构变更
     return bytes;
 }
 
+
+function getDrawMapPathControl(view: HTMLElement) {
+    const div = document.createElement("div");
+    let btnEmpty = document.createElement("input");
+    btnEmpty.type = "button";
+    btnEmpty.value = "全部可走";
+    btnEmpty.addEventListener("click", function () {
+        if (confirm(`确定全部可走？`)) {
+            fillWalkable();
+        }
+    });
+    div.appendChild(btnEmpty);
+    div.appendChild(document.createTextNode("  "));
+    let btnFull = document.createElement("input");
+    btnFull.type = "button";
+    btnFull.value = "全部不可走";
+    btnFull.addEventListener("click", function () {
+        if (confirm(`确定全部不可走？`)) {
+            fillGrids(0);
+        }
+    });
+    div.appendChild(btnFull);
+    div.appendChild(document.createElement("br"));
+    let lblPixelPoint = document.createElement("label");
+    div.appendChild(lblPixelPoint);
+    div.appendChild(document.createElement("br"));
+    let lblGridPoint = document.createElement("label");
+    div.appendChild(lblGridPoint);
+    div.appendChild(document.createElement("br"));
+    createRadio("不可走", 0, Const.radioName, div, false);
+    createRadio("可走", 1, Const.radioName, div, true);
+    for (let i = 2; i <= gridLevel; i++) {
+        createRadio(`可走${i}`, i, Const.radioName, div, true);
+    }
+    return {
+        get view() {
+            return div
+        },
+        onToggle
+    }
+
+    function onToggle(flag: boolean) {
+        if (flag) {
+            showMapGrid();
+        } else {
+            hideMapGrid();
+        }
+    }
+
+    function showMapGrid() {
+        $gm.$showMapGrid = true;
+        //监听鼠标事件
+        view.addEventListener("mousedown", onBegin);
+        view.addEventListener("mousemove", showCoord);
+        $engine.invalidate();
+    }
+
+    function onBegin(e: MouseEvent) {
+        if ((e.target as HTMLElement).tagName.toLowerCase() !== "canvas") {
+            return
+        }
+        if (e.button == 0) {
+            view.addEventListener("mousemove", onMove);
+            view.addEventListener("mouseup", onEnd);
+            onMove(e);
+        }
+    }
+
+    function onMove(e: MouseEvent) {
+        const { clientX, clientY } = e;
+        //转换成格位坐标
+        let dpr = window.devicePixelRatio;
+        let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
+        pt = getMap().screen2Map(pt.x, pt.y);
+        //设置可走/不可走
+        setWalk(pt.x, pt.y, +$(`input[name=${Const.radioName}]:checked`).val());
+        $engine.invalidate();
+    }
+
+    function onEnd() {
+        view.removeEventListener("mousemove", onMove);
+        view.removeEventListener("mouseup", onEnd);
+    }
+
+    function hideMapGrid() {
+        onEnd();
+        view.removeEventListener("mousedown", onBegin);
+        view.removeEventListener("mousemove", showCoord);
+        $gm.$showMapGrid = false;
+    }
+
+
+    function showCoord(e: MouseEvent) {
+        const { clientX, clientY } = e;
+        let dpr = window.devicePixelRatio;
+        let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
+        lblPixelPoint.innerText = `像素坐标：${pt.x},${pt.y}`;
+        pt = getMap().screen2Map(pt.x, pt.y);
+        lblGridPoint.innerText = `格位坐标：${pt.x},${pt.y}`;
+    }
+
+    function fillWalkable() {
+        fillGrids(getCurMapWalkableMask())
+    }
+}
+
 function getAreaGroupControl(view: HTMLElement): EditMapControl {
     const div = document.createElement("div");
     let btnNew = document.createElement("input");
@@ -538,7 +520,6 @@ function getAreaGroupControl(view: HTMLElement): EditMapControl {
         $gm.$showMapGrid = true;
         //监听鼠标事件
         view.addEventListener("mousedown", onBegin);
-        view.addEventListener("mousemove", showCoord);
         $engine.invalidate();
         refreshPoints();
     }
@@ -641,7 +622,6 @@ function getAreaGroupControl(view: HTMLElement): EditMapControl {
 
     function hideMapGrid() {
         onEnd();
-        view.removeEventListener("mousemove", showCoord);
         view.addEventListener("mousedown", onBegin);
         $gm.$showMapGrid = false;
         clearPoints();
