@@ -170,6 +170,7 @@ function onMove(e: MouseEvent) {
 }
 
 function onEnd() {
+    view.removeEventListener("mousedown", onBegin);
     view.removeEventListener("mousemove", onMove);
     view.removeEventListener("mouseup", onEnd);
 }
@@ -557,9 +558,7 @@ function getAreaGroupControl(view: HTMLElement): EditMapControl {
         let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
         pt = getMap().screen2Map(pt.x, pt.y);
         let flag = +curSel.find(`input[name=${getGroupRadioName(group.id)}]:checked`).val();
-        if (flag) {
-            addPoint(pt.x, pt.y, group);
-        }
+        setPoint(pt.x, pt.y, group, flag);
         $engine.invalidate();
     }
 
@@ -571,11 +570,18 @@ function getAreaGroupControl(view: HTMLElement): EditMapControl {
         view.removeEventListener("mouseup", onEnd);
     }
 
-    function addPoint(x: number, y: number, group: AreaGroupItem) {
+    function setPoint(x: number, y: number, group: AreaGroupItem, flag: number) {
         //数据添加到children中
         let children = group.points
-        if (!children.find(pt => pt.x == x && pt.y == y)) {
-            children.push(getPoint(x, y))
+        let old = children.find(pt => pt.x == x && pt.y == y);
+        if (flag) {
+            if (!old) {
+                children.push(getPoint(x, y))
+                //在地图上显示
+                refreshPoints();
+            }
+        } else if (old) {
+            children.remove(old)
             //在地图上显示
             refreshPoints();
         }
@@ -595,7 +601,7 @@ function getAreaGroupControl(view: HTMLElement): EditMapControl {
         graphics.clear();
     }
 
-    function refreshPoints() {
+    function refreshPoints(refresh = true) {
         clearPoints();
         let group = getGroup();
         if (group) {
@@ -610,7 +616,9 @@ function getAreaGroupControl(view: HTMLElement): EditMapControl {
                     graphics.endFill();
                 }
             }
-            group.list.datalist({ data: group.points });
+            if (refresh) {
+                group.list.datalist({ data: group.points });
+            }
         }
     }
 
@@ -656,7 +664,7 @@ function getAreaGroupControl(view: HTMLElement): EditMapControl {
 
         let radioName = getGroupRadioName(id);
 
-        createRadio("不添加新坐标", 0, radioName, panelEle, false);
+        createRadio("删除坐标", 0, radioName, panelEle, false);
         createRadio("添加新坐标", 1, radioName, panelEle, true);
 
         let btnDel = document.createElement("input");
@@ -674,11 +682,13 @@ function getAreaGroupControl(view: HTMLElement): EditMapControl {
     }
 
     function clearAll(e: MouseEvent) {
-        let btn = e.currentTarget as HTMLInputElement;
-        let id = btn.getAttribute("groupId");
-        let group = groups.get(id);
-        group.points.length = 0;
-        refreshPoints();
+        if (confirm(`确认要清除所有点么？`)) {
+            let btn = e.currentTarget as HTMLInputElement;
+            let id = btn.getAttribute("groupId");
+            let group = groups.get(id);
+            group.points.length = 0;
+            refreshPoints();
+        }
     }
 
     function onPointSelect(idx: number, point: jy.Point) {
@@ -691,7 +701,7 @@ function getAreaGroupControl(view: HTMLElement): EditMapControl {
                     pt.selected = pt == point;
                 }
             }
-            refreshPoints();
+            refreshPoints(false);
         }
     }
 
