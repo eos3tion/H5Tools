@@ -8,7 +8,7 @@ import * as $http from "http";
 import { HGameEngine } from "./HGameEngine";
 import { AniDele } from "./AniDele";
 import { Core } from "../Core";
-import { PathSolution } from "../mappath/PathSolution";
+import { PathSolution, EditMapControl } from "../mappath/PathSolution";
 import { PB } from "../pb/PB";
 
 const enum CtrlName {
@@ -17,17 +17,40 @@ const enum CtrlName {
 }
 
 let curCtrl: string;
+const ctrlDict = {} as { [id: string]: EditMapControl };
 
 function mapPathCtrlInit() {
-    const drawMapPathControl = PathSolution.current.drawMapPathControl;
+    const current = PathSolution.current;
+
+
+    const drawMapPathControl = current.drawMapPathControl;
     $("#divMapPath").append(drawMapPathControl.view);
+    ctrlDict["divMapPath"] = drawMapPathControl;
+
+    const areaGroupControl = current.areaGroupControl;
+    if (areaGroupControl) {
+        $("#divAreaGroup").append(areaGroupControl.view);
+        ctrlDict["divAreaGroup"] = areaGroupControl;
+    }
 
     $("#accControl").accordion({
         onUnselect: checkSelect,
         onSelect: checkSelect
     });
 
+    for (let id in ctrlDict) {
+        const ctrl = ctrlDict[id];
+        if (ctrl.onInit) {
+            ctrl.onInit(currentMap);
+        }
+    }
+
+    return
+
     function checkSelect() {
+        jy.Global.callLater($checkSelect, 0)
+    }
+    function $checkSelect() {
         let select = $("#accControl").accordion("getSelected");
         let flag = false;
         let ctxId: string;
@@ -38,9 +61,18 @@ function mapPathCtrlInit() {
             }
             ctxId = ctx.id;
         }
-        curCtrl = ctxId;
-        drawMapPathControl.onToggle(flag);
-        $engine.invalidate();
+        if (curCtrl != ctxId) {
+            let old = ctrlDict[curCtrl];
+            if (old) {
+                old.onToggle(false);
+            }
+            curCtrl = ctxId;
+            let ctrl = ctrlDict[curCtrl];
+            if (ctrl) {
+                ctrl.onToggle(true);
+            }
+            $engine.invalidate();
+        }
     }
     checkSelect();
 }
@@ -96,6 +128,9 @@ btnEditGroup.on("click", editGroup);
 
 function editGroup() {
     $["messager"].prompt("", "添加分组标识", groupId => {
+        if (!groupId) {
+            return
+        }
         groupId = groupId.trim();
         const effs = $engine.effs;
         for (let i = 0; i < effs.length; i++) {
@@ -429,6 +464,12 @@ jy.on(AppEvent.CopyEffect, e => {
 function saveMap() {
     if (!currentMap) {
         return;
+    }
+    for (let id in ctrlDict) {
+        const ctrl = ctrlDict[id];
+        if (ctrl.onSave) {
+            ctrl.onSave(currentMap);
+        }
     }
     const mapCfgFile = path.join(Core.basePath, currentMap.path, ConstString.MapCfgFileName);
 

@@ -762,6 +762,10 @@ declare const enum TypeCheckerKey {
     Int = "int",
 
     LingYuArray = "lingyuArray",
+    /**
+     * 条件
+     */
+    Condition = "condition",
 }
 
 declare type Key = string | number;

@@ -1,6 +1,6 @@
 import { createRadio } from "../Core";
 import MapInfo = jy.MapInfo;
-export interface DrawMapPathControl {
+export interface EditMapControl {
     view: Element;
 
     /**
@@ -9,6 +9,18 @@ export interface DrawMapPathControl {
      *  false 关闭
      */
     onToggle(flag: boolean);
+
+    /**
+     * 存储地图之前调度
+     * @param map 
+     */
+    onSave?(map: MapInfo);
+
+    /**
+     * 加载完地图，初始时
+     * @param map 
+     */
+    onInit?(map: MapInfo);
 }
 export interface OnSaveOption {
     map: MapInfo,
@@ -32,7 +44,12 @@ export interface PathSolution<T extends MapInfo> {
     /**
      * 控件，用于绘制地图
      */
-    drawMapPathControl: DrawMapPathControl;
+    drawMapPathControl: EditMapControl;
+
+    /**
+     * 控件，用于绘制区域
+     */
+    areaGroupControl?: EditMapControl;
 
     /**
      * 初始设置地图数据  
