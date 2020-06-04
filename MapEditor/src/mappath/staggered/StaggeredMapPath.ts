@@ -221,13 +221,21 @@ class DrawMapPathControl {
         btnEmpty = document.createElement("input");
         btnEmpty.type = "button";
         btnEmpty.value = "全部可走";
-        btnEmpty.addEventListener("click", fillWalkable);
+        btnEmpty.addEventListener("click", function () {
+            if (confirm(`确定全部可走？`)) {
+                fillWalkable();
+            }
+        });
         div.appendChild(btnEmpty);
         div.appendChild(document.createTextNode("  "));
         btnFull = document.createElement("input");
         btnFull.type = "button";
         btnFull.value = "全部不可走";
-        btnFull.addEventListener("click", fillGrids(0));
+        btnFull.addEventListener("click", function () {
+            if (confirm(`确定全部不可走？`)) {
+                fillGrids(0);
+            }
+        });
         div.appendChild(btnFull);
         div.appendChild(document.createElement("br"));
         lblPixelPoint = document.createElement("label");
