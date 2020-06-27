@@ -823,7 +823,11 @@
                         }
                     }
                 } catch (e) {
-                    e.message = "第" + this.tn.line + "行出错:\n" + this.tn.source.split(/\n|\r\n/)[this.tn.line - 1] + "\nerror: " + e.message;
+                    var source = this.tn.source;
+                    var index = this.tn.index;
+                    e.message = "第" + this.tn.line + "行出错:\n" + 
+                    source.substring(source.lastIndexOf("\n",index),index) + 
+                    "\nerror: " + e.message;
                     throw e;
                 }
                 delete topLevel["name"];
