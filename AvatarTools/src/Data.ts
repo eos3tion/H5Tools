@@ -62,7 +62,7 @@ module jy {
                 const frame = frames[i];
                 if (frame) {
                     let { a, f, t, e, d } = frame;
-                    let dat = [a, f, t] as any[];
+                    let dat = [+a, +f, +t] as any[];
                     frameData[i] = dat;
                     if (e) {
                         let d3 = e as any;
@@ -98,7 +98,7 @@ module jy {
     }
 
     PstInfo.prototype.toData = function toData(this: PstInfo) {
-        let data = [this.type, this.rawSplitInfo, getData(this.frames)];
+        let data = [+this.type, this.rawSplitInfo, getData(this.frames)];
         if (this.extra) {
             data.push(this.extra);
         }
