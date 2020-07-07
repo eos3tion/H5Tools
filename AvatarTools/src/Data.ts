@@ -75,7 +75,7 @@ module jy {
                         if (!dat[3]) {
                             dat[3] = 0;
                         }
-                        dat[4] = d;
+                        dat[4] = +d;
                     }
                 } else {
                     frameData[i] = 0;
