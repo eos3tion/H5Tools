@@ -10,6 +10,7 @@ import { genManualAreaCode, getManualCodeInfo, hasManualAreaCode, getRawManualAr
 import ClientRegTemplate from "./ClientRegTemplate.js";
 import PluginLoader from "./PluginLoader.js";
 import asyncFileLoad from "./asyncFileLoad.js";
+import { loadTiaoJian } from "./ConditionTypeParser.js";
 
 
 hljs.loadLanguage("typescript");
@@ -334,7 +335,11 @@ export class ExcelDataSaver {
                     return cfg;
                 }
                 //可替换的配置内容的key
-                let replacableKeys = ["clientPath", "serverPath", "serverRegClass", "clientRegClass", "endScript", "endAction", "clientModule", "clientPreCheck", "serverPreCheck", "clientEndCheck", "serverEndCheck", "msgCode"];
+                let replacableKeys = ["clientPath", "serverPath",
+                    "serverRegClass", "clientRegClass",
+                    "endScript", "endAction", "clientModule",
+                    "clientPreCheck", "serverPreCheck", "clientEndCheck",
+                    "serverEndCheck", "msgCode", "tiaojian"];
                 let replacer = cfg.replacer;
                 if (!replacer) {
                     replacer = {};
@@ -395,6 +400,8 @@ class XLSXDecoder {
 
     }
     async init(gcfg: GlobalCfg, file: File, cPath: string, sPath: string, idx: number, cb: { (file: File, error: boolean, hasExtra: { hasClient?: boolean, hasServer?: boolean }) }, configKeyInfo: { cFileNames: Map<string, ConfigKeyBin>, sFileNames: Map<string, ConfigKeyBin> }, newSForbidden: { [index: string]: boolean }, useESModule: boolean) {
+       
+        loadTiaoJian(gcfg);
         cPath = cPath || "";
         sPath = sPath || "";
         let fre = path.parse(file.name);
@@ -1612,15 +1619,15 @@ async function solveCheck(url: string, desc: string, pData?: any) {
             throw Error(`执行${desc}[${url}]有误,${e.message}`);
         }
         if (result) {
-            const { type, msg } = result;
+            let { type, msg } = result;
             switch (type) {
                 case PreCheckResponseType.Success:
                     break;
                 case PreCheckResponseType.Warn:
-                    error(msg);
+                    error(desc + ":" + msg);
                     break;
                 case PreCheckResponseType.Error:
-                    alert(msg);
+                    alert(desc + ":" + msg);
                     throw Error(`执行${desc}[${url}]发现问题,${msg}`);
             }
         }

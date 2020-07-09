@@ -202,6 +202,18 @@ interface GlobalCfg {
      * code码的配置
      */
     msgCode: MsgCodeCfg[];
+
+    /**
+     * 条件表配置路径  
+     * JSON数据
+     */
+    tiaojian?: string;
+
+    /**
+     * 支持的条件函数  
+     * 所有函数都会将函数名转换成小写字符串
+     */
+    tiaojianFuncs?: string[]
 }
 
 interface FileConfig {
@@ -735,7 +747,8 @@ declare const enum TypeCheckerIndex {
     Date = 6,
     Time = 7,
     DateTime = 8,
-    Int32 = 9
+    Int32 = 9,
+    Condition = 10,
 }
 
 
@@ -765,7 +778,7 @@ declare const enum TypeCheckerKey {
     /**
      * 条件
      */
-    Condition = "condition",
+    Condition = "tiaojian",
 }
 
 declare type Key = string | number;

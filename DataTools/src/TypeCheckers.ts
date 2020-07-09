@@ -1,3 +1,5 @@
+import { decode } from "./ConditionTypeParser.js";
+
 /**
  * 数值类型在解析json的时候，字符串会多两个""，数值更节省
  * 
@@ -380,7 +382,6 @@ class DateTimeChecker extends AbsTypeChecker {
 
     def = 0;
     idx = TypeCheckerIndex.DateTime;
-    solveString = `new Date({value}*10000)`;
     check(value: string) {
         let t = value.split(" ");
         let date = t[0];
@@ -403,6 +404,23 @@ class DateTimeChecker extends AbsTypeChecker {
         return value;
     }
 }
+
+
+class ConditionChecker extends AbsTypeChecker {
+    type = "Condition";
+    javaType = "String";
+    def = undefined;
+    idx = TypeCheckerIndex.Condition;
+    check(value: string) {
+        decode(value);
+        return value;
+    }
+    serverCheck(value: string) {
+        let data = decode(value);
+        return JSON.stringify(data);
+    }
+}
+
 
 /**
  * 用于支持灵娱的数组
@@ -483,11 +501,6 @@ class LingYuArrayChecker extends AbsTypeChecker {
         return value;
     }
 }
-
-class ConditionChecker extends AbsTypeChecker {
-    type = "CoditionNode";
-}
-
 /**
  * ValueTypeError
  */

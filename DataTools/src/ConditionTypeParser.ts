@@ -1,59 +1,34 @@
-const enum Type {
+const enum RawOP {
     /**
      * 具体值
      */
     Value = 1,
+    BracketsMask = 0b100000000000,
     /**
      * 括号
      */
-    Brackets = 0b1000,
+    Brackets = BracketsMask | 0,
     /**
      * 函数
      */
-    Function = 0b1001,
+    Function = BracketsMask | 1,
     /**
      * 比较  
      * = > < <> >= <=
      */
     Comperation = 2,
-}
-
-/**
- * 比较符
- */
-const enum Comperation {
     /**
-     * =
+     * 条件标识
      */
-    Equal = 0,
-    /**
-     * <
-     */
-    LessThan = 1,
-    /**
-     * >
-     */
-    GreaterThan = 2,
-    /**
-     * <>
-     */
-    NotEqual = 3,
-    /**
-     * <=
-     */
-    LessThanOrEqual = 4,
-    /**
-     * >=
-     */
-    GreaterThanOrEqual = 5,
+    TiaoJianKey = 3,
 }
 
 
 interface Node {
     parent: Node;
-    type: Type;
-    stacks: Node[];
-    value: number | string;
+    op: RawOP;
+    nodes: Node[];
+    value: string;
     /**
      * 原始内容
      */
@@ -66,11 +41,51 @@ interface Node {
      * 结束索引
      */
     end: number;
+    close?: boolean;
 }
 
 
 const Comparations =
-    ["=", "<", ">"]
+    ["=", "<", ">"];
+export interface TiaoJianCfg {
+    id: number;
+    key: string;
+    min: number;
+    max: number;
+    layer: string;
+}
+
+let tiaojian: { [key: string]: TiaoJianCfg };
+let _supportedFunctions: string[];
+let _tiaojianPath: string;
+
+export function loadTiaoJian(gcfg: GlobalCfg) {
+    const path: typeof import("path") = nodeRequire("path");
+    const fs: typeof import("fs") = nodeRequire("fs");
+    let { tiaojian: tiaojianPath, tiaojianFuncs } = gcfg;
+    _tiaojianPath = tiaojianPath;
+    tiaojian = null;
+    if (tiaojianPath && fs.existsSync(tiaojianPath)) {
+        let msg = fs.readFileSync(tiaojianPath, "utf8");
+        let list: TiaoJianCfg[];
+        try {
+            list = JSON.parse(msg);
+        } catch (e) {
+            throw Error(`[tiaojian]配置，${tiaojianPath}中的数据不是JSON，无法解析`)
+        }
+        let len = list.length;
+        if (len > 0) {
+            tiaojian = {};
+            for (let i = 0; i < len; i++) {
+                const cfg = list[i];
+                tiaojian[cfg.key] = cfg;
+            }
+        }
+    }
+    if (tiaojianFuncs) {
+        _supportedFunctions = tiaojianFuncs.map(v => v.toLowerCase());
+    }
+}
 
 export function decode(content: string) {
     if (!content) {
@@ -82,10 +97,9 @@ export function decode(content: string) {
         raw: content.trim(),
         start: pos,
         end: len,
-        stacks: []
+        nodes: []
     } as Node;
     let root = nod;
-    let start = pos;
     while (pos < len) {
         let char = content.charAt(pos);
         if (char == "(") {
@@ -93,42 +107,43 @@ export function decode(content: string) {
             let func = raw.trim();
             let node = {
                 start: pos + 1,
-                stacks: [],
-                parent: nod,
+                nodes: [],
+                parent: nod
             } as Node;
-            nod.stacks.push(node);
+            nod.nodes.push(node);
             if (func) {
-                nod.type = Type.Function;
-                nod.value = func;
+                nod.op = RawOP.Function;
+                nod.value = func.toLowerCase();
             } else {
-                nod.type = Type.Brackets;
+                nod.op = RawOP.Brackets;
             }
             nod = node;
         } else if (char == ",") {
             let raw = content.substring(nod.start, pos);
             nod.end = pos;
             nod.raw = raw;
-            if (!nod.type) {
-                nod.type = Type.Value;
+            if (!nod.op) {
+                nod.op = RawOP.Value;
+                nod.value = raw;
             }
             let value = raw.trim();
             do {
                 nod = nod.parent;
-            } while ((nod.type & 0b1000) != 0b1000)
+            } while (nod && !isBrackedsType(nod.op))
             let node = {
                 start: pos + 1,
-                stacks: [],
+                nodes: [],
                 parent: nod,
                 raw,
                 value,
             } as Node;
-            nod.stacks.push(node);
+            nod.nodes.push(node);
             nod = node;
         } else if (Comparations.indexOf(char) > -1) {
-            if (nod.type) {
+            if (nod.op) {
                 throw Error(`${char}左边没有正确的比较值，请检查：${content.substring(0, pos)}`)
             }
-            nod.type = Type.Comperation;
+            nod.op = RawOP.Comperation;
             let nextStart = pos + 1;
             let nextChar = content.charAt(pos + 1);
             if (char == "<") {
@@ -145,11 +160,11 @@ export function decode(content: string) {
             let raw = content.substring(nod.start, pos);
             let node = {
                 start: nextStart,
-                stacks: [],
+                nodes: [],
                 parent: nod
             } as Node;
-            nod.stacks.push({
-                type: 1,
+            nod.nodes.push({
+                op: 1,
                 start: nod.start,
                 end: pos,
                 parent: nod,
@@ -160,16 +175,123 @@ export function decode(content: string) {
             pos = nextStart - 1;
         } else if (char == ")") {
             nod.end = pos;
-            nod.raw = content.substring(nod.start, pos);
-            if (!nod.type) {
-                nod.type = Type.Value;
+            let raw = content.substring(nod.start, pos);
+            nod.raw = raw;
+            if (!nod.op) {
+                nod.op = RawOP.Value;
+                nod.value = raw;
             }
             do {
                 nod = nod.parent;
-                nod.end = pos;
-            } while ((nod.type & 0b1000) != 0b1000)
+                if (nod) {
+                    nod.end = pos;
+                    if (isBrackedsType(nod.op)) {
+                        nod.close = true;
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            } while (true)
+
         }
         pos++;
     }
-    return root;
+    checkNode(root);
+    return getOutData(root);
+}
+
+
+
+function isBrackedsType(op: RawOP) {
+    return (op & RawOP.BracketsMask) == RawOP.BracketsMask
+}
+
+/**
+ * 检查数据
+ * @param root 
+ */
+function checkNode(node: Node) {
+    let { op, nodes } = node;
+    if (op == RawOP.Comperation) {
+        let ns = nodes.filter(n => n.value || n.nodes.length)
+        //检查子节点
+        if (ns.length != 2) {
+            throw Error(`${node.raw}为比较操作，但是有空数据`)
+        }
+        //检查数据是否在`TiaoJian`表中
+        if (tiaojian) {
+            let findCfg: TiaoJianCfg;
+            let value: number;
+            for (let i = 0; i < 2; i++) {
+                const nd = ns[i];
+                let nop = RawOP.Value;
+                if (nop == RawOP.Value) {
+                    if (!findCfg) {
+                        findCfg = tiaojian[nd.value];
+                        if (findCfg) {
+                            nd.op = RawOP.TiaoJianKey;
+                        }
+                    } else {
+                        value = +nd.value;
+                    }
+                } else if (isBrackedsType(nop)) {
+                    checkNode(nd);
+                } else {
+                    throw Error(`配置的条件[${node.raw}]的[${node.value}]两边填写的数据有误`);
+                }
+            }
+            if (findCfg) {
+                if (value != null) {
+                    let { min, max } = findCfg;
+                    if (min != null && value < min) {
+                        throw Error(`配置的条件[${node.raw}]，低于条件的最小值[${min}]`)
+                    }
+                    if (max != null && value > max) {
+                        throw Error(`配置的条件[${node.raw}]，高于条件的最大值[${max}]`)
+                    }
+                }
+            } else {
+                throw Error(`无法在指定条件表[${_tiaojianPath}]找到对应条件，请检查[${node.raw}]`)
+            }
+        }
+    } else if (op == RawOP.Value) {
+        //不做处理
+    } else {
+        if (isBrackedsType(op)) {
+            if (op == RawOP.Function) {
+                if (_supportedFunctions && _supportedFunctions.indexOf(node.value) == -1) {
+                    throw Error(`未支持的函数[${node.value}]`)
+                }
+            }
+            if (!node.close) {
+                throw Error(`括号未闭合，请检查[${node.raw}]`)
+            }
+        }
+        nodes.forEach(node => checkNode(node));
+    }
+}
+
+const enum Operator {
+    Value = 0,//值
+    Function = 1,//函数
+    Comparation = 2,//比较
+    TiaoJianKey = 3,//条件key
+}
+
+const OpTransfer = {
+    [RawOP.Value]: Operator.Value,
+    [RawOP.Function]: Operator.Function,
+    [RawOP.Comperation]: Operator.Comparation,
+    [RawOP.TiaoJianKey]: Operator.TiaoJianKey
+}
+
+function getOutData(node: Node) {
+    let { op, value, nodes } = node;
+    let data = {
+        op: OpTransfer[op],
+        value,
+        nodes: nodes && nodes.length && nodes.map(getOutData)
+    }
+    return data;
 }
