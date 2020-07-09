@@ -42,6 +42,7 @@ function writeCommonBinData(fname: string, directory: string, data: any[]) {
                 switch (headType) {
                     case TypeCheckerIndex.Any:
                     case TypeCheckerIndex.String:
+                    case TypeCheckerIndex.Condition:
                         if (def != undefined && def !== 0 /*json的版本，是使用不同类型的数值 0 来代表默认值的 */) {
                             strDef = def + "";
                         } else {
