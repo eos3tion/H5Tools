@@ -336,16 +336,25 @@ function getDrawMapPathControl(view: HTMLElement) {
     let lblGridPoint = document.createElement("label");
     div.appendChild(lblGridPoint);
     div.appendChild(document.createElement("br"));
-    createRadio("不可走", 0, Const.radioName, div, false);
-    createRadio("可走", 1, Const.radioName, div, true);
-    for (let i = 2; i <= gridLevel; i++) {
-        createRadio(`可走${i}`, i, Const.radioName, div, true);
-    }
+
+    let checked = false;
     return {
         get view() {
+            if (!checked) {
+                checkComponent();
+            }
             return div
         },
         onToggle
+    }
+
+    function checkComponent() {
+        createRadio("不可走", 0, Const.radioName, div, false);
+        createRadio("可走", 1, Const.radioName, div, true);
+        for (let i = 2; i <= gridLevel; i++) {
+            createRadio(`可走${i}`, i, Const.radioName, div, true);
+        }
+        checked = true;
     }
 
     function onToggle(flag: boolean) {
