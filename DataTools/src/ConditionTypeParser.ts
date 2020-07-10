@@ -293,6 +293,6 @@ function getOutData(node: Node) {
         op: OpTransfer[op],
         value
     } as Node;
-    data.nodes = nods;
+    nods && (data.nodes = nods);
     return data;
 }
