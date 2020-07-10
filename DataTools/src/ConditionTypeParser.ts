@@ -26,7 +26,7 @@ const enum RawOP {
 
 interface Node {
     parent: Node;
-    op: RawOP;
+    op: number;
     nodes: Node[];
     value: string;
     /**
@@ -288,10 +288,11 @@ const OpTransfer = {
 
 function getOutData(node: Node) {
     let { op, value, nodes } = node;
+    let nods = nodes && nodes.length && nodes.map(getOutData)
     let data = {
         op: OpTransfer[op],
-        value,
-        nodes: nodes && nodes.length && nodes.map(getOutData)
-    }
+        value
+    } as Node;
+    data.nodes = nods;
     return data;
 }
