@@ -197,6 +197,12 @@ export function decode(content: string) {
         }
         pos++;
     }
+    if (nod.value == undefined) {
+        nod.op = RawOP.Value
+        let raw = content.substring(nod.start, pos);
+        nod.raw = raw;
+        nod.value = raw;
+    }
     checkNode(root);
     return getOutData(root);
 }
