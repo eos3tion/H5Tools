@@ -173,7 +173,7 @@ class BooleanChecker extends AbsTypeChecker {
 
     def = 0;
     idx = TypeCheckerIndex.Bool;
-    solveString = `!!{value}`;
+    solveString = true;
     check(value: string) {
         if (!+value || value == "false") {
             return 0;
@@ -317,7 +317,8 @@ class DateChecker extends AbsTypeChecker {
 
     def = 0;
     idx = TypeCheckerIndex.Date;
-    solveString = `new Date({value}*10000)`;
+
+    solveString = true;
 
     check(value: string) {
         if (!checkDate(value)) {
@@ -350,7 +351,7 @@ class TimeChecker extends AbsTypeChecker {
     def = 0;
 
     idx = TypeCheckerIndex.Time;
-    solveString = `new TimeVO({value})`;
+    solveString = true;
     check(value: string) {
         let time = checkTime(value);
         if (!time) {
@@ -382,6 +383,7 @@ class DateTimeChecker extends AbsTypeChecker {
 
     def = 0;
     idx = TypeCheckerIndex.DateTime;
+    solveString = true;
     check(value: string) {
         let t = value.split(" ");
         let date = t[0];
@@ -411,6 +413,7 @@ class ConditionChecker extends AbsTypeChecker {
     javaType = "String";
     def = undefined;
     idx = TypeCheckerIndex.Condition;
+    solveString = true;
     check(value: string) {
         decode(value);
         return value;

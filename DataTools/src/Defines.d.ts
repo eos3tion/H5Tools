@@ -435,9 +435,11 @@ interface TypeChecker {
      * @memberOf TypeChecker
      */
     getOutValue(v: any, def: any): any;
-    solveString?: string;
 
-    solveJavaString?: string;
+    /**
+     * 是否为特殊字符串，需要转义
+     */
+    solveString?: boolean;
 
 }
 
