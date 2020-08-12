@@ -195,6 +195,10 @@ function checkFile(files: FileArray, parent: string = "") {
                     let dirs = re.dir.split(path.sep);
                     let key = dirs[dirs.length - 1];
                     goted = { img: img, data: data, key: key };
+                    //检查是否有pst文件
+                    if (fs.existsSync(path.join(re.dir, "pst.json"))) {
+                        return alert(`您拖入的文件是使用"pak"进行打包的，请检查`)
+                    }
                 }
             }
             if (goted) {
@@ -202,7 +206,6 @@ function checkFile(files: FileArray, parent: string = "") {
             }
         }
     }
-    return null;
 }
 
 
