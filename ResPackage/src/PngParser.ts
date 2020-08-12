@@ -99,7 +99,7 @@ export class PngParser implements IBlock {
                     for (let x = 0; x < width; x++) {
                         idx += 3;
                         let a = buffer[idx++];
-                        if (a >= alpha) {
+                        if (a > alpha) {
                             if (left > x) {
                                 left = x;
                             }
