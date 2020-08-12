@@ -25,6 +25,13 @@ var GrowingPacker = (function () {
                 else
                     block.fit = this.growNode(block.w, block.h);
             }
+            if (gap > 0) {
+                for (n = 0; n < len; n++) {
+                    block = blocks[n];
+                    block.w -= gap;
+                    block.h -= gap;
+                }
+            }
             return blocks;
         },
 
