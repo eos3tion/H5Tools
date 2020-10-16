@@ -134,7 +134,10 @@ export default class PBMsgDictTemplate {
             let bin = keyDict[key];
             let parentKey = bin.parentKey;
             if (parentKey) {
-                bin.value = keyDict[parentKey].value;
+                let parent = keyDict[parentKey];
+                if (parent) {
+                    bin.value = parent.value;
+                }
             }
         }
 
