@@ -314,10 +314,10 @@ export class GridMapPath implements PathSolution<MapInfo> {
 }
 
 function getDataB64(pathdata: Uint8Array) {
-    let v = pathdata.find(v => v != 0);
-    if (v != undefined) {//检查pathdata中的数据,如果全部可走，则返回空
-        return egret.Base64Util.encode(pathdata.buffer);
-    }
+    // let v = pathdata.find(v => v != 0);
+    // if (v != undefined) {//检查pathdata中的数据,如果全部可走，则返回空
+    return egret.Base64Util.encode(pathdata.buffer);
+    // }
 }
 
 function getDataForJava(map: MapInfo) {//为了避免服务端数据结构变更，减少
