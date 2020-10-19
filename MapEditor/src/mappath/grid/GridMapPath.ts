@@ -272,7 +272,9 @@ export class GridMapPath implements PathSolution<MapInfo> {
         out.columns = current.columns;
         out.rows = current.rows;
         let pathdata = current.pathdata;
-        out.pathdataB64 = getDataB64(pathdata);
+        if (pathdata) {
+            out.pathdataB64 = getDataB64(pathdata);
+        }
     }
 
     afterSave(opt: OnSaveOption) {
