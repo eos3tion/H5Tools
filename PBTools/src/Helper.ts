@@ -72,10 +72,10 @@ export function writeFile(fname: string, directory: string, data: string, otherC
     let outpath = path.join(directory, fname);
     try {
         // 检查是否有原始文件，检查文件的原始内容和去除了下面信息之后的内容是否相同
-		/**
-		 * 使用JunyouProtoTools，从 ${path} 生成
-		 * 生成时间 ${createTime}
-		 **/
+        /**
+         * 使用JunyouProtoTools，从 ${path} 生成
+         * 生成时间 ${createTime}
+         **/
         if (fs.existsSync(outpath)) {//有原始文件
             let originContent = fs.readFileSync(outpath, "utf8");
             if (minifyCode(originContent) == minifyCode(data)) {
@@ -94,7 +94,12 @@ export function writeFile(fname: string, directory: string, data: string, otherC
 }
 
 export function getTempPath() {
-    return path.join(electron.remote.app.getAppPath(), Const.BasePath);
+    const app = electron.remote.app;
+    if (process.platform === "win32") {
+        return path.join(app.getAppPath(), Const.BasePath);
+    } else {
+        return path.join(app.getPath("temp"), Const.BasePath);
+    }
 }
 
 export const progress = new Progress()
