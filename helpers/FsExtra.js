@@ -8,7 +8,7 @@ var FsExtra = (function () {
             throw Error("路径无效" + paths);
         }
         var p = paths[0];
-        if (!fs.existsSync(p)) {
+        if (process.platform==="win32"&&!fs.existsSync(p)) {
             throw Error("没有根目录" + p);
         }
         for (var i = 1, len = paths.length; i < len; i++) {
