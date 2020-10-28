@@ -76,6 +76,12 @@ function createWindow() {
     localShortcut.register(contents, "CommandOrControl+V", () => {
       contents.paste();
     });
+    process.env.PATH = [
+      './node_modules/.bin',
+      '/.nodebrew/current/bin',
+      '/usr/local/bin',
+      process.env.PATH
+    ].join(':');
   }
 }
 
