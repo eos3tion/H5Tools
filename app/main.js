@@ -48,17 +48,35 @@ function createWindow() {
   // and load the index.html of the app.
   // http://h5tools.client.jy/index.html
   win.loadURL(homePage);
-
+  let contents = win.webContents;
   // Open the DevTools.
-  win.webContents.openDevTools();
+  contents.openDevTools();
 
   // Emitted when the window is closed.
   win.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    win = null;
+    if (process.platform !== 'darwin') {
+      isquit = true;
+    }
+    if (isquit) {
+      win = null;
+    } else {
+      e.preventDefault();
+      win.hide();
+    }
   });
+
+  if (process.platform === "darwin") {
+    const localShortcut = require('electron-localshortcut');
+    localShortcut.register(contents, "CommandOrControl+A", () => {
+      contents.selectAll();
+    });
+    localShortcut.register(contents, "CommandOrControl+C", () => {
+      contents.copy();
+    });
+    localShortcut.register(contents, "CommandOrControl+V", () => {
+      contents.paste();
+    });
+  }
 }
 
 // This method will be called when Electron has finished
