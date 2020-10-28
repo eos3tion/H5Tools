@@ -148,8 +148,9 @@ export default class ServerProxy extends ServerProxy2 {
 
 
         //将文件写入指定文件
-        FsExtra.writeFileSync(path.join(basePath, Const.ProtoFilePath), protoContent);
-
+        const protoPath = path.join(basePath, Const.ProtoFilePath);
+        FsExtra.writeFileSync(protoPath, protoContent);
+        log(`成功写入${protoPath}`, "#0f0");
         FsExtra.mkdirs(javaPath);
         //执行protoc编译成java文件
         await execAsync({ cmd: this._protocPath, cwd: basePath }, `--java_out=${Const.JavaFileBase}/`, Const.ProtoFilePath);
