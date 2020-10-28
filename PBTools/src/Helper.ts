@@ -102,6 +102,15 @@ export function getTempPath() {
     }
 }
 
+export function getDataPath(url: string) {
+    const app = electron.remote.app;
+    if (process.platform === "win32") {
+        return path.join(app.getAppPath(), url);
+    } else {
+        return path.join(app.getPath("appData"), url);
+    }
+}
+
 export const progress = new Progress()
 progress.bindProgress($g("progress") as HTMLProgressElement).bindLabel($g("lblProgress"))
 

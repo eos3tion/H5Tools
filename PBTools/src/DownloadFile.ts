@@ -3,6 +3,7 @@ import * as _path from "path";
 import * as _fs from "fs";
 import * as _url from "url";
 import * as _http from "http";
+import { getDataPath } from "./Helper";
 
 /**
  * 检查并下载文件
@@ -11,10 +12,9 @@ import * as _http from "http";
  */
 export function checkAndDownloadFile(localPath: string, remotePath: string) {
     return new Promise<string>((resolve, reject) => {
-        const electron: typeof _electron = nodeRequire("electron");
         const path: typeof _path = nodeRequire("path");
         const fs: typeof _fs = nodeRequire("fs");
-        let binPath = path.join(electron.remote.app.getAppPath(), localPath);
+        let binPath = getDataPath(localPath);
         let baseDir = path.dirname(binPath);
         if (fs.existsSync(binPath)) {//没有找到pngquant文件
             resolve(binPath);

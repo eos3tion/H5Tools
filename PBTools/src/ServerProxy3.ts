@@ -93,12 +93,23 @@ export default class ServerProxy extends ServerProxy2 {
         if (!checkCmdIsOK("javac", ["-version"])) {
             return alert("javac无法正常执行，请检查jdk是否正常安装，检查环境变量是否设置正常");
         }
-        //由于jar.exe并无类似`-version`的指令，可正常返回状态0，默认 javac 有则 jar 可正常执行
-        //检查/下载
-        try {
-            this._protocPath = await checkAndDownloadFile(Const.ProtocPath, Const.ProtocPath);
-        } catch (e) {
-            return alert(`${Const.ProtocPath}下载失败，请检查网络`)
+        if (process.platform === "win32") {
+            //由于jar.exe并无类似`-version`的指令，可正常返回状态0，默认 javac 有则 jar 可正常执行
+            //检查/下载
+            try {
+                this._protocPath = await checkAndDownloadFile(Const.ProtocPath, Const.ProtocPath);
+            } catch (e) {
+                return alert(`${Const.ProtocPath}下载失败，请检查网络`)
+            }
+        } else {
+            //检查一下路径 `/usr/local/bin/protoc` brew 默认安装路径
+            const brewPath = "/usr/local/bin/protoc";
+            if (fs.existsSync(brewPath)) {
+                this._protocPath = brewPath;
+            } else if (!checkCmdIsOK("protoc", ["--version"])) {
+                alert("protoc无法正常执行，请检查protoc是否正常安装，检查环境变量是否设置正常");
+                this._protocPath = "protoc";
+            }
         }
 
         try {
