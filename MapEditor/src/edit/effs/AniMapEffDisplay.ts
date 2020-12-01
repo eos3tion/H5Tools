@@ -1,10 +1,10 @@
 import { FileArray, MapEffRender, MapEffFactory } from "./MapEffDisplay";
 import * as $path from "path";
-import { Core } from "../../Core";
 const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
-import { addRes } from "../../res/Res";
 const fs: typeof $fs = nodeRequire("fs");
+import { Core } from "../../Core";
+import { addRes } from "../../res/Res";
 
 const anis: { [index: string]: jy.AniInfo } = $DD.ani = {};
 
@@ -58,6 +58,7 @@ function prepare(key: string, dataPath?: string, imgPath?: string) {
         addRes(`${jy.ResPrefix.Ani}${key}/${filename}`, imgPath);
         anis[key] = ani;
     }
+    return true;
 }
 
 
@@ -69,50 +70,50 @@ function checkAniFile(files: FileArray, parent: string = "") {
     // 遍历文件，检查文件是否匹配
     for (let i = 0, len = files.length; i < len; i++) {
         let file = files[i];
-        if (path) { // 如果是Electron环境
-            let p: string;
-            if (typeof file === "string") {
-                p = path.join(parent, <string>file);
-            } else {
-                // 检查路径
-                p = file["path"];
+        let p: string;
+        if (typeof file === "string") {
+            p = path.join(parent, <string>file);
+        } else {
+            // 检查路径
+            p = file["path"];
+        }
+        let fstats = fs.statSync(p);
+        // 如果是文件夹
+        if (fstats.isDirectory()) {
+            goted = checkAniFile(fs.readdirSync(p), p);
+        } else if (fstats.isFile()) {// 检查文件
+            let re = path.parse(p);
+            if (re.ext == ".png") {
+                imgPath = p;
+            } else if (re.base == ConstString.AniDataFile) {
+                dataPath = p;
             }
-            let fstats = fs.statSync(p);
-            // 如果是文件夹
-            if (fstats.isDirectory()) {
-                goted = checkAniFile(fs.readdirSync(p), p);
-            } else if (fstats.isFile()) {// 检查文件
-                let re = path.parse(p);
-                if (re.ext == ".png") {
-                    imgPath = p;
-                } else if (re.base == ConstString.AniDataFile) {
-                    dataPath = p;
-                }
-                if (imgPath && dataPath) {
-                    // 得到上级目录
-                    let key = path.basename(re.dir);
-                    goted = { imgPath, dataPath, key };
-                }
+            if (imgPath && dataPath) {
+                // 得到上级目录
+                let key = path.basename(re.dir);
+                goted = { imgPath, dataPath, key };
             }
-            if (goted) {
-                return goted;
-            }
+        }
+        if (goted) {
+            return goted;
+        }
+
+    }
+}
+
+async function checkAndGetRender(files: FileList) {
+    const goted = checkAniFile(files)
+    if (goted) {
+        const key = goted.key;
+        if (prepare(key, goted.dataPath, goted.imgPath)) {
+            let render = jy.recyclable(AniMapEffRender);
+            render.create(key);
+            return render;
         }
     }
 }
 
-function checkFile(files: FileArray, parent?: string) {
-    const goted = checkAniFile(files, parent)
-    if (goted) {
-        const key = goted.key;
-        prepare(key, goted.dataPath, goted.imgPath)
-        let render = jy.recyclable(AniMapEffRender);
-        render.create(key);
-        return render;
-    }
-}
-
-function create(eff: MapEffData) {
+async function create(eff: MapEffData) {
     let uri = eff.uri;
     prepare(uri)
     let render = jy.recyclable(AniMapEffRender);
@@ -121,9 +122,9 @@ function create(eff: MapEffData) {
 }
 
 export const AniMapEffFactory = {
-    checkFile,
+    checkAndGetRender,
     create,
-    prepare: function (effData: MapEffData) {
+    prepare: async function (effData: MapEffData) {
         prepare(effData.uri);
     },
 } as MapEffFactory

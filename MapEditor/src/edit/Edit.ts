@@ -186,13 +186,13 @@ function onDrop(e: DragEvent) {
 }
 
 
-function setData(map: jy.MapInfo) {
+async function setData(map: jy.MapInfo) {
     currentMap = map;
     let effs = map.effs;
     if (effs) {
-        prepareEffs(effs);
+        await prepareEffs(effs);
     }
-    egret.runEgret();
+    egret.runEgret({ renderMode: "webgl" });
 }
 
 let lx: number, ly: number;
@@ -359,11 +359,11 @@ jy.on(AppEvent.RemoveEffect, e => {
     refreshEffectList();
 })
 
-jy.on(AppEvent.CopyEffect, e => {
+jy.on(AppEvent.CopyEffect, async e => {
     let data = e.data as MapEffData;
     data.x += 50;
     data.y += 50;
-    let render = createEff(data);
+    let render = await createEff(data);
     if (render) {
         let dele = new AniDele(data, render);
         $engine.effs.pushOnce(dele);

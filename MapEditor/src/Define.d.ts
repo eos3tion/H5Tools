@@ -78,6 +78,11 @@ interface GlobalCfg {
      * 特效路径，默认使用 "../a" 目录
      */
     effectPath?: string;
+
+    /**
+     * 龙骨资源目录，默认使用"../dbone"目录
+     */
+    dbonePath?: string;
 }
 
 /**

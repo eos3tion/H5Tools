@@ -24,12 +24,13 @@ class BinLoader implements Res.ResLoader {
             default:
                 try {
                     data = fs.readFileSync(item.url);
-                } catch{
+                } catch {
                     state = jy.RequestState.FAILED;
                 }
                 break;
         }
         item.state = state;
+        item.data = data;
         callback.callAndRecycle(item);
 
     }
@@ -72,8 +73,8 @@ class ImageLoader implements Res.ResLoader {
     }
 }
 Res.regAnalyzer(Res.ResItemType.Binary, new BinLoader());
-Res.regAnalyzer(Res.ResItemType.Binary, new BinLoader());
-Res.regAnalyzer(Res.ResItemType.Binary, new BinLoader());
+Res.regAnalyzer(Res.ResItemType.Json, new BinLoader("json"));
+Res.regAnalyzer(Res.ResItemType.Text, new BinLoader("text"));
 Res.regAnalyzer(Res.ResItemType.Image, new ImageLoader());
 
 

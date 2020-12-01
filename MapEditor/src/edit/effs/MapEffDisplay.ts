@@ -1,5 +1,6 @@
 import { AniDele } from "../AniDele";
 import { AniMapEffFactory } from "./AniMapEffDisplay";
+import { DBoneMapEffFactory } from "./DBoneMapEffDisplay";
 
 export interface MapEffRender {
     display: egret.DisplayObject;
@@ -12,10 +13,10 @@ export interface FileArray {
 }
 
 export interface MapEffFactory {
-    checkFile(files: FileArray, parent?: string): jy.Recyclable<MapEffRender> | void;
+    checkAndGetRender(files: FileList): Promise<jy.Recyclable<MapEffRender> | void>;
 
-    prepare(effData: MapEffData): void;
-    create(effData: MapEffData): jy.Recyclable<MapEffRender> | void;
+    prepare(effData: MapEffData): Promise<void>;
+    create(effData: MapEffData): Promise<jy.Recyclable<MapEffRender> | void>;
 }
 
 const dict = {} as { [type: number]: MapEffFactory };
@@ -37,7 +38,7 @@ export async function checkDrop(e: DragEvent) {
     let files = e.dataTransfer.files;
     for (let type in dict) {
         const factory = dict[type];
-        let render = await factory.checkFile(files);
+        let render = await factory.checkAndGetRender(files);
         if (render) {
             let { clientX, clientY } = e;
             //将坐标转换到game上
@@ -51,20 +52,20 @@ export async function checkDrop(e: DragEvent) {
     }
 }
 
-export function prepareEffs(effDatas: MapEffData[]) {
+export async function prepareEffs(effDatas: MapEffData[]) {
     for (let i = 0; i < effDatas.length; i++) {
         let eff = effDatas[i];
         let factory = getFactory(eff.type);
         if (factory) {
-            factory.prepare(eff);
+            await factory.prepare(eff);
         }
     }
 }
 
-export function createEffs(effDatas: MapEffData[], effs: AniDele[]) {
+export async function createEffs(effDatas: MapEffData[], effs: AniDele[]) {
     for (let i = 0; i < effDatas.length; i++) {
         let eff = effDatas[i];
-        let render = createEff(eff);
+        let render = await createEff(eff);
         if (render) {
             let dele = new AniDele(eff, render);
             effs.push(dele);
@@ -72,7 +73,7 @@ export function createEffs(effDatas: MapEffData[], effs: AniDele[]) {
     }
 }
 
-export function createEff(eff: MapEffData) {
+export async function createEff(eff: MapEffData) {
     let factory = getFactory(eff.type);
     if (factory) {
         return factory.create(eff);
@@ -80,4 +81,5 @@ export function createEff(eff: MapEffData) {
 }
 
 
-regMapEffFactory(jy.MapEffType.Ani, AniMapEffFactory)
+regMapEffFactory(jy.MapEffType.Ani, AniMapEffFactory);
+regMapEffFactory(jy.MapEffType.DBone, DBoneMapEffFactory);
