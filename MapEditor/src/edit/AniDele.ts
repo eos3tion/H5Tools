@@ -1,3 +1,5 @@
+import { MapEffRender } from "./effs/MapEffDisplay";
+
 const divEffectPro = $("#divEffectPro");
 const chkAniIsMovable = $g("chkAniIsMovable") as HTMLInputElement;
 const sldAniScaleX = $("#sldAniScaleX");
@@ -134,7 +136,6 @@ export class AniDele extends egret.Sprite {
     btnPro: egret.TextField;
     btnMove: egret.TextField;
     data: MapEffData;
-    render: jy.Recyclable<jy.AniRender>;
 
     lx: number;
     ly: number;
@@ -152,6 +153,8 @@ export class AniDele extends egret.Sprite {
     showBtn: boolean;
     selected = false;
     _group: string;
+
+    render: jy.Recyclable<MapEffRender>;
 
     /**
      * 分组标识
@@ -191,17 +194,14 @@ export class AniDele extends egret.Sprite {
         }
     }
 
-    public constructor(data: MapEffData) {
+    public constructor(data: MapEffData, render: jy.Recyclable<MapEffRender>) {
         super();
+        this.render = render;
+        this.addChild(render.display);
         let uri = data.uri;
         this.uri = uri;
         this.group = data.group;
         this.data = data;
-        let render = jy.AniRender.getAni(uri, { start: 100 * Math.random() });
-        this.render = render;
-        let display = render.display;
-        this.addChild(display);
-        render.f = 100 * Math.random() >> 0;
         this.isMove = isMove(data);
         this.checkTransform();
         this.checkMove();

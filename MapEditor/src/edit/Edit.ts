@@ -1,4 +1,3 @@
-import { addRes } from "../res/Res";
 import * as $path from "path";
 const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
@@ -10,6 +9,7 @@ import { AniDele } from "./AniDele";
 import { Core } from "../Core";
 import { PathSolution, EditMapControl } from "../mappath/PathSolution";
 import { PB } from "../pb/PB";
+import { prepareEffs, checkDrop, createEff } from "./effs/MapEffDisplay";
 
 const enum CtrlName {
     MapPathCtrl = "divMapPath",
@@ -44,8 +44,7 @@ function mapPathCtrlInit() {
             ctrl.onInit(currentMap);
         }
     }
-
-    return
+    return checkSelect();
 
     function checkSelect() {
         jy.Global.callLater($checkSelect, 0)
@@ -74,13 +73,8 @@ function mapPathCtrlInit() {
             $engine.invalidate();
         }
     }
-    checkSelect();
 }
 
-interface FileArray {
-    length: number;
-    [index: number]: File | string;
-}
 
 
 jy.ConfigUtils.getResUrl = function (uri: string) {
@@ -161,13 +155,13 @@ document.addEventListener("selectstart", e => e.preventDefault());
 let shiftDown = false;
 
 function onKeyDown(e: KeyboardEvent) {
-    if (e.keyCode == 16) {
+    if (e.key == "Shift") {
         shiftDown = true;
     }
 }
 
 function onKeyUp(e: KeyboardEvent) {
-    if (e.keyCode == 16) {
+    if (e.key == "Shift") {
         shiftDown = false;
     }
 }
@@ -185,102 +179,18 @@ jy.on(MapEvent.StopDragEff, function () {
 
 view.addEventListener("dragover", e => e.preventDefault());
 view.addEventListener("drop", onDrop);
-const anis: { [index: string]: jy.AniInfo } = $DD.ani = {};
 function onDrop(e: DragEvent) {
     e.preventDefault();
-    let goted = checkAniFile(e.dataTransfer.files);
-    if (goted) {
-        let { key, dataPath, imgPath } = goted;
-        checkAni(key, dataPath, imgPath);
-        let { clientX, clientY } = e;
-        //将坐标转换到game上
-        let dpr = window.devicePixelRatio;
-        let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-        let dele = new AniDele({ uri: key, layerID: jy.GameLayerID.CeilEffect, sX: 1, sY: 1, rotation: 0 });
-
-        dele.setStartPoint(pt.x, pt.y);
-        $engine.effs.pushOnce(dele);
-        refreshEffectList();
-    }
+    checkDrop(e);
+    refreshEffectList();
 }
 
-function checkAni(key: string, dataPath?: string, imgPath?: string) {
-    let ani = anis[key];
-    if (!ani) {
-        if (!dataPath) {
-            dataPath = path.join(Core.basePath, Core.cfg.effectPath, key, ConstString.AniDataFile);
-        }
-        if (!imgPath) {
-            imgPath = path.join(Core.basePath, Core.cfg.effectPath, key, ConstString.AniImageFile);
-        }
-        if (!fs.existsSync(dataPath)) {
-            return alert(`找不到指定的特效配置文件[${dataPath}]`)
-        }
-        let str = fs.readFileSync(dataPath, "utf8");
-        let data;
-        try {
-            data = JSON.parse(str);
-        } catch (e) {
-            return alert(`特效配置文件[${dataPath}]有误`);
-        }
-        ani = new jy.AniInfo();
-        ani.init(key, data);
-        if (!ani.actionInfo.isCircle) {
-            return alert(`特效配置文件不是循环动画，请检查`);
-        }
-        let filename = path.basename(imgPath);
-        addRes(`${jy.ResPrefix.Ani}${key}/${filename}`, imgPath);
-        anis[key] = ani;
-    }
-}
-
-function checkAniFile(files: FileArray, parent: string = "") {
-    // 必须同时找到
-    let goted: { imgPath: string, dataPath: string, key: string } = null;
-    let imgPath: string;
-    let dataPath: string;
-    // 遍历文件，检查文件是否匹配
-    for (let i = 0, len = files.length; i < len; i++) {
-        let file = files[i];
-        if (path) { // 如果是Electron环境
-            let p: string;
-            if (typeof file === "string") {
-                p = path.join(parent, <string>file);
-            } else {
-                // 检查路径
-                p = file["path"];
-            }
-            let fstats = fs.statSync(p);
-            // 如果是文件夹
-            if (fstats.isDirectory()) {
-                goted = checkAniFile(fs.readdirSync(p), p);
-            } else if (fstats.isFile()) {// 检查文件
-                let re = path.parse(p);
-                if (re.ext == ".png") {
-                    imgPath = p;
-                } else if (re.base == ConstString.AniDataFile) {
-                    dataPath = p;
-                }
-                if (imgPath && dataPath) {
-                    // 得到上级目录
-                    let key = path.basename(re.dir);
-                    goted = { imgPath, dataPath, key };
-                }
-            }
-            if (goted) {
-                return goted;
-            }
-        }
-    }
-}
 
 function setData(map: jy.MapInfo) {
     currentMap = map;
     let effs = map.effs;
     if (effs) {
-        for (let i = 0; i < effs.length; i++) {
-            checkAni(effs[i].uri);
-        }
+        prepareEffs(effs);
     }
     egret.runEgret();
 }
@@ -453,8 +363,11 @@ jy.on(AppEvent.CopyEffect, e => {
     let data = e.data as MapEffData;
     data.x += 50;
     data.y += 50;
-    let dele = new AniDele(data);
-    $engine.effs.pushOnce(dele);
+    let render = createEff(data);
+    if (render) {
+        let dele = new AniDele(data, render);
+        $engine.effs.pushOnce(dele);
+    }
     refreshEffectList();
 });
 

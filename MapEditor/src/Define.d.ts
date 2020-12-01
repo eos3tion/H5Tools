@@ -118,6 +118,11 @@ interface MapEffData {
      * 分组数据
      */
     group?: string;
+
+    /**
+     * 效果类型
+     */
+    type?: number;
 }
 
 interface MovableMapEffData extends MapEffData {

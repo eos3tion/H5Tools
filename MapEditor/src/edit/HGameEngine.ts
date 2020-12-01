@@ -1,5 +1,6 @@
 import BaseLayer = jy.BaseLayer;
 import { AniDele } from "./AniDele";
+import { createEffs } from "./effs/MapEffDisplay";
 
 class HGameEngine extends jy.GameEngine {
     /**
@@ -315,10 +316,7 @@ function initEff(effDatas: MapEffData[], effs: AniDele[]) {
     }
     i = 0;
     if (effDatas) {
-        for (; i < effDatas.length; i++) {
-            const eff = effDatas[i];
-            effs[i] = new AniDele(eff);
-        }
+        createEffs(effDatas, effs);
     }
     effs.length = i;
 }
