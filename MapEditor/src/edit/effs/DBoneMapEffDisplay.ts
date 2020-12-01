@@ -24,7 +24,13 @@ const enum DBFile {
      */
     Skeleton = "d_ske.json",
 }
-
+function getStr(str: string) {
+    if (str != undefined) {
+        return str
+    } else {
+        return "";
+    }
+}
 export class DBoneMapEffRender implements MapEffRender {
     display: dragonBones.EgretArmatureDisplay;
 
@@ -44,7 +50,7 @@ export class DBoneMapEffRender implements MapEffRender {
     arm: Armature;
 
     get uri() {
-        return `${this.folder}|${this.armature}|${this.ani}`
+        return `${this.folder}|${getStr(this.armature)}|${getStr(this.ani)}`
     }
 
     create(folder: string, armature?: string) {
@@ -68,7 +74,7 @@ export class DBoneMapEffRender implements MapEffRender {
                 armature = arm.name;
             }
         }
-        if (!changed && armature != this.armature) {
+        if (changed || armature != this.armature) {
             this.armature = armature;
             changed = true;
         }
@@ -94,14 +100,16 @@ export class DBoneMapEffRender implements MapEffRender {
         let { arm, display } = this;
         if (arm) {
             if (!ani) {
-                ani = arm.animation[0]?.name;
+                ani = arm.animation?.[0]?.name;
             }
             if (ani != this.ani) {
                 this.ani = ani;
                 if (!ani) {
                     return alert(`无效的[animation:${ani}]`);
                 }
-                display.animation.play(ani);
+                if (ani) {
+                    display.animation.play(ani);
+                }
             }
         }
     }
@@ -123,10 +131,11 @@ export class DBoneMapEffRender implements MapEffRender {
 
 let dbFactorys = {} as { [uri: string]: DBFactory }
 
-async function prepare(uri: string) {
+async function prepare(key: string) {
+    const [uri, armature, ani] = key.split("|");
     let p = getPath(uri);
     if (await prepareAndCheck(p)) {
-        return p;
+        return { fullPath: p, uri, armature, ani };
     }
 }
 
@@ -191,10 +200,9 @@ async function checkAndGetRender(files: FileList) {
 
 async function create(eff: MapEffData) {
     //路径以 uri|armature|ani  分隔
-    let key = eff.uri;
-    const [uri, armature, ani] = key.split("|");
-    let p = await prepare(uri);
+    let p = await prepare(eff.uri);
     if (p) {
+        const { uri, armature, ani } = p;
         let render = jy.recyclable(DBoneMapEffRender);
         render.create(uri, armature);
         render.playAni(ani);

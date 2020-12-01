@@ -34,7 +34,7 @@ export function regMapEffFactory(type: number, factory: MapEffFactory) {
  * 检查文件列表，区分类型
  * @param file 
  */
-export async function checkDrop(e: DragEvent) {
+export async function checkDrop(e: DragEvent, effs: AniDele[]) {
     let files = e.dataTransfer.files;
     for (let type in dict) {
         const factory = dict[type];
@@ -44,9 +44,9 @@ export async function checkDrop(e: DragEvent) {
             //将坐标转换到game上
             let dpr = window.devicePixelRatio;
             let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-            let dele = new AniDele({ uri: render.uri, layerID: jy.GameLayerID.CeilEffect, sX: 1, sY: 1, rotation: 0 }, render);
+            let dele = new AniDele({ type: +type, uri: render.uri, layerID: jy.GameLayerID.CeilEffect, sX: 1, sY: 1, rotation: 0 }, render);
             dele.setStartPoint(pt.x, pt.y);
-            $engine.effs.pushOnce(dele);
+            effs.pushOnce(dele);
             break
         }
     }

@@ -181,7 +181,7 @@ view.addEventListener("dragover", e => e.preventDefault());
 view.addEventListener("drop", onDrop);
 function onDrop(e: DragEvent) {
     e.preventDefault();
-    checkDrop(e);
+    checkDrop(e, $engine.effs);
     refreshEffectList();
 }
 
@@ -199,9 +199,9 @@ let lx: number, ly: number;
 function showMap() {
     $engine.enterMap(currentMap as jy.MapInfo);
     view.addEventListener("mousedown", checkDragStart);
-    refreshEffectList();
     $engine.invalidate();
     PathSolution.current.onEnterMap(currentMap);
+    refreshEffectList();
 }
 
 let dragStartPt = { x: 0, y: 0 };
@@ -350,7 +350,7 @@ function selectEff(idx: number, data: AniDele) {
 }
 
 function refreshEffectList() {
-    effListFun({ data: $engine.effs });
+    setTimeout(effListFun, 100, { data: $engine.effs });
 }
 
 jy.on(AppEvent.RemoveEffect, e => {
