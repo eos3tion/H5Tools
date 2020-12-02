@@ -10,6 +10,7 @@ import { checkCmdIsOK, execAsync } from "./exec";
 import { checkAndDownloadFile } from "./DownloadFile";
 import { getTempPath, progress, log } from "./Helper";
 import { IndexResult } from "./GitlabHelper";
+import { saveCommonProto } from "./OptionProtoHead";
 
 const path: typeof _path = nodeRequire("path");
 const fs: typeof _fs = nodeRequire("fs");
@@ -68,6 +69,11 @@ export default class ServerProxy extends ServerProxy2 {
     protected sPath: string;
     protected javaProtoPackage: string;
     protected cmdFullPath: string;
+    /**
+     * proto文件输出的基础路径
+     */
+    protected protoBasePath: string;
+    protected lan: string;
 
     constructor() {
         super();
@@ -85,6 +91,8 @@ export default class ServerProxy extends ServerProxy2 {
         this.sPath = sPath;
         this.javaProtoPackage = cookieForPath.setPathCookie("txtProtoPackage", false, false);
         this.cmdFullPath = cookieForPath.setPathCookie("txtCmdClassFullPath", false, false);
+        this.protoBasePath = cookieForPath.setPathCookie("txtProtoOutput", false, false);
+        this.lan = cookieForPath.setPathCookie("selLanguage", false, false);
         const fs: typeof _fs = nodeRequire("fs");
         if (!sPath || !fs.existsSync(sPath)) {
             return alert(`服务器端的源码基础路径[${sPath}]不存在`);
@@ -146,51 +154,54 @@ export default class ServerProxy extends ServerProxy2 {
         let { className: cmdClassName, packageName: cmdPackageName } = this.parseFullClassName(cmdFullPath);
         let protoContent = ProtoFile.flush(javaProtoPackage);
 
-
+        let protoBasePath = this.protoBasePath || basePath;
         //将文件写入指定文件
-        const protoPath = path.join(basePath, Const.ProtoFilePath);
+        const protoPath = path.join(protoBasePath, Const.ProtoFilePath);
+        saveCommonProto(protoPath);
         FsExtra.writeFileSync(protoPath, protoContent);
         log(`成功写入${protoPath}`, "#0f0");
         FsExtra.mkdirs(javaPath);
         //执行protoc编译成java文件
-        await execAsync({ cmd: this._protocPath, cwd: basePath }, `--java_out=${Const.JavaFileBase}/`, Const.ProtoFilePath);
+        await execAsync({ cmd: this._protocPath, cwd: protoBasePath }, `--${this.lan}_out=${Const.JavaFileBase}/`, Const.ProtoFilePath);
         progress.endTask();
 
-        //基于JavaFileBase 找到所有生成的java文件
-        let javaFiles = [] as string[];
-        FsExtra.walkDirs(javaPath, file => {
-            javaFiles.push(file);
-        });
-        let classesPath = path.join(basePath, Const.ClassFileBase)
-        FsExtra.mkdirs(classesPath);
-        //将java文件，编译成class
-        await execAsync({ cmd: "javac", cwd: basePath }, "-encoding", "UTF-8", "-classpath", this._jarPath, "-d", Const.ClassFileBase, ...javaFiles);
+        if (this.lan == "java") {
+            //基于JavaFileBase 找到所有生成的java文件
+            let javaFiles = [] as string[];
+            FsExtra.walkDirs(javaPath, file => {
+                javaFiles.push(file);
+            });
+            let classesPath = path.join(basePath, Const.ClassFileBase)
+            FsExtra.mkdirs(classesPath);
+            //将java文件，编译成class
+            await execAsync({ cmd: "javac", cwd: basePath }, "-encoding", "UTF-8", "-classpath", this._jarPath, "-d", Const.ClassFileBase, ...javaFiles);
 
 
-        progress.endTask();
+            progress.endTask();
 
-        let jarOutput = path.join(sPath, Const.ProtoJarOutput);
-        //检查文件夹路径是否存在
-        let jarPath = path.dirname(jarOutput);
-        if (!fs.existsSync(jarPath)) {
-            FsExtra.mkdirs(jarPath);
+            let jarOutput = path.join(sPath, Const.ProtoJarOutput);
+            //检查文件夹路径是否存在
+            let jarPath = path.dirname(jarOutput);
+            if (!fs.existsSync(jarPath)) {
+                FsExtra.mkdirs(jarPath);
+            }
+
+            //将class文件打成jar包
+            await execAsync({ cmd: "jar", cwd: classesPath }, "cf", jarOutput, ".");
+            progress.endTask();
+
+            //生成ClientCmdType.java
+            let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
+            FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
+            log(`生成文件${javaFile}`)
+            progress.endTask();
+
+            //生成ClientPBParser.java
+            javaFile = path.join(sPath, Const.ClientPBParserPath);//这个地址暂时不处理，后面弃用
+            FsExtra.writeFileSync(javaFile, ClientPBParser.flush(javaProtoPackage, cmdFullPath));
+            log(`生成文件${javaFile}`)
+            progress.endTask();
         }
-
-        //将class文件打成jar包
-        await execAsync({ cmd: "jar", cwd: classesPath }, "cf", jarOutput, ".");
-        progress.endTask();
-
-        //生成ClientCmdType.java
-        let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
-        FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
-        log(`生成文件${javaFile}`)
-        progress.endTask();
-
-        //生成ClientPBParser.java
-        javaFile = path.join(sPath, Const.ClientPBParserPath);//这个地址暂时不处理，后面弃用
-        FsExtra.writeFileSync(javaFile, ClientPBParser.flush(javaProtoPackage, cmdFullPath));
-        log(`生成文件${javaFile}`)
-        progress.endTask();
         return null
     }
 
@@ -235,6 +246,7 @@ module ProtoFile {
         // `+ messages.join("\n");
         return `syntax = "proto2";
 package ${protoPakcage};
+import "wallan.proto";
 option java_package = "${protoPakcage}";
 `
             + messages.join("\n");

@@ -24,6 +24,8 @@ ready(() => {
 	cookieForPath.getPathCookie("txtProtoPackage");
 	cookieForPath.getPathCookie("txtCmdClassFullPath");
 	cookieForPath.getPathCookie("txtServerWiki");
+	cookieForPath.getPathCookie("txtProtoOutput");
+	cookieForPath.getPathCookie("selLanguage");
 	isOptMsg = !!+cookie.getCookie(projectKey + "OptMsg");
 	let chkOptimizeMsg = $g("chkOptimizeMsg");
 	chkOptimizeMsg.checked = isOptMsg;
@@ -36,6 +38,8 @@ ready(() => {
 	chkSpliteProto.addEventListener("change", () => {
 		cookie.setCookie(projectKey + "chkSpliteProto", +$g("chkSpliteProto").checked + "");
 	});
+
+
 	const serverProxy3 = new ServerProxy3();
 	const serverProxy4 = new ServerProxy4();
 	const btnServer = $g("btnServer");
@@ -48,6 +52,8 @@ ready(() => {
 			} else {
 				serverProxy = serverProxy3;
 			}
+
+
 			let result = await serverProxy.request(cookieForPath);
 			if (result) {
 				if (result.alert) {

@@ -40,8 +40,14 @@
         <input type="button" id="btnCreateTest" value="在wiki上生成测试样例" />
     </div>
     <div style="background:#fee">
+        服务端语言：<select id="selLanguage">
+            <option value="java">JAVA</option>
+            <option value="csharp">C#</option>
+        </select> <br />
         服务端源码地址：
         <input id="txtServerHttp" style="width:400px;" type="input" value="" /><br />
+        proto文件生成路径：
+        <input id="txtProtoOutput" style="width:400px;" type="input" value="" /><br />
         服务端proto包名：
         <input id="txtProtoPackage" style="width:400px;" type="input" value="com.wallan.protobuf" /><br />
         服务端Cmd完整类名：如(com.abc.ConstCMD)

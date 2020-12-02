@@ -8,6 +8,7 @@ import ServerProxy3 from "ServerProxy3";
 import { execAsync } from "./exec";
 import { progress, log } from "./Helper";
 import { IndexResult } from "./GitlabHelper";
+import { saveCommonProto } from "./OptionProtoHead";
 
 const path: typeof _path = nodeRequire("path");
 const fs: typeof _fs = nodeRequire("fs");
@@ -31,11 +32,11 @@ export default class ServerProxy extends ServerProxy3 {
 
         const { basePath, sPath, javaProtoPackage, cmdFullPath } = this;
         //1.遍历所有页面，得到完整引用字典
+        let protoBasePath = this.protoBasePath || basePath;
 
-
-        const protoSavePath = path.join(basePath, Const.ProtoFilePath);
-
-
+        const protoSavePath = path.join(protoBasePath, Const.ProtoFilePath);
+        //生成附加文件
+        saveCommonProto(protoSavePath);
         //生成proto文件
         for (let name in linkDict) {
             ProtoFile.start();
@@ -61,32 +62,33 @@ export default class ServerProxy extends ServerProxy3 {
                 ClientCmdType.add(icmd, name);
             }
 
+            let protoCnt = ProtoFile.flush(javaProtoPackage);
             //将文件写入指定文件
-            FsExtra.writeFileSync(path.join(protoSavePath, page.name + ".proto"), ProtoFile.flush(javaProtoPackage));
+            FsExtra.writeFileSync(path.join(protoSavePath, page.name + ".proto"), protoCnt);
 
         }
         for (let name in linkDict) {
             //编译proto文件
-            await this.compileProto(name);
+            await this.compileProto(name, protoBasePath);
             progress.endTask();
         }
 
+        if (this.lan == "java") {
 
-        //生成ClientCmdType.java
-        let { className: cmdClassName, packageName: cmdPackageName } = this.parseFullClassName(cmdFullPath);
-        let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
-        FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
-        log(`生成文件${javaFile}`)
-
+            //生成ClientCmdType.java
+            let { className: cmdClassName, packageName: cmdPackageName } = this.parseFullClassName(cmdFullPath);
+            let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
+            FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
+            log(`生成文件${javaFile}`)
+        }
         return null
     }
 
-    private async compileProto(name: string) {
-        let basePath = this.basePath;
+    private async compileProto(name: string, protoBasePath: string) {
         let javaPath = this.sPath;
         FsExtra.mkdirs(javaPath);
         //执行protoc编译成java文件
-        await execAsync({ cmd: this._protocPath, cwd: basePath }, `--java_out=${javaPath}/`, `--proto_path=./${Const.ProtoFilePath}`, `${Const.ProtoFilePath}/${name}.proto`);
+        await execAsync({ cmd: this._protocPath, cwd: protoBasePath }, `--${this.lan}_out=${javaPath}/`, `--proto_path=./${Const.ProtoFilePath}`, `${Const.ProtoFilePath}/${name}.proto`);
     }
 }
 
@@ -119,6 +121,7 @@ module ProtoFile {
         // `+ messages.join("\n");
         return `syntax = "proto2";
 package ${protoPakcage};
+import "wallan.proto";
 ${imports.join(`\n`)}
 option java_package = "${protoPakcage}";
 

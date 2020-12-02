@@ -74,6 +74,9 @@ export function getPageData(content: string, name: string) {
 
         if (!reuseMsg) {
             globalIdentityContent.push(`message ${name} {`);
+            for (let key in options) {
+                globalIdentityContent.push(`option ${key}=${options[key]};`);
+            }
             fields.forEach(v => {
                 let comment = v.comment;
                 comment = comment ? "//" + comment : "";
