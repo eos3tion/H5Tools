@@ -54,12 +54,25 @@ function changeProPos(x: number, y: number) {
 function showPro(dele: AniDele, x: number, y: number) {
     if (currentShow != dele) {
         isProShow = false;
+        let detail = currentShow?.render?.detail;
+        if (detail) {
+            divEffectPro[0].removeChild(detail);
+        }
+
         currentShow = dele;
     }
     if (isProShow) {
         divEffectPro.hide();
     } else {
         divEffectPro.show();
+        let render = currentShow?.render;
+        if (render) {
+            let detail = render.detail;
+            if (detail) {
+                divEffectPro.append(detail);
+                detail.show(render);
+            }
+        }
         setView = true;
         changeProPos(x, y);
         if (!initedEffectPro) {
@@ -79,7 +92,7 @@ function showPro(dele: AniDele, x: number, y: number) {
         sldAniScaleX.val(data.sX || 1);
         sldAniScaleY.val(data.sY || 1);
         txtAniSeed.val(data.seed || 0);
-        lblAniUri.text(data.uri);
+        lblAniUri.text(dele.uri);
         (document.querySelector(`input[name=layerID][value="${data.layerID || jy.GameLayerID.CeilEffect}"]`) as HTMLInputElement).checked = true;
         dele.checkPos();
         sldAniRotation.slider("setValue", ~~data.rotation);
@@ -142,7 +155,9 @@ export class AniDele extends egret.Sprite {
 
     touching: boolean;
 
-    uri: string;
+    get uri(): string {
+        return this.render?.uri || this.data.uri;
+    }
 
     isMove: boolean;
 
@@ -198,8 +213,6 @@ export class AniDele extends egret.Sprite {
         super();
         this.render = render;
         this.addChild(render.display);
-        let uri = data.uri;
-        this.uri = uri;
         this.group = data.group;
         this.data = data;
         this.isMove = isMove(data);

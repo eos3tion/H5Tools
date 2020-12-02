@@ -9,7 +9,7 @@ import { AniDele } from "./AniDele";
 import { Core } from "../Core";
 import { PathSolution, EditMapControl } from "../mappath/PathSolution";
 import { PB } from "../pb/PB";
-import { prepareEffs, checkDrop, createEff } from "./effs/MapEffDisplay";
+import { prepareEffs, checkDrop, createEff, regMapEffFactorys } from "./effs/MapEffDisplay";
 
 const enum CtrlName {
     MapPathCtrl = "divMapPath",
@@ -187,6 +187,7 @@ function onDrop(e: DragEvent) {
 
 
 async function setData(map: jy.MapInfo) {
+    regMapEffFactorys();
     currentMap = map;
     let effs = map.effs;
     if (effs) {
@@ -353,6 +354,8 @@ function refreshEffectList() {
     setTimeout(effListFun, 100, { data: $engine.effs });
 }
 
+jy.on(AppEvent.EffectChange, refreshEffectList)
+
 jy.on(AppEvent.RemoveEffect, e => {
     let dele = e.data;
     $engine.effs.remove(dele);
@@ -399,7 +402,9 @@ function saveMap() {
         let effs = [] as MapEffData[];
         const layers = [jy.GameLayerID.BottomEffect, jy.GameLayerID.CeilEffect, jy.GameLayerID.UnderMap];
         for (let i = 0; i < effDeles.length; i++) {
-            let dat = effDeles[i].data;
+            let dele = effDeles[i];
+            let dat = dele.data;
+            dat.uri = dele.render?.uri || dat.uri;
             dat.layer = layers.indexOf(dat.layerID);
             dat.scaleX = dat.sX * 100 | 0;
             dat.scaleY = dat.sY * 100 | 0;

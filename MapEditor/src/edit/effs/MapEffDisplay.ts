@@ -1,10 +1,18 @@
 import { AniDele } from "../AniDele";
 import { AniMapEffFactory } from "./AniMapEffDisplay";
 import { DBoneMapEffFactory } from "./DBoneMapEffDisplay";
+export interface MapEffDetailFragment extends HTMLDivElement {
+    id: string;
+    show(render: MapEffRender);
+}
 
 export interface MapEffRender {
     display: egret.DisplayObject;
     uri: string;
+    /**
+     * 附加的默认内容
+     */
+    detail?: MapEffDetailFragment;
     onRecycle();
 }
 export interface FileArray {
@@ -13,6 +21,8 @@ export interface FileArray {
 }
 
 export interface MapEffFactory {
+
+    init?();
     checkAndGetRender(files: FileList): Promise<jy.Recyclable<MapEffRender> | void>;
 
     prepare(effData: MapEffData): Promise<void>;
@@ -26,8 +36,9 @@ function getFactory(type: number) {
     return dict[type];
 }
 
-export function regMapEffFactory(type: number, factory: MapEffFactory) {
+function regMapEffFactory(type: number, factory: MapEffFactory) {
     dict[type] = factory;
+    factory.init?.();
 }
 
 /**
@@ -80,6 +91,7 @@ export async function createEff(eff: MapEffData) {
     }
 }
 
-
-regMapEffFactory(jy.MapEffType.Ani, AniMapEffFactory);
-regMapEffFactory(jy.MapEffType.DBone, DBoneMapEffFactory);
+export function regMapEffFactorys() {
+    regMapEffFactory(jy.MapEffType.Ani, AniMapEffFactory);
+    regMapEffFactory(jy.MapEffType.DBone, DBoneMapEffFactory);
+}

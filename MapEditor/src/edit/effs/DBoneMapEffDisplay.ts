@@ -1,4 +1,4 @@
-import { MapEffFactory, MapEffRender } from "./MapEffDisplay";
+import { MapEffDetailFragment, MapEffFactory, MapEffRender } from "./MapEffDisplay";
 import * as $path from "path";
 const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
@@ -32,8 +32,10 @@ function getStr(str: string) {
     }
 }
 export class DBoneMapEffRender implements MapEffRender {
-    display: dragonBones.EgretArmatureDisplay;
+    display = new egret.Sprite()
 
+    db: dragonBones.EgretArmatureDisplay;
+    detail: MapEffDetailFragment;
     /**
      * 资源标识
      */
@@ -53,52 +55,59 @@ export class DBoneMapEffRender implements MapEffRender {
         return `${this.folder}|${getStr(this.armature)}|${getStr(this.ani)}`
     }
 
-    create(folder: string, armature?: string) {
+    create(folder: string) {
         let changed = false;
         if (this.folder != folder) {
             this.folder = folder;
-            changed = true;
         }
         let factory = dbFactorys[folder];
         this.factory = factory;
-        if (!factory) {
+        if (!factory || changed) {
             this.armature = undefined;
             this.arm = undefined;
-            return alert(`无效的[folder:${folder}]`);
-        }
-        let ske = factory.$ske;
-        let arm: Armature;
-        if (!armature) {
-            arm = ske.armature[0];
-            if (arm) {
-                armature = arm.name;
+            if (!factory) {
+                return alert(`无效的[folder:${folder}]`);
             }
         }
-        if (changed || armature != this.armature) {
-            this.armature = armature;
-            changed = true;
-        }
-        if (changed) {
-            let old = this.display;
-            if (old) {
-                old.dispose();
+    }
+    setArmature(armature?: string) {
+        let factory = this.factory;
+        if (factory) {
+            let ske = factory.$ske;
+            let arm: Armature;
+            if (!armature) {
+                arm = ske.armature[0];
+                if (arm) {
+                    armature = arm.name;
+                }
             }
-        }
+            if (armature != this.armature) {
+                this.armature = armature;
+                let old = this.db;
+                if (old) {
+                    jy.removeDisplay(old);
+                    old.dispose();
+                    this.db = undefined;
+                }
 
-        if (!arm && armature) {
-            arm = ske.armature.find(item => item.name == armature);
+
+                if (!arm && armature) {
+                    arm = ske.armature.find(item => item.name == armature);
+                }
+                this.arm = arm;
+                if (!arm) {
+                    return alert(`无效的[armature:${armature}]`);
+                }
+                let db = factory.buildArmatureDisplay(armature);
+                this.db = db;
+                this.display.addChild(db);
+            }
         }
-        this.arm = arm;
-        if (!arm) {
-            return alert(`无效的[armature:${armature}]`);
-        }
-        let db = factory.buildArmatureDisplay(armature);
-        this.display = db;
     }
 
     playAni(ani?: string) {
-        let { arm, display } = this;
-        if (arm) {
+        let { arm, db } = this;
+        if (arm && db) {
             if (!ani) {
                 ani = arm.animation?.[0]?.name;
             }
@@ -108,14 +117,15 @@ export class DBoneMapEffRender implements MapEffRender {
                     return alert(`无效的[animation:${ani}]`);
                 }
                 if (ani) {
-                    display.animation.play(ani);
+                    db.animation.play(ani);
                 }
             }
         }
+        jy.dispatch(AppEvent.EffectChange);
     }
 
     onRecycle() {
-        let db = this.display;
+        let db = this.db;
         if (db) {
             this.display = undefined;
             jy.removeDisplay(db);
@@ -127,6 +137,107 @@ export class DBoneMapEffRender implements MapEffRender {
         this.ani = undefined;
         this.folder = undefined;
     }
+}
+
+function init() {
+    const detail = document.createElement("div") as MapEffDetailFragment;
+    detail.id = "DBoneMapEffDetails";
+    const divArm = document.createElement("div");
+    divArm.appendChild(document.createTextNode("骨架："));
+    const selectArm = document.createElement("select");
+    divArm.appendChild(selectArm);
+    selectArm.addEventListener("change", onArmChange)
+    const divAni = document.createElement("div");
+    divAni.appendChild(document.createTextNode("动画："));
+    const selectAni = document.createElement("select");
+    selectAni.addEventListener("change", onAniChange);
+    divAni.appendChild(selectAni);
+    detail.appendChild(divArm);
+    detail.appendChild(divAni);
+    let curRender: DBoneMapEffRender;
+    let curFactory: DBFactory;
+    let armFlag = true;
+    let aniFlag = true;
+    detail.show = function (render: DBoneMapEffRender) {
+        curRender = render;
+        if (render) {
+            armFlag = false;
+            let { factory, armature } = render;
+            if (curFactory != factory) {
+                curFactory = factory;
+                let $arms = factory.$arms;
+                selectArm.innerHTML = "";
+                let find = false;
+                for (let i = 0; i < $arms.length; i++) {
+                    const arm = $arms[i];
+                    let option = document.createElement("option");
+                    option.text = option.value = arm;
+                    if (arm == armature) {
+                        option.selected = true;
+                        find = true;
+                    }
+                    selectArm.appendChild(option);
+                }
+                if (!find) {
+                    selectArm.selectedIndex = 0;
+                }
+            }
+            armFlag = true;
+            onArmChange();
+        }
+
+    }
+
+    function onArmChange() {
+        if (!armFlag) {
+            return
+        }
+        if (curRender) {
+            aniFlag = false;
+            curRender.setArmature(selectArm.value);
+            let arm = curRender.arm;
+            selectAni.innerHTML = "";
+            if (arm) {
+                let ani = curRender.ani;
+                let anis = arm.animation;
+                if (anis) {
+                    let find = false;
+                    for (let i = 0; i < anis.length; i++) {
+                        const a = anis[i];
+                        let option = document.createElement("option");
+                        let name = a.name;
+                        option.text = option.value = name;
+                        if (name == ani) {
+                            option.selected = true;
+                            find = true;
+                        }
+                        selectAni.appendChild(option);
+                    }
+                    if (!find) {
+                        selectAni.selectedIndex = 0;
+                    }
+                }
+            }
+
+            aniFlag = true;
+            onAniChange()
+        }
+    }
+
+    function onAniChange() {
+        if (!aniFlag) {
+            return
+        }
+        if (curRender) {
+            let v = selectAni.value;
+            if (v) {
+                curRender.playAni(v);
+            }
+        }
+    }
+
+
+    DBoneMapEffRender.prototype.detail = detail;
 }
 
 let dbFactorys = {} as { [uri: string]: DBFactory }
@@ -192,6 +303,7 @@ async function checkAndGetRender(files: FileList) {
         if (uri) {
             let render = jy.recyclable(DBoneMapEffRender);
             render.create(uri);
+            render.setArmature();
             render.playAni();
             return render;
         }
@@ -204,7 +316,8 @@ async function create(eff: MapEffData) {
     if (p) {
         const { uri, armature, ani } = p;
         let render = jy.recyclable(DBoneMapEffRender);
-        render.create(uri, armature);
+        render.create(uri);
+        render.setArmature(armature);
         render.playAni(ani);
         return render;
     }
@@ -216,7 +329,8 @@ export const DBoneMapEffFactory = {
     prepare: async function (effData: MapEffData) {
         await prepare(effData.uri);
     },
-    create
+    create,
+    init
 } as MapEffFactory;
 
 

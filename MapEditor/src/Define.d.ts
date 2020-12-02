@@ -65,6 +65,10 @@ declare const enum AppEvent {
      * data {AniDele}
      */
     CopyEffect,
+    /**
+     * 地图效果变更
+     */
+    EffectChange,
 }
 
 interface GlobalCfg {
