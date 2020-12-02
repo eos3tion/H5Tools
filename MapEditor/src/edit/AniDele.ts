@@ -196,6 +196,9 @@ export class AniDele extends egret.Sprite {
         return msg;
     }
 
+    get iconCls() {
+        return this.visible ? "icon-blank" : "icon-clear";
+    }
     onRender(now: number) {
         let display = this.render.display;
         if (this.isMove) {

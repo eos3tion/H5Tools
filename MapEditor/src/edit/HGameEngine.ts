@@ -171,7 +171,7 @@ class HGameEngine extends jy.GameEngine {
     /**
      * 进入新地图
      */
-    public enterMap(map: jy.MapInfo) {
+    async enterMap(map: jy.MapInfo) {
         //先清理场景中的元素
         if (map != this.currentMap) {
             this.clearMap();
@@ -197,7 +197,7 @@ class HGameEngine extends jy.GameEngine {
             }
             this._bg.setMini(ConstString.Mini + map.ext);
             //初始化地图特效
-            initEff(map.effs, this.effs);
+            await initEff(map.effs, this.effs);
         }
     }
 
@@ -308,17 +308,15 @@ class HGameEngine extends jy.GameEngine {
  * @param effDatas 地图效果数据
  * @param effs 地图特效
  */
-function initEff(effDatas: MapEffData[], effs: AniDele[]) {
-    let i = 0;
-    for (; i < effs.length; i++) {
+async function initEff(effDatas: MapEffData[], effs: AniDele[]) {
+    for (let i = 0; i < effs.length; i++) {
         const eff = effs[i];
         eff.dispose();
     }
-    i = 0;
+    effs.length = 0;
     if (effDatas) {
-        createEffs(effDatas, effs);
+        await createEffs(effDatas, effs);
     }
-    effs.length = i;
 }
 
 function checkPos(rect: egret.Rectangle, eff: AniDele) {

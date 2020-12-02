@@ -87,12 +87,12 @@ class Entry extends egret.Sprite {
         this.on(EgretEvent.ADDED_TO_STAGE, this.onAdded, this);
     }
 
-    onAdded() {
+    async onAdded() {
         //创建地图
         jy.GameEngine.init(this.stage, HGameEngine);
         jy.Global.initTick();
         jy.ResManager.init();
-        showMap();
+        await showMap();
         mapPathCtrlInit();
     }
 }
@@ -112,7 +112,6 @@ $("#bgColor").on("change", function () {
 divControl.draggable({
     handle: ".panel-header"
 })
-const dlEffectList = $("#dlEffectList");
 
 const btnSave = $("#btnSave");
 btnSave.on("click", saveMap);
@@ -120,30 +119,61 @@ btnSave.on("click", saveMap);
 const btnEditGroup = $("#btnEditGroup");
 btnEditGroup.on("click", editGroup);
 
+const btnHide = $("#btnHide");
+btnHide.on("click", hideEffs);
+
+const btnShow = $("#btnShow");
+btnShow.on("click", showEffs);
+
+function hideEffs() {
+    const effs = $engine.effs;
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        if (eff.selected) {
+            eff.visible = false;
+        }
+    }
+    refreshEffectList();
+}
+
+function showEffs() {
+    const effs = $engine.effs;
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        if (eff.selected) {
+            eff.visible = true;
+        }
+    }
+    refreshEffectList();
+}
+
 function editGroup() {
     $["messager"].prompt("", "添加分组标识", groupId => {
-        if (!groupId) {
-            return
-        }
         groupId = groupId.trim();
         const effs = $engine.effs;
         for (let i = 0; i < effs.length; i++) {
             const eff = effs[i];
             if (eff.selected) {
                 eff.group = groupId;
-                effListFun("refreshRow", i);
             }
         }
+        refreshEffectList();
     });
 
 }
 
 divEffectPro.hide();
 
+
+const dlEffectList = $("#dlEffectList");
 function effListFun(...args) {
-    return dlEffectList.datalist(...args);
+    return dlEffectList.tree(...args);
 }
-effListFun({ onSelect: selectEff, textField: "text" });
+effListFun({
+    onSelect: selectEff,
+    onCheck: checkEff,
+    textField: "text"
+});
 
 const state = AppState.Edit;
 let currentMap: jy.MapInfo;
@@ -179,9 +209,9 @@ jy.on(MapEvent.StopDragEff, function () {
 
 view.addEventListener("dragover", e => e.preventDefault());
 view.addEventListener("drop", onDrop);
-function onDrop(e: DragEvent) {
+async function onDrop(e: DragEvent) {
     e.preventDefault();
-    checkDrop(e, $engine.effs);
+    await checkDrop(e, $engine.effs);
     refreshEffectList();
 }
 
@@ -197,8 +227,8 @@ async function setData(map: jy.MapInfo) {
 }
 
 let lx: number, ly: number;
-function showMap() {
-    $engine.enterMap(currentMap as jy.MapInfo);
+async function showMap() {
+    await $engine.enterMap(currentMap as jy.MapInfo);
     view.addEventListener("mousedown", checkDragStart);
     $engine.invalidate();
     PathSolution.current.onEnterMap(currentMap);
@@ -311,35 +341,38 @@ function checkSelection() {
     const effs = $engine.effs;
     for (let i = 0; i < effs.length; i++) {
         const eff = effs[i];
-        effListFun(eff.selected ? "selectRow" : "unselectRow", i);
+        let target = $("#" + (eff as any).domId)[0];
+        if (target) {
+            effListFun(eff.selected ? "check" : "uncheck", target);
+        }
     }
 
     checkingSelectionData = false;
 }
 
 
-
-/**
- * 选中特效
- */
-function selectEff(idx: number, data: AniDele) {
+function checkEff(data: AniDele | { children: AniDele[] }) {
     if (checkingSelectionData) {
         return
     }
-
-    if (data) {
-        //是否按住shift
-        if (!shiftDown) {
-            const effs = $engine.effs;
-            //清理数据
-            for (let i = 0; i < effs.length; i++) {
-                const eff = effs[i];
-                if (idx != i) {
-                    eff.select(false);
-                }
-            }
+    if (isAniDele(data)) {
+        tickEff(data);
+    } else {
+        let datas = data.children;
+        for (let i = 0; i < datas.length; i++) {
+            tickEff(datas[i]);
         }
+    }
+    checkSelection();
 
+    function isAniDele(data: AniDele | { children: AniDele[] }): data is AniDele {
+        return !data["children"]
+    }
+}
+
+
+function tickEff(data: AniDele) {
+    if (data) {
         if (data.selected) {
             data.select(false);
         } else {
@@ -347,11 +380,53 @@ function selectEff(idx: number, data: AniDele) {
             $engine.camera.moveTo(data.x, data.y);
         }
     }
+}
+
+/**
+ * 选中特效
+ */
+function selectEff(data: AniDele) {
+    if (checkingSelectionData) {
+        return
+    }
+
+    if (data) {
+        const effs = $engine.effs;
+        //清理数据
+        for (let i = 0; i < effs.length; i++) {
+            const eff = effs[i];
+            if (eff != data) {
+                eff.select(false);
+            }
+        }
+
+        tickEff(data);
+    }
     checkSelection();
 }
 
+let refreshing = 0;
 function refreshEffectList() {
-    setTimeout(effListFun, 100, { data: $engine.effs });
+    clearTimeout(refreshing);
+    refreshing = setTimeout($refreshEffectList, 100) as any;
+}
+function $refreshEffectList() {
+    let effs = $engine.effs;
+    let groups = {} as { [group: number]: { text: string, children: AniDele[] } }
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        let g = eff.group || "";
+        let group = groups[g];
+        if (!group) {
+            groups[g] = group = { text: g, children: [] };
+        }
+        group.children.push(eff);
+    }
+    let data = [];
+    for (let g in groups) {
+        data.push(groups[g]);
+    }
+    effListFun({ data });
 }
 
 jy.on(AppEvent.EffectChange, refreshEffectList)
