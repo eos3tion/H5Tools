@@ -97,10 +97,7 @@ export default class ServerProxy extends ServerProxy2 {
         if (!sPath || !fs.existsSync(sPath)) {
             return alert(`服务器端的源码基础路径[${sPath}]不存在`);
         }
-        //检查javac能否正常执行
-        if (!checkCmdIsOK("javac", ["-version"])) {
-            return alert("javac无法正常执行，请检查jdk是否正常安装，检查环境变量是否设置正常");
-        }
+
         if (process.platform === "win32") {
             //由于jar.exe并无类似`-version`的指令，可正常返回状态0，默认 javac 有则 jar 可正常执行
             //检查/下载
@@ -164,8 +161,12 @@ export default class ServerProxy extends ServerProxy2 {
         //执行protoc编译成java文件
         await execAsync({ cmd: this._protocPath, cwd: protoBasePath }, `--${this.lan}_out=${Const.JavaFileBase}/`, Const.ProtoFilePath);
         progress.endTask();
+        //检查javac能否正常执行
 
         if (this.lan == "java") {
+            if (!checkCmdIsOK("javac", ["-version"])) {
+                return alert("javac无法正常执行，请检查jdk是否正常安装，检查环境变量是否设置正常");
+            }
             //基于JavaFileBase 找到所有生成的java文件
             let javaFiles = [] as string[];
             FsExtra.walkDirs(javaPath, file => {
