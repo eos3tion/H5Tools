@@ -24,7 +24,7 @@ export class DragDele extends egret.Sprite {
         g.drawRect(-1000, -1000, 2000, 2000);
         g.endFill();
         this.touchEnabled = true;
-        this.addEventListener(egret.TouchEvent.TOUCH_BEGIN, this.tb, this);
+        this.addEventListener(EgretEvent.TOUCH_BEGIN, this.tb, this);
         $(document).ready(() => {
             $("#ox")["numberspinner"]({ onChange: this._offsetChange });
             $("#oy")["numberspinner"]({ onChange: this._offsetChange });
@@ -89,8 +89,8 @@ export class DragDele extends egret.Sprite {
     private tb(e: egret.TouchEvent) {
         this.lx = e.stageX;
         this.ly = e.stageY;
-        this.stage.addEventListener(egret.TouchEvent.TOUCH_MOVE, this.tm, this);
-        this.stage.addEventListener(egret.TouchEvent.TOUCH_END, this.te, this);
+        this.stage.addEventListener(EgretEvent.TOUCH_MOVE, this.tm, this);
+        this.stage.addEventListener(EgretEvent.TOUCH_END, this.te, this);
         this.touching = true;
     }
 
@@ -108,8 +108,8 @@ export class DragDele extends egret.Sprite {
     }
 
     private te(e: egret.TouchEvent) {
-        this.stage.removeEventListener(egret.TouchEvent.TOUCH_MOVE, this.tm, this);
-        this.stage.removeEventListener(egret.TouchEvent.TOUCH_END, this.te, this);
+        this.stage.removeEventListener(EgretEvent.TOUCH_MOVE, this.tm, this);
+        this.stage.removeEventListener(EgretEvent.TOUCH_END, this.te, this);
         $("#ox")["numberspinner"]("setValue", this.x - this.ox);
         $("#oy")["numberspinner"]("setValue", this.y - this.oy);
         this.touching = false;
