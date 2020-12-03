@@ -41,6 +41,10 @@ class HGameEngine extends jy.GameEngine {
         this._stage.on(EgretEvent.RESIZE, this.onResize, this);
         this.scale = 1;
         window.$engine = this;
+        window.onwheel = e => {
+            $engine.scale += e.deltaY * .0001;
+        };
+
     }
     private onResize() {
         let { stageWidth, stageHeight } = this._stage;

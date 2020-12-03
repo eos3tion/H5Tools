@@ -329,7 +329,7 @@ export class AniDele extends egret.Sprite {
         if (dx * dx + dy * dy > 10) {
             this.lx = nx;
             this.ly = ny;
-            let dpr = window.devicePixelRatio;
+            let dpr = window.devicePixelRatio * $engine.scale;
             this.x += dx / dpr;
             this.y += dy / dpr;
         }
