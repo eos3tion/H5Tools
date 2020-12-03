@@ -530,6 +530,17 @@ function getMapInfoPB(map: jy.MapInfo) {
     if (noPic) {
         pb.noPic = new jy.ByteArray(noPic.buffer);
     }
+    let effs = map.effs;
+    let out = [] as MapEffData[];
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        let group = eff.group;
+        //检查分组
+        if (group && group.startsWith("*")) {
+            continue;
+        }
+        out.push(eff);
+    }
     pb.effs = map.effs as jy.MapEffPB[];
     return pb;
 }
