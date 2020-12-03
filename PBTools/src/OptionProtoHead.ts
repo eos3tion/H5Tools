@@ -1,6 +1,7 @@
 const OptionProtoHead = `
 syntax = "proto2";
 import "google/protobuf/descriptor.proto";
+{package}
 
 extend google.protobuf.MessageOptions {
     optional int32 cmd = 51234;
@@ -918,8 +919,8 @@ message GeneratedCodeInfo {
 }
 `
 
-export function saveCommonProto(basePath: string) {
-    const path: typeof import("path") = nodeRequire("path")
-    FsExtra.writeFileSync(path.join(basePath, "google", "protobuf", "descriptor.proto"), GoogleDescriptorProto);
-    FsExtra.writeFileSync(path.join(basePath, "wallan.proto"), OptionProtoHead);
+export function saveCommonProto(basePath: string, pack = "") {
+  const path: typeof import("path") = nodeRequire("path")
+  FsExtra.writeFileSync(path.join(basePath, "google", "protobuf", "descriptor.proto"), GoogleDescriptorProto);
+  FsExtra.writeFileSync(path.join(basePath, "wallan.proto"), OptionProtoHead.replace(/\{package\}/, pack));
 }

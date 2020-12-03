@@ -94,39 +94,40 @@ export default class ServerProxy extends ServerProxy2 {
         this.protoBasePath = cookieForPath.setPathCookie("txtProtoOutput", false, false);
         this.lan = cookieForPath.setPathCookie("selLanguage", false, false);
         const fs: typeof _fs = nodeRequire("fs");
-        if (!sPath || !fs.existsSync(sPath)) {
-            return alert(`服务器端的源码基础路径[${sPath}]不存在`);
+        if (sPath && !fs.existsSync(sPath)) {
+            return alert(`服务器端配置了源码基础路径,但是找不到该路径[${sPath}]`);
         }
+        if (sPath) {
+            if (process.platform === "win32") {
+                //由于jar.exe并无类似`-version`的指令，可正常返回状态0，默认 javac 有则 jar 可正常执行
+                //检查/下载
+                try {
+                    this._protocPath = await checkAndDownloadFile(Const.ProtocPath, Const.ProtocPath);
+                } catch (e) {
+                    return alert(`${Const.ProtocPath}下载失败，请检查网络`)
+                }
+            } else {
+                //检查一下路径 `/usr/local/bin/protoc` brew 默认安装路径
+                const brewPath = "/usr/local/bin/protoc";
+                if (fs.existsSync(brewPath)) {
+                    this._protocPath = brewPath;
+                } else if (!checkCmdIsOK("protoc", ["--version"])) {
+                    alert("protoc无法正常执行，请检查protoc是否正常安装，检查环境变量是否设置正常");
+                    this._protocPath = "protoc";
+                }
+            }
 
-        if (process.platform === "win32") {
-            //由于jar.exe并无类似`-version`的指令，可正常返回状态0，默认 javac 有则 jar 可正常执行
-            //检查/下载
             try {
-                this._protocPath = await checkAndDownloadFile(Const.ProtocPath, Const.ProtocPath);
+                this._jarPath = await checkAndDownloadFile(Const.ProtocJarPath, Const.ProtocJarPath);
             } catch (e) {
-                return alert(`${Const.ProtocPath}下载失败，请检查网络`)
+                return alert(`${Const.ProtocJarPath}下载失败，请检查网络`)
             }
-        } else {
-            //检查一下路径 `/usr/local/bin/protoc` brew 默认安装路径
-            const brewPath = "/usr/local/bin/protoc";
-            if (fs.existsSync(brewPath)) {
-                this._protocPath = brewPath;
-            } else if (!checkCmdIsOK("protoc", ["--version"])) {
-                alert("protoc无法正常执行，请检查protoc是否正常安装，检查环境变量是否设置正常");
-                this._protocPath = "protoc";
-            }
-        }
-
-        try {
-            this._jarPath = await checkAndDownloadFile(Const.ProtocJarPath, Const.ProtocJarPath);
-        } catch (e) {
-            return alert(`${Const.ProtocJarPath}下载失败，请检查网络`)
         }
         return true;
     }
 
 
-    protected async sovleData({ pages: linkDict }: IndexResult) {
+    protected async sovleData({ pages: linkDict }: IndexResult): Promise<any> {
         progress.addTask();
         //生成proto文件
         ProtoFile.start();
@@ -154,13 +155,18 @@ export default class ServerProxy extends ServerProxy2 {
         let protoBasePath = this.protoBasePath || basePath;
         //将文件写入指定文件
         const protoPath = path.join(protoBasePath, Const.ProtoFilePath);
-        saveCommonProto(protoPath);
+        saveCommonProto(protoPath, javaProtoPackage);
         FsExtra.writeFileSync(protoPath, protoContent);
         log(`成功写入${protoPath}`, "#0f0");
+        if (!this.sPath) {
+            return
+        }
+
         FsExtra.mkdirs(javaPath);
         //执行protoc编译成java文件
         await execAsync({ cmd: this._protocPath, cwd: protoBasePath }, `--${this.lan}_out=${Const.JavaFileBase}/`, Const.ProtoFilePath);
         progress.endTask();
+
         //检查javac能否正常执行
 
         if (this.lan == "java") {
@@ -203,7 +209,6 @@ export default class ServerProxy extends ServerProxy2 {
             log(`生成文件${javaFile}`)
             progress.endTask();
         }
-        return null
     }
 
     resetBasePath() {

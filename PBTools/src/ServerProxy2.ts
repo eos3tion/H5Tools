@@ -48,7 +48,7 @@ export default class ServerProxy {
      * @param cookieForPath 
      * @param linkDict 
      */
-    protected async sovleData(result: IndexResult) {
+    protected async sovleData(result: IndexResult): Promise<any> {
         progress.addTask();
         let cnt = await postHttpData(sPath, result.pages);
         if (cnt) {

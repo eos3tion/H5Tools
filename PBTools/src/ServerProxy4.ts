@@ -36,7 +36,7 @@ export default class ServerProxy extends ServerProxy3 {
 
         const protoSavePath = path.join(protoBasePath, Const.ProtoFilePath);
         //生成附加文件
-        saveCommonProto(protoSavePath);
+        saveCommonProto(protoSavePath, `package ${javaProtoPackage};`);
         //生成proto文件
         for (let name in linkDict) {
             ProtoFile.start();
@@ -65,7 +65,10 @@ export default class ServerProxy extends ServerProxy3 {
             let protoCnt = ProtoFile.flush(javaProtoPackage);
             //将文件写入指定文件
             FsExtra.writeFileSync(path.join(protoSavePath, page.name + ".proto"), protoCnt);
+        }
 
+        if (!this.sPath) {
+            return
         }
         for (let name in linkDict) {
             //编译proto文件
@@ -74,14 +77,12 @@ export default class ServerProxy extends ServerProxy3 {
         }
 
         if (this.lan == "java") {
-
             //生成ClientCmdType.java
             let { className: cmdClassName, packageName: cmdPackageName } = this.parseFullClassName(cmdFullPath);
             let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
             FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
             log(`生成文件${javaFile}`)
         }
-        return null
     }
 
     private async compileProto(name: string, protoBasePath: string) {
