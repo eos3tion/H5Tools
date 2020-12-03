@@ -42,7 +42,10 @@ class HGameEngine extends jy.GameEngine {
         this.scale = 1;
         window.$engine = this;
         window.onwheel = e => {
-            $engine.scale += e.deltaY * .0001;
+            let target = e.target;
+            if (target.tagName === "CANVAS" && target.parentNode?.id === "StateEdit") {
+                $engine.scale += e.deltaY * .0001;
+            }
         };
 
     }
