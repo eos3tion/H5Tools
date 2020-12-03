@@ -91,7 +91,8 @@ class Entry extends egret.Sprite {
         //创建地图
         jy.GameEngine.init(this.stage, HGameEngine);
         jy.Global.initTick();
-        jy.ResManager.init();
+        //地编不删除已经加载的数据
+        jy.ResManager.init(Infinity);
         await showMap();
         mapPathCtrlInit();
     }
