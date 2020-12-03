@@ -364,12 +364,10 @@ function checkEff(data: AniDele | { children: AniDele[] }) {
         }
     }
     checkSelection();
-
-    function isAniDele(data: AniDele | { children: AniDele[] }): data is AniDele {
-        return !data["children"]
-    }
 }
-
+function isAniDele(data: AniDele | { children: AniDele[] }): data is AniDele {
+    return !data["children"]
+}
 
 function tickEff(data: AniDele) {
     if (data) {
@@ -385,8 +383,8 @@ function tickEff(data: AniDele) {
 /**
  * 选中特效
  */
-function selectEff(data: AniDele) {
-    if (checkingSelectionData) {
+function selectEff(data: AniDele | { children: AniDele[] }) {
+    if (checkingSelectionData || !isAniDele(data)) {
         return
     }
 
