@@ -4,7 +4,16 @@ import "google/protobuf/descriptor.proto";
 {package}
 
 extend google.protobuf.MessageOptions {
-    optional int32 cmd = 51234;
+    optional int32 cmd = 51000;
+    optional int32 climit = 51001;
+}
+
+extend google.protobuf.FileOptions {
+    optional string cmodule = 52000;
+    optional string cpath = 52001;
+    optional string service = 52002;
+    optional int32 pbindex = 52003;
+    optional string name = 52004;
 }
 `
 

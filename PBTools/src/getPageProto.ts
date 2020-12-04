@@ -108,6 +108,7 @@ export function getPageData(content: string, name: string) {
         name = Pinyin.getFullChars(name).replace(/[^a-zA-Z]/g, "");
     }
 
+    page.protoContent = content;
     page.content = globalIdentityContent.join("\n");
     page.name = name;
     return page;

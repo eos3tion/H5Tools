@@ -41,7 +41,7 @@ export default class ServerProxy extends ServerProxy3 {
         for (let name in linkDict) {
             ProtoFile.start();
             const page = linkDict[name];
-            const { impRefNames, cmds, content } = page;
+            const { impRefNames, cmds, protoContent } = page;
 
             for (let i = 0; i < impRefNames.length; i++) {
                 const impName = impRefNames[i];
@@ -54,7 +54,7 @@ export default class ServerProxy extends ServerProxy3 {
 
 
             ClientCmdType.start();
-            ProtoFile.add(content);
+            ProtoFile.add(protoContent);
             for (let cmd in cmds) {
                 const cmdInfo = cmds[cmd];
                 let icmd = +cmd;

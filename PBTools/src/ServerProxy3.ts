@@ -135,7 +135,7 @@ export default class ServerProxy extends ServerProxy2 {
         ClientCmdType.start();
         for (let name in linkDict) {
             const page = linkDict[name];
-            ProtoFile.add(page.content);
+            ProtoFile.add(page.protoContent);
             const cmds = page.cmds;
             for (let cmd in cmds) {
                 const cmdInfo = cmds[cmd];
