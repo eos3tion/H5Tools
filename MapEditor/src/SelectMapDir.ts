@@ -59,7 +59,7 @@ function showMapList(basePath: string) {
     } catch (e) {
         return alert(`配置文件[${cfgFile}]内容有误，请检查`);
     }
-    cfg.dbonePath ||= "../dbones";
+    cfg.dbonePath ||= "../dbone";
     cfg.effectPath ||= "../a";
     Core.cfg = cfg;
     cookie.setCookie(MapPathCookie, basePath);
