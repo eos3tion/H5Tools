@@ -255,6 +255,9 @@ function getPath(uri: string) {
 }
 
 async function prepareAndCheck(p: string) {
+    if (!fs.existsSync(p)) {
+        return alert(`无法找到龙骨文件夹[${p}]`);
+    }
     let fstats = fs.statSync(p);
     if (!fstats.isDirectory()) {
         return alert(`龙骨文件夹不正确`)
