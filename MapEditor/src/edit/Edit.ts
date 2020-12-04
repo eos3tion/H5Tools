@@ -545,7 +545,7 @@ function getMapInfoPB(map: jy.MapInfo) {
         }
         out.push(eff);
     }
-    pb.effs = map.effs as jy.MapEffPB[];
+    pb.effs = out as jy.MapEffPB[];
     return pb;
 }
 
