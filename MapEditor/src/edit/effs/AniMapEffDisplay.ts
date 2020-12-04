@@ -10,6 +10,7 @@ const anis: { [index: string]: jy.AniInfo } = $DD.ani = {};
 
 class AniMapEffRender implements MapEffRender {
 
+    type = jy.MapEffType.Ani;
     uri: string;
     get display() {
         return this.render.display;

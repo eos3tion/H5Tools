@@ -32,6 +32,7 @@ function getStr(str: string) {
     }
 }
 export class DBoneMapEffRender implements MapEffRender {
+    type = jy.MapEffType.DBone;
     display = new egret.Sprite()
 
     db: dragonBones.EgretArmatureDisplay;

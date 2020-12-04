@@ -482,6 +482,10 @@ function saveMap() {
             dat.layer = layers.indexOf(dat.layerID);
             dat.scaleX = dat.sX * 100 | 0;
             dat.scaleY = dat.sY * 100 | 0;
+            let type = dele.render?.type;
+            if (type) {
+                dat.type = type;
+            }
             effs[i] = dat;
         }
         out.effs = effs;

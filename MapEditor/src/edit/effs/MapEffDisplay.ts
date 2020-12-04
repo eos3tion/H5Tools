@@ -14,6 +14,8 @@ export interface MapEffRender {
      */
     detail?: MapEffDetailFragment;
     onRecycle();
+
+    type: number;
 }
 export interface FileArray {
     length: number;
