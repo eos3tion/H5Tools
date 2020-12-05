@@ -143,7 +143,7 @@ module ClientCmdType {
     }
 
     export function add(cmd: number, name: string) {
-        lines.push(`\tpublic final static Integer ${name} = ${cmd};`);
+        lines.push(`\tpublic final static int ${name} = ${cmd};`);
     }
 
     export function flush(cmdPackage: string, cmdClass: string) {
