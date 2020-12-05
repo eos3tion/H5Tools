@@ -37,6 +37,8 @@ export default class ServerProxy extends ServerProxy3 {
         const protoSavePath = path.join(protoBasePath, Const.ProtoFilePath);
         //生成附加文件
         saveCommonProto(protoSavePath, `package ${javaProtoPackage};`);
+
+        ClientCmdType.start();
         //生成proto文件
         for (let name in linkDict) {
             ProtoFile.start();
@@ -53,7 +55,6 @@ export default class ServerProxy extends ServerProxy3 {
             }
 
 
-            ClientCmdType.start();
             ProtoFile.add(protoContent);
             for (let cmd in cmds) {
                 const cmdInfo = cmds[cmd];
@@ -80,7 +81,7 @@ export default class ServerProxy extends ServerProxy3 {
             //生成ClientCmdType.java
             let { className: cmdClassName, packageName: cmdPackageName } = this.parseFullClassName(cmdFullPath);
             let javaFile = path.join(sPath, ...cmdPackageName.split("."), cmdClassName + ".java");
-            FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName));
+            FsExtra.writeFileSync(javaFile, ClientCmdType.flush(cmdPackageName, cmdClassName));
             log(`生成文件${javaFile}`)
         }
     }
@@ -145,12 +146,9 @@ module ClientCmdType {
         lines.push(`\tpublic final static Integer ${name} = ${cmd};`);
     }
 
-    export function flush(cmdPackage: string) {
+    export function flush(cmdPackage: string, cmdClass: string) {
         return `package ${cmdPackage};
-public class ClientCmdType {
-    /***debug gm command****/
-    public final static Integer DebugCmd_C = 32767; 
-    public final static Integer DebugCmd_S = 32766;
+public class ${cmdClass} {
 ` + lines.join("\n")
             + "\n}"
     }
