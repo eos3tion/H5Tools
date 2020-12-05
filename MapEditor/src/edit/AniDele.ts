@@ -303,7 +303,10 @@ export class AniDele extends egret.Sprite {
 
 
     copy() {
-        jy.dispatch(AppEvent.CopyEffect, this.data.$clone());
+        let data = this.data;
+        let uri = this.render.uri || data.uri;
+        data.uri = uri;
+        jy.dispatch(AppEvent.CopyEffect, data.$clone());
     }
 
     showPro() {
