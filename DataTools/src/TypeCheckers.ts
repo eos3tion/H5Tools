@@ -35,7 +35,7 @@ abstract class AbsTypeChecker implements TypeChecker {
     jsonDef?: any;
 
     getOutValue(v: any, def: any) {
-        return [v, def, this.jsonDef, 0].find(v => v != undefined)
+        return [v, def, this.jsonDef, 0].find(v => v !== undefined)
     }
 }
 /**
@@ -75,7 +75,7 @@ class StringChecker extends AbsTypeChecker {
 
     def = "";
 
-    jsonDef = 0;
+    jsonDef = "";
 
     idx = TypeCheckerIndex.String;
 
@@ -99,7 +99,7 @@ class NumberChekcer extends AbsTypeChecker {
     javaType = "double";
 
     def = 0;
-    jsonDef = "";
+    jsonDef = 0;
     idx = TypeCheckerIndex.Number;
     check(value: string) {
         if (!value) {
@@ -201,6 +201,8 @@ class ArrayCheker extends AbsTypeChecker {
     def = undefined;
     idx = TypeCheckerIndex.Array;
 
+    jsonDef = null;
+
     check(value: string): any {
         if (value) {
             if (Array.isArray(value)) {
@@ -233,6 +235,8 @@ class Array2DCheker extends AbsTypeChecker {
 
     def = undefined;
     idx = TypeCheckerIndex.Array2D;
+
+    jsonDef = null;
 
     check(value: string): any {
         if (value) {
@@ -414,6 +418,8 @@ class ConditionChecker extends AbsTypeChecker {
     def = undefined;
     idx = TypeCheckerIndex.Condition;
     solveString = true;
+
+    jsonDef = "";
     check(value: string) {
         decode(value);
         return value;
