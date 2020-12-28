@@ -11,6 +11,7 @@ import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
 import * as $electron from "electron";
 import MapInfo = jy.MapInfo;
+import { loadTiledMap } from "./tiled/TiledParser";
 
 const electron: typeof $electron = nodeRequire("electron");
 
@@ -38,6 +39,19 @@ const state = AppState.EditMapInfo;
 lblPicHCount.addEventListener("change", onChange)
 lblPicVCount.addEventListener("change", onChange)
 lblPicSize.addEventListener("change", onChange)
+
+const lblTiledPath = $g("lblTiledPath") as HTMLInputElement;
+const btnCheckTiled = $g("btnCheckTiled") as HTMLInputElement;
+btnCheckTiled.addEventListener("click", function () {
+    let p = lblTiledPath.value.trim();
+    if (p) {
+        try {
+            loadTiledMap(p)
+        } catch (e) {
+            alert(e.message);
+        }
+    }
+})
 
 /**
  * 手动设置地图数值
