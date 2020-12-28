@@ -26,6 +26,8 @@ declare const enum ConstString {
      * java的文件路径
      */
     JavaMapPath = "path.mm",
+
+    EventBeforeRunEgret = "BeforeRunEgret",
 }
 
 declare const enum ConstNum {
@@ -188,6 +190,11 @@ declare namespace jy {
          * 地图所有数据的base64字符串
          */
         mapBytesB64?: string;
+
+        /**
+         * 通过`Tiled`编辑的地图路径
+         */
+        tiledPath: string;
     }
 
     export interface GameEngine {

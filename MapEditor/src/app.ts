@@ -14,6 +14,18 @@ const states: { [state: number]: ViewState } = {
     [AppState.Edit]: Edit
 }
 
+jy.Global.initTick();
+requestAnimationFrame(onTick);
+let tickFlag = true;
+function onTick() {
+    if (tickFlag) {
+        requestAnimationFrame(onTick);
+        egret.ticker.update();
+    }
+}
+jy.on(ConstString.EventBeforeRunEgret, function () {
+    tickFlag = false;
+})
 
 function show(view: HTMLElement) {
     document.documentElement.getElementsByTagName("body")[0].appendChild(view);

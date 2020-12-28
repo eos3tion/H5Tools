@@ -90,7 +90,7 @@ class Entry extends egret.Sprite {
     async onAdded() {
         //创建地图
         jy.GameEngine.init(this.stage, HGameEngine);
-        jy.Global.initTick();
+        // jy.Global.initTick();
         //地编不删除已经加载的数据
         jy.ResManager.init(Infinity);
         await showMap();
@@ -224,6 +224,7 @@ async function setData(map: jy.MapInfo) {
     if (effs) {
         await prepareEffs(effs);
     }
+    jy.dispatch("BeforeRunEgret");
     egret.runEgret({ renderMode: "webgl" });
 }
 
