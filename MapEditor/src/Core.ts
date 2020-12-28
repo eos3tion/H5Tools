@@ -1,4 +1,5 @@
 import { $PathSolution } from "./mappath/PathSolution";
+import { TiledMap } from "./tiled/TiledParser";
 export const Core = {
     /**
      * 地图列表
@@ -12,6 +13,10 @@ export const Core = {
      * 全局配置
      */
     cfg: null as GlobalCfg,
+    /**
+     * tiled生成的地图数据
+     */
+    tiledMap: null as TiledMap,
     /**
      * 隐藏视图
      */

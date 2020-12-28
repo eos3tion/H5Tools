@@ -4624,22 +4624,13 @@ var egret;
                 this.vertexIndex = 0;
                 this.indexIndex = 0;
                 this.hasMesh = false;
-                var indices = new Uint16Array(12288 /* MaxIndicesCount */);
-                this.indices = indices;
-                this.indicesForMesh = new Uint16Array(12288 /* MaxIndicesCount */);
-                var vertices = new ArrayBuffer(8192 /* MaxVertexCount */ * 24 /* VertByteSize */);
+                this.indices = egret.SharedIndices;
+                this.indicesForMesh = new Uint16Array(122880 /* MaxIndicesCount */);
+                var vertices = new ArrayBuffer(81920 /* MaxVertexCount */ * 24 /* VertByteSize */);
                 var vertF32 = new Float32Array(vertices);
                 var vertU32 = new Uint32Array(vertices);
                 this.vertices = vertF32;
                 this._vertU32 = vertU32;
-                for (var i = 0, j = 0; i < 12288 /* MaxIndicesCount */; i += 6, j += 4) {
-                    indices[i + 0] = j + 0;
-                    indices[i + 1] = j + 1;
-                    indices[i + 2] = j + 2;
-                    indices[i + 3] = j + 0;
-                    indices[i + 4] = j + 2;
-                    indices[i + 5] = j + 3;
-                }
             }
             /**
              * 是否达到最大缓存数量
@@ -4647,7 +4638,7 @@ var egret;
             WebGLVertexArrayObject.prototype.reachMaxSize = function (vertexCount, indexCount) {
                 if (vertexCount === void 0) { vertexCount = 4; }
                 if (indexCount === void 0) { indexCount = 6; }
-                return this.vertexIndex > 8192 /* MaxVertexCount */ - vertexCount || this.indexIndex > 12288 /* MaxIndicesCount */ - indexCount;
+                return this.vertexIndex > 81920 /* MaxVertexCount */ - vertexCount || this.indexIndex > 122880 /* MaxIndicesCount */ - indexCount;
             };
             /**
              * 获取缓存完成的顶点数组

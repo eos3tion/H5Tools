@@ -21,7 +21,7 @@ export async function loadTiledMap(cfgPath: string) {
         throw Error(`TiledMap的配置[${cfgPath}]，格式不是JSON`);
     }
 
-    const { layers, tilesets } = cfg;
+    const { layers, tilesets, width, height, tilewidth: mtw, tileheight: mth } = cfg;
     //检查图层数据
     if (!layers || !layers.length) {
         throw Error(`TiledMap的配置[${cfgPath}]有误，没有任何有效图层`);
@@ -47,7 +47,7 @@ export async function loadTiledMap(cfgPath: string) {
         let ox = 0, oy = 0;
         if (tileoffset) {
             ox = tileoffset.x;
-            oy = tileoffset.y;
+            oy = -(tileheight - mth - tileoffset.y);
         }
         //以左上为原点
         let verDict = {
@@ -57,8 +57,8 @@ export async function loadTiledMap(cfgPath: string) {
             [TileTexType.Rectangle]: [
                 ox, oy,
                 ox, oy + tileheight,
-                ox + tilewidth, oy,
-                ox + tilewidth, oy + tileheight
+                ox + tilewidth, oy + tileheight,
+                ox + tilewidth, oy
             ],
             //       上(0)
             // 左(1)        右(3)
@@ -141,7 +141,7 @@ export async function loadTiledMap(cfgPath: string) {
         }
     }
 
-    const tileLayers = [] as Layer[];
+    const tileLayers = [] as TiledMapLayerInfo[];
 
     //处理layer数据
     for (const layer of layers) {
@@ -149,21 +149,33 @@ export async function loadTiledMap(cfgPath: string) {
         const { data, width, height } = layer;
         let dict = [] as { [id: number]: Tile };
         let i = 0;
+        let textures = [] as egret.Texture[];
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 let id = data[i];
                 if (id !== 0) {
                     let tile = tileDict[id];
                     if (tile) {
-                        dict[id] = tile;
+                        dict[i] = tile;
+                        textures.pushOnce(tile.texture);
                     }
                 }
                 i++;
             }
         }
-        tileLayers.push({ cfg: layer, tileDict: dict })
+        tileLayers.push({
+            cfg: layer,
+            tileDict: dict,
+            textures
+        })
     }
-    return tileLayers;
+    return {
+        width,
+        height,
+        tileWidth: mtw,
+        tileHeight: mth,
+        layers: tileLayers
+    } as TiledMap;
 }
 
 function getProperty(properties: TieldMap.Property[], key: string) {
@@ -176,9 +188,19 @@ function getProperty(properties: TieldMap.Property[], key: string) {
     }
 }
 
-interface Layer {
+export interface TiledMap {
+    width: number;
+    height: number;
+
+    tileWidth: number;
+    tileHeight: number;
+    layers: TiledMapLayerInfo[];
+}
+
+export interface TiledMapLayerInfo {
     cfg: TieldMap.Layer;
-    tileDict: { [pos: number]: Tile }
+    tileDict: { [pos: number]: Tile };
+    textures: egret.Texture[];
 }
 
 interface TileSet {

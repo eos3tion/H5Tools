@@ -11,7 +11,7 @@ import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
 import * as $electron from "electron";
 import MapInfo = jy.MapInfo;
-import { loadTiledMap } from "./tiled/TiledParser";
+import { loadTiledMap, TiledMap } from "./tiled/TiledParser";
 
 const electron: typeof $electron = nodeRequire("electron");
 
@@ -42,13 +42,20 @@ lblPicSize.addEventListener("change", onChange)
 
 const lblTiledPath = $g("lblTiledPath") as HTMLInputElement;
 const btnCheckTiled = $g("btnCheckTiled") as HTMLInputElement;
-btnCheckTiled.addEventListener("click", function () {
+btnCheckTiled.addEventListener("click", async function () {
     let p = lblTiledPath.value.trim();
     if (p) {
+        let map: TiledMap;
         try {
-            loadTiledMap(p)
+            map = await loadTiledMap(p)
         } catch (e) {
             alert(e.message);
+        }
+        if (map) {
+            Core.tiledMap = map;
+            if (Core.selectMap) {
+                resizeMap(Core.selectMap, map.tileWidth, map.tileHeight, map.width - 1, map.height - 1);
+            }
         }
     }
 })

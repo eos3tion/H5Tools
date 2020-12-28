@@ -17450,7 +17450,7 @@ var egret;
                                     var codeLen = words[k].length;
                                     var has4BytesUnicode = false;
                                     if (codeLen == 1 && k < wl - 1) // when there is 2 bytes high surrogate
-                                     {
+                                    {
                                         var charCodeHigh = words[k].charCodeAt(0);
                                         var charCodeLow = words[k + 1].charCodeAt(0);
                                         if (charCodeHigh >= 0xD800 && charCodeHigh <= 0xDBFF && (charCodeLow & 0xFC00) == 0xDC00) { // low
@@ -17477,7 +17477,7 @@ var egret;
                                             var codeLen = words2[k2].length;
                                             var has4BytesUnicode2 = false;
                                             if (codeLen == 1 && k2 < wl2 - 1) // when there is 2 bytes high surrogate
-                                             {
+                                            {
                                                 var charCodeHigh = words2[k2].charCodeAt(0);
                                                 var charCodeLow = words2[k2 + 1].charCodeAt(0);
                                                 if (charCodeHigh >= 0xD800 && charCodeHigh <= 0xDBFF && (charCodeLow & 0xFC00) == 0xDC00) { // low
@@ -19285,7 +19285,7 @@ var egret;
          */
         ByteArray.prototype.encodeUTF8 = function (string) {
             var offset = 0, c1, // character 1
-            c2; // character 2
+                c2; // character 2
             var buffer = []; //new Uint8Array(ByteArray.utf8ByteLength(string));
             for (var i = 0; i < string.length; ++i) {
                 c1 = string.charCodeAt(i);
@@ -19326,7 +19326,7 @@ var egret;
             if (len < 1)
                 return "";
             var parts = null, chunk = [], start = 0, i = 0, // char offset
-            t; // temporary
+                t; // temporary
             while (start < len) {
                 t = buffer[start++];
                 if (t < 128)
@@ -19468,6 +19468,19 @@ var egret;
         prototype.__types__ = types;
     }
     egret.registerClass = registerClass;
+})(egret || (egret = {}));
+var egret;
+(function (egret) {
+    var indices = new Uint16Array(122880);
+    for (var i = 0, j = 0; i < 122880; i += 6, j += 4) {
+        indices[i + 0] = j + 0;
+        indices[i + 1] = j + 1;
+        indices[i + 2] = j + 2;
+        indices[i + 3] = j + 0;
+        indices[i + 4] = j + 2;
+        indices[i + 5] = j + 3;
+    }
+    egret.SharedIndices = indices;
 })(egret || (egret = {}));
 //////////////////////////////////////////////////////////////////////////////////////
 //

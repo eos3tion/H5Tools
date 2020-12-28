@@ -1,6 +1,8 @@
 import BaseLayer = jy.BaseLayer;
 import { AniDele } from "./AniDele";
 import { createEffs } from "./effs/MapEffDisplay";
+import { initTiledMap } from "../tiled/TiledLayer";
+import { Core } from "../Core";
 
 class HGameEngine extends jy.GameEngine {
     /**
@@ -33,6 +35,7 @@ class HGameEngine extends jy.GameEngine {
 
     noX: boolean;
     noY: boolean;
+    tiled: { setRect(rect: egret.Rectangle): void; };
     protected init() {
         this.initConfigs();
         this.initLayers();
@@ -205,6 +208,10 @@ class HGameEngine extends jy.GameEngine {
             this._bg.setMini(ConstString.Mini + map.ext);
             //初始化地图特效
             await initEff(map.effs, this.effs);
+            let tiledMap = Core.tiledMap;
+            if (tiledMap) {
+                this.tiled = initTiledMap(tiledMap);
+            }
         }
     }
 
@@ -271,6 +278,10 @@ class HGameEngine extends jy.GameEngine {
 
             //渲染地图底图
             this._bg.setRect(rect);
+            let tiled = this.tiled;
+            if (tiled) {
+                tiled.setRect(rect);
+            }
             this._viewRect = rect;
             camera.change();
             //检查特效
