@@ -47,7 +47,7 @@ btnCheckTiled.addEventListener("click", async function () {
     if (p) {
         let map: TiledMap;
         try {
-            map = await loadTiledMap(p)
+            map = await loadTiledMap(p, true)
         } catch (e) {
             alert(e.message);
         }
