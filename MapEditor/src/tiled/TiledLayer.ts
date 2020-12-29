@@ -20,6 +20,12 @@ export function initTiledMap(data: TiledMap) {
         setRect({ left, top, right, bottom }: egret.Rectangle) {
             let sx = left / tileWidth | 0;
             let sy = top / hh | 0;
+            if (sy > 0) {
+                sy--;
+            }
+            if (sx > 0) {
+                sx--;
+            }
             let ex = Math.ceil(right / tileWidth) + 1;
             let ey = Math.ceil(bottom / hh) + 1;
             if (ex > cols) {
