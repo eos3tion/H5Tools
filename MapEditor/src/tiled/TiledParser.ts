@@ -45,7 +45,20 @@ export async function loadTiledMap(cfgPath: string, mergeTileset?: boolean) {
     const tilesetList = [] as TileSet[];
     for (let i = 0; i < tilesets.length; i++) {
         let cfg = tilesets[i];
-        let { image, imagewidth, imageheight, columns, firstgid, tilewidth, tileheight, tilecount, margin, spacing, tiles = [], tileoffset } = cfg;
+        let { image, imagewidth, imageheight, columns, firstgid, tilewidth, tileheight, tilecount, margin, spacing, tiles, tileoffset } = cfg;
+        if (tiles) {
+            if (tiles.length != tilecount) {
+                let newTiles = [];
+                //根据id重整数据
+                for (let i = 0; i < tiles.length; i++) {
+                    const tile = tiles[i];
+                    newTiles[tile.id] = tile;
+                }
+                tiles = newTiles;
+            }
+        } else {
+            tiles = [];
+        }
         let setA = getProperty(cfg.properties, Const.RhombusKey);
         let imgPath = path.join(baseDir, image);
         let item = await loadRes({ uri: imgPath, url: imgPath });
@@ -89,61 +102,102 @@ export async function loadTiledMap(cfgPath: string, mergeTileset?: boolean) {
             let x = margin;
             for (let col = 0; col < columns; col++) {
                 let tileInfo = tiles[t];
-                let tileA = setA || getProperty(tileInfo?.properties, Const.RhombusKey);
-                let left = x / imagewidth;
-                let top = y / imageheight;
-                let right = (x + tilewidth) / imagewidth;
-                let bottom = (y + tileheight) / imageheight;
-                let hw = (x + tilewidth * .5) / imagewidth;
-                let hh = (y + tileheight * .5) / imageheight;
                 let uvs = [] as number[];
                 let type: TileTexType;
-                if (tileA) {//菱形
-                    //       上(0)
-                    // 左(1)        右(3)
-                    //       下(2)
-                    uvs[0] = hw;
-                    uvs[1] = top;
+                let polygon = tileInfo?.objectgroup?.objects?.[0]?.polygon;
+                let verts: number[];
+                if (polygon && polygon.length == 4) {
+                    let [p0, p1, p2, p3] = polygon;
+                    verts = [];
+                    verts[0] = p0.x + ox;
+                    verts[1] = p0.y + oy;
+                    verts[2] = p1.x + ox;
+                    verts[3] = p1.y + oy;
+                    verts[4] = p2.x + ox;
+                    verts[5] = p2.y + oy;
+                    verts[6] = p3.x + ox;
+                    verts[7] = p3.y + oy;
 
-                    uvs[2] = left;
-                    uvs[3] = hh;
+                    type = TileTexType.Polygon;
+                    //得到差值的polygon
+                    let Tpolygon = polygon.map(pt => ({
+                        x: pt.x + x,
+                        y: pt.y + y
+                    }))
+                    {
+                        let [p0, p1, p2, p3] = Tpolygon;
+                        uvs[0] = p0.x / imagewidth;
+                        uvs[1] = p0.y / imageheight;
 
-                    uvs[4] = hw;
-                    uvs[5] = bottom;
+                        uvs[2] = p1.x / imagewidth;
+                        uvs[3] = p1.y / imageheight;
 
-                    uvs[6] = right;
-                    uvs[7] = hh;
+                        uvs[4] = p2.x / imagewidth;
+                        uvs[5] = p2.y / imageheight;
 
-                    hasRhombus = true;
-                    type = TileTexType.Rhombus;
+                        uvs[6] = p3.x / imagewidth;
+                        uvs[7] = p3.y / imageheight;
+                    }
+
                 } else {
-                    // 左上(0)      右上(3)
-                    // 
-                    // 左下(1)      右下(2)
-                    uvs[0] = left;
-                    uvs[1] = top;
 
-                    uvs[2] = left;
-                    uvs[3] = bottom;
+                    let tileA = setA || getProperty(tileInfo?.properties, Const.RhombusKey);
+                    let left = x / imagewidth;
+                    let top = y / imageheight;
+                    let right = (x + tilewidth) / imagewidth;
+                    let bottom = (y + tileheight) / imageheight;
+                    let hw = (x + tilewidth * .5) / imagewidth;
+                    let hh = (y + tileheight * .5) / imageheight;
+                    if (tileA) {//菱形
+                        //       上(0)
+                        // 左(1)        右(3)
+                        //       下(2)
+                        uvs[0] = hw;
+                        uvs[1] = top;
 
-                    uvs[4] = right;
-                    uvs[5] = bottom;
+                        uvs[2] = left;
+                        uvs[3] = hh;
 
-                    uvs[6] = right;
-                    uvs[7] = top;
+                        uvs[4] = hw;
+                        uvs[5] = bottom;
 
-                    hasRect = true;
-                    type = TileTexType.Rectangle;
+                        uvs[6] = right;
+                        uvs[7] = hh;
+
+                        hasRhombus = true;
+                        type = TileTexType.Rhombus;
+                    } else {
+                        // 左上(0)      右上(3)
+                        // 
+                        // 左下(1)      右下(2)
+                        uvs[0] = left;
+                        uvs[1] = top;
+
+                        uvs[2] = left;
+                        uvs[3] = bottom;
+
+                        uvs[4] = right;
+                        uvs[5] = bottom;
+
+                        uvs[6] = right;
+                        uvs[7] = top;
+
+                        hasRect = true;
+                        type = TileTexType.Rectangle;
+                    }
+
+                    verts = verDict[type];
                 }
                 let tile = tileDict[firstgid] = {
                     uvs,
-                    vertices: verDict[type],
+                    vertices: verts,
                     type,
                     texture,
                     tileset,
                     id: firstgid,
                     ox: x,
-                    oy: y
+                    oy: y,
+                    polygon
                 }
                 t++;
                 firstgid++;
@@ -320,7 +374,7 @@ function mergeTileSets(tilesets: TileSet[]) {
                 uvs[6] = right;
                 uvs[7] = bottom;
 
-            } else {
+            } else if (type == TileTexType.Rhombus) {
                 //       左(1)
                 //
                 //    下(2)  上(0)
@@ -341,6 +395,24 @@ function mergeTileSets(tilesets: TileSet[]) {
                 //右(3)
                 uvs[6] = mh;
                 uvs[7] = bottom;
+            } if (type == TileTexType.Polygon) {
+                let polygon = tile.polygon.map(pt => ({
+                    x: dh - pt.y + ox,
+                    y: pt.x + oy
+                }));
+                let [p1, p2, p3, p0] = polygon;
+                uvs[0] = p0.x / Size;
+                uvs[1] = p0.y / Size;
+
+                uvs[2] = p1.x / Size;
+                uvs[3] = p1.y / Size;
+
+                uvs[4] = p2.x / Size;
+                uvs[5] = p2.y / Size;
+
+                uvs[6] = p3.x / Size;
+                uvs[7] = p3.y / Size;
+
             }
         } else {
             cnt.putImageData(data, ox, oy);
@@ -364,7 +436,7 @@ function mergeTileSets(tilesets: TileSet[]) {
                 uvs[6] = right;
                 uvs[7] = top;
 
-            } else {
+            } else if (type == TileTexType.Rhombus) {
                 //       上(0)
                 // 左(1)        右(3)
                 //       下(2)
@@ -383,6 +455,23 @@ function mergeTileSets(tilesets: TileSet[]) {
                 //右(3)
                 uvs[6] = right;
                 uvs[7] = mv;
+            } else if (type == TileTexType.Polygon) {
+                let polygon = tile.polygon.map(pt => ({
+                    x: pt.x + ox,
+                    y: pt.y + oy
+                }));
+                let [p0, p1, p2, p3] = polygon;
+                uvs[0] = p0.x / Size;
+                uvs[1] = p0.y / Size;
+
+                uvs[2] = p1.x / Size;
+                uvs[3] = p1.y / Size;
+
+                uvs[4] = p2.x / Size;
+                uvs[5] = p2.y / Size;
+
+                uvs[6] = p3.x / Size;
+                uvs[7] = p3.y / Size;
             }
         }
     }
@@ -449,6 +538,10 @@ interface TileSet {
 const enum TileTexType {
     Rectangle = 0,
     Rhombus = 1,
+    /**
+     * 直接在Tiled中画出的4点的多边形
+     */
+    Polygon = 2,
 }
 
 interface Tile {
@@ -473,4 +566,8 @@ interface Tile {
      * 在纹理中的y轴偏移量（像素）
      */
     oy: number;
+    /**
+     * 只有type为`多边形`时，此值有效
+     */
+    polygon?: jy.Point[];
 }

@@ -117,7 +117,7 @@ declare namespace TieldMap {
         tiles?: Tile[];
         properties?: Property[];
         tilewidth: number;
-        tileoffset?: Tileoffset;
+        tileoffset?: Point;
 
     }
 
@@ -135,7 +135,7 @@ declare namespace TieldMap {
         tile: number;
     }
 
-    interface Tileoffset {
+    interface Point {
         x: number;
         y: number;
     }
@@ -147,14 +147,44 @@ declare namespace TieldMap {
          */
         terrain: [number, number, number, number];
 
-        properties: Property[];
-
+        properties?: Property[];
+        objectgroup?: Objectgroup;
     }
 
-    export interface Property {
+    interface Property {
         name: string;
         type: string;
         value: boolean;
+    }
+
+
+    interface Objectgroup {
+        draworder: string;
+        id: number;
+        name: string;
+        objects: Object[];
+        opacity: number;
+        type: string;
+        visible: boolean;
+        x: number;
+        y: number;
+    }
+
+    interface Object {
+        ellipse?: boolean;
+        point?: boolean;
+
+        height: number;
+        id: number;
+        name: string;
+        polygon?: Point[];
+        polyline?: Point[];
+        rotation: number;
+        type: string;
+        visible: boolean;
+        width: number;
+        x: number;
+        y: number;
     }
 }
 
