@@ -3,6 +3,8 @@ const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
 import { Core } from "./Core";
+import { loadTiledMap, TiledMap } from "./tiled/TiledParser";
+import { createTileSets } from "./tiled/TileSetParser";
 
 const txtMapPath = $g("txtMapPath") as HTMLInputElement;
 const view = $g("StateSelectMapDir") as HTMLDivElement;
@@ -94,3 +96,18 @@ export {
     state,
     view,
 }
+
+
+const lblTiledPath = $g("lblTiledSetPath") as HTMLInputElement;
+const btnCheckTiled = $g("btnCreateTiledSet") as HTMLInputElement;
+btnCheckTiled.addEventListener("click", async function () {
+    let p = lblTiledPath.value.trim();
+    if (p) {
+        try {
+            Core.tileDict = await createTileSets(p, Core.basePath)
+        } catch (e) {
+            alert(e.message);
+        }
+
+    }
+})

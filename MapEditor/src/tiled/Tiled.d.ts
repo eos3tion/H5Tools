@@ -189,3 +189,11 @@ declare namespace TieldMap {
 }
 
 
+declare const enum TiledConst {
+    /**
+     * 默认导出目录`tiled`
+     */
+    DefaultDir = "tiled",
+
+    TileSetFile = "tileset.json",
+}

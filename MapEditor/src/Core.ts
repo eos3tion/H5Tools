@@ -1,5 +1,6 @@
 import { $PathSolution } from "./mappath/PathSolution";
 import { TiledMap } from "./tiled/TiledParser";
+import { Tile } from "./tiled/TileSetParser";
 export const Core = {
     /**
      * 地图列表
@@ -42,6 +43,7 @@ export const Core = {
      */
     pathSolution: null as $PathSolution,
 
+    tileDict: null as { [id: number]: Tile }
 }
 
 export function setMapBit(x: number, y: number, columns: number, pathdata: Uint8Array, flag: any) {
