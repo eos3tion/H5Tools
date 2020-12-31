@@ -19471,8 +19471,8 @@ var egret;
 })(egret || (egret = {}));
 var egret;
 (function (egret) {
-    var indices = new Uint16Array(122880);
-    for (var i = 0, j = 0; i < 122880; i += 6, j += 4) {
+    var indices = new Uint16Array(12288);
+    for (var i = 0, j = 0; i < 12288; i += 6, j += 4) {
         indices[i + 0] = j + 0;
         indices[i + 1] = j + 1;
         indices[i + 2] = j + 2;
