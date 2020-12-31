@@ -45,9 +45,13 @@ const btnCheckTiled = $g("btnCheckTiled") as HTMLInputElement;
 btnCheckTiled.addEventListener("click", async function () {
     let p = lblTiledPath.value.trim();
     if (p) {
+        let tileDict = Core.tileDict;
+        if (!tileDict) {
+            return alert(`没有纹理集，请刷新，检查纹理集，再做Tiled地图的加载`);
+        }
         let map: TiledMap;
         try {
-            map = await loadTiledMap(p, true)
+            map = await loadTiledMap(p, tileDict);
         } catch (e) {
             alert(e.message);
         }

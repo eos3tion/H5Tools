@@ -89,6 +89,10 @@ interface GlobalCfg {
      * 龙骨资源目录，默认使用"../dbone"目录
      */
     dbonePath?: string;
+    /**
+     * 是否检查tiled资源
+     */
+    tiled?: boolean;
 }
 
 /**

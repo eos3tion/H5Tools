@@ -1,21 +1,20 @@
-import { TiledMap, TiledMapLayerInfo } from "./TiledParser";
+import { TiledMap } from "./TiledParser";
+const enum Const {
+    MaxIndicesCount = 12288,
+    IndicesCount = 6,
+}
+
 
 export function initTiledMap(data: TiledMap) {
     const layers = data.layers;
-    let addLayerConfig = jy.GameEngine.addLayerConfig;
-    const list = [] as TiledLayer[];
-    let start = 1720;
-    // id 从1720 到 1729
-    for (let i = 0; i < layers.length; i++) {
-        const layerData = layers[i];
-        const lid = start + i;
-        addLayerConfig(lid, jy.GameLayerID.GameScene, TiledLayer);
-        let layer = $engine.getLayer(lid) as TiledLayer;
-        layer.init(layerData);
-        list.push(layer);
-    }
+    let lid = 1720;
+    jy.GameEngine.addLayerConfig(lid, jy.GameLayerID.GameScene, jy.BaseLayer);
+    let layer = $engine.getLayer(lid) as jy.BaseLayer;
+
     const { tileWidth, tileHeight, width: cols, height: rows } = data;
     const hh = tileHeight >> 1;
+    let hw = tileWidth >> 1;
+    let lashHash: number;
     return {
         setRect({ left, top, right, bottom }: egret.Rectangle) {
             let sx = left / tileWidth | 0;
@@ -35,78 +34,70 @@ export function initTiledMap(data: TiledMap) {
                 ey = rows;
             }
 
-            for (const layer of list) {
-                layer.setRect(sx, sy, ex, ey, tileWidth, hh);
-            }
-        }
-    }
-}
-
-
-class TiledLayer extends egret.Sprite implements jy.GameLayer {
-
-    id: number;
-    data: TiledMapLayerInfo;
-    map: TiledMap;
-
-    meshs: { [hash: number]: egret.Mesh & { idx: number, count: number } };
-
-    constructor(id: number) {
-        super();
-        this.id = id;
-    }
-
-    init(data: TiledMapLayerInfo) {
-        this.data = data;
-        let textures = data.textures;
-        let meshs = {};
-        this.removeChildren();
-        for (let i = 0; i < textures.length; i++) {
-            const tex = textures[i];
-            let mesh = new egret.Mesh;
-            meshs[tex.hashCode] = mesh;
-            mesh.texture = tex;
-            this.addChild(mesh);
-        }
-        this.meshs = meshs;
-    }
-
-    setRect(sx: number, sy: number, ex: number, ey: number, tw: number, hh: number) {
-
-        const { tileDict, cfg: { width } } = this.data;
-        const meshs = this.meshs;
-        for (const hash in meshs) {
-            let mesh = meshs[hash];
-            mesh.idx = 0;
-            mesh.count = 0;
-        }
-        let hTW = tw >> 1;
-        for (let y = sy; y < ey; y++) {
-            let s = y * width;
-            let oy = y * hh;
-            let oxx = y & 1 ? hTW : 0;
-            for (let x = sx; x < ex; x++) {
-                let tile = tileDict[s + x];
-                if (tile) {
-                    const { uvs: cuvs, vertices: cverts, texture } = tile;
-                    const mesh = meshs[texture.hashCode];
-                    const { uvs, vertices } = mesh.$renderNode as egret.sys.MeshNode;
-                    let ox = x * tw + oxx;
-                    let ui = mesh.idx;
-                    for (let i = 0; i < 8; i++) {
-                        uvs[ui] = cuvs[i];
-                        vertices[ui] = cverts[i] + (i & 1 ? oy : ox);
-                        ui++;
+            let hash = (sy * cols + sx) * 1E8 + ey * cols + ex;
+            if (hash != lashHash) {
+                lashHash = hash;
+                let lastTexture: egret.Texture;
+                let children = layer.$children;
+                let ci = 0;
+                let mesh: egret.Mesh, count = 0, idx = 0;
+                for (let i = 0; i < layers.length; i++) {
+                    const tileDict = layers[i];
+                    for (let y = sy; y < ey; y++) {
+                        let s = y * cols;
+                        let oy = y * hh;
+                        let oxx = y & 1 ? hw : 0;
+                        for (let x = sx; x < ex; x++) {
+                            let tile = tileDict[s + x];
+                            if (tile) {
+                                const { uvs: cuvs, verts: cverts, texture } = tile;
+                                let flag = false;
+                                if (lastTexture != texture) {
+                                    lastTexture = texture;
+                                    flag = true;
+                                }
+                                if (!flag) {
+                                    if (mesh && count > Const.MaxIndicesCount - Const.IndicesCount) {
+                                        flag = true;
+                                    }
+                                }
+                                if (flag) {
+                                    if (mesh) {
+                                        (mesh.$renderNode as egret.sys.MeshNode).indices = egret.SharedIndices.subarray(0, count) as any;
+                                        mesh.$updateVertices();
+                                    }
+                                    mesh = children[ci++] as egret.Mesh;
+                                    if (!mesh) {
+                                        mesh = jy.recyclable(egret.Mesh);
+                                        layer.addChild(mesh, false);
+                                    }
+                                    mesh.texture = texture;
+                                    count = 0;
+                                    idx = 0;
+                                }
+                                const { uvs, vertices } = mesh.$renderNode as egret.sys.MeshNode;
+                                let ox = x * tileWidth + oxx;
+                                for (let xi = 0; xi < 8; xi++) {
+                                    uvs[idx] = cuvs[xi];
+                                    vertices[idx] = cverts[xi] + (xi & 1 ? oy : ox);
+                                    idx++;
+                                }
+                                count += Const.IndicesCount;
+                            }
+                        }
                     }
-                    mesh.idx = ui;
-                    mesh.count += 6;
+                }
+                if (mesh) {
+                    (mesh.$renderNode as egret.sys.MeshNode).indices = egret.SharedIndices.subarray(0, count) as any;
+                    mesh.$updateVertices();
+                }
+                //移除多余的
+                for (let i = children.length - 1; i >= ci; i--) {
+                    let mesh = layer.removeChildAt(i, false) as jy.Recyclable<egret.Mesh>;
+                    mesh.texture = null;
+                    mesh.recycle();
                 }
             }
-        }
-        for (const hash in meshs) {
-            let mesh = meshs[hash];
-            (mesh.$renderNode as egret.sys.MeshNode).indices = egret.SharedIndices.subarray(0, mesh.count) as any;
-            mesh.$updateVertices();
         }
     }
 }

@@ -3,8 +3,7 @@ const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
 import { Core } from "./Core";
-import { loadTiledMap, TiledMap } from "./tiled/TiledParser";
-import { createTileSets } from "./tiled/TileSetParser";
+import { createTileSets, loadTileset } from "./tiled/TileSetParser";
 
 const txtMapPath = $g("txtMapPath") as HTMLInputElement;
 const view = $g("StateSelectMapDir") as HTMLDivElement;
@@ -20,9 +19,15 @@ dlMapList.datalist({ onSelect: checkSelect, textField: "path" });
 const MapPathCookie = ConstString.CookiePrefix + "MapPath";
 txtMapPath.value = cookie.getCookie(MapPathCookie) || "";
 
-function onEdit() {
+async function onEdit() {
     let row = dlMapList.datalist("getSelected");
     if (row) {
+        //检查是否为tiled地图，尝试加载配置
+        if (Core.cfg.tiled) {
+            if (!Core.tileDict) {
+                Core.tileDict = await loadTileset(Core.basePath);
+            }
+        }
         jy.dispatch(AppEvent.StateChange, [AppState.EditMapInfo, row]);
     }
 }
@@ -73,8 +78,7 @@ function showMapList(basePath: string) {
     list.forEach(dir => {
         //检查子目录数据
         let fullDir = path.join(basePath, dir);
-        if (fs.statSync(fullDir).isDirectory() && dir != ConstString.LibPath) {
-
+        if (fs.statSync(fullDir).isDirectory() && dir != ConstString.LibPath && dir != TiledConst.DefaultDir) {
             //检查是否已经有文件内容
             let map = new jy.MapInfo();
             map.path = dir;
@@ -101,13 +105,16 @@ export {
 const lblTiledPath = $g("lblTiledSetPath") as HTMLInputElement;
 const btnCheckTiled = $g("btnCreateTiledSet") as HTMLInputElement;
 btnCheckTiled.addEventListener("click", async function () {
+    let basePath = Core.basePath;
+    if (!basePath) {
+        return alert(`请先加载地图列表后确认目录再创建纹理配置`);
+    }
     let p = lblTiledPath.value.trim();
     if (p) {
         try {
-            Core.tileDict = await createTileSets(p, Core.basePath)
+            Core.tileDict = await createTileSets(p, basePath);
         } catch (e) {
             alert(e.message);
         }
-
     }
 })
