@@ -6,7 +6,7 @@ export function getTiledCfg(cfgPath: string) {
         throw Error(`TiledMap的配置路径[${cfgPath}]不存在`);
     }
     let cfgContent = fs.readFileSync(cfgPath, "utf8");
-    let cfg: TieldMap.Map;
+    let cfg: TiledMap.Map;
     try {
         cfg = JSON.parse(cfgContent);
     } catch {

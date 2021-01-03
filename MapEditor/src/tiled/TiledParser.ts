@@ -57,7 +57,7 @@ export function checkTiledData(data: ArrayLike<number>, tileDict: TileDict, idx:
         if (id !== 0) {
             let tile = tileDict[id];
             if (!tile) {
-                // throw Error(`TiledMap的[layer:${idx}]，上有纹理集中没有的Tile[id:${id}]`);
+                throw Error(`TiledMap的[layer:${idx}]，上有纹理集中没有的Tile[id:${id}]`);
             }
         }
     }

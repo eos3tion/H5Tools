@@ -1,4 +1,4 @@
-declare namespace TieldMap {
+declare namespace TiledMap {
     type Orientation = "orthogonal" | "isometric" | "staggered" | "hexagonal";
     type RenderOrder = "right-down" | "right-up" | "left-down" | "left-up";
     interface Map {

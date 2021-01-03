@@ -24,12 +24,13 @@ interface BaseTileInfo {
     verts: number[];
 }
 
-interface TileInfo extends BaseTileInfo {
+interface TileInfo {
     /**
      * Tiled中的标识
      */
     id: number;
-
+    tid?: number;
+    uvs: number[];
     type: TileTexType;
 
     /**
@@ -45,6 +46,7 @@ interface TileInfo extends BaseTileInfo {
      */
     polygon?: jy.Point[];
 
+    dict: { [id: number]: number[] }
 }
 
 
@@ -72,7 +74,7 @@ export async function createTileSets(cfgPath: string, basePath: string) {
 
     alert("成功创建纹理数据");
     return dict;
-    async function prepareTileSet(cfg: TieldMap.Tileset, tileList: TileData[], baseDir: string) {
+    async function prepareTileSet(cfg: TiledMap.Tileset, tileList: TileData[], baseDir: string) {
         let { image, imagewidth, imageheight, columns, firstgid, tilewidth, tileheight, tilecount, margin, spacing, tiles, tileoffset } = cfg;
         if (tiles) {
             if (tiles.length != tilecount) {
@@ -97,112 +99,20 @@ export async function createTileSets(cfgPath: string, basePath: string) {
         canvas.height = imageheight;
         let cnt = canvas.getContext("2d");
         cnt.drawImage(img, 0, 0);
-        let s = Math.sqrt(tilewidth * tilewidth + tileheight * tileheight);
-
         let t = 0;
         let y = margin;
-        let tileHW = tilewidth * .5;
-        let tileHH = tileheight * .5;
         let ox = 0, oy = 0;
         if (tileoffset) {
             ox = tileoffset.x;
             oy = -(tileheight - mth - tileoffset.y);
         }
-        //以左上为原点
-        let verDict = {
-            // 左上(0)      右上(3)
-            // 
-            // 左下(1)      右下(2)
-            [TileTexType.Rectangle]: [
-                ox, oy,
-                ox, oy + tileheight,
-                ox + tilewidth, oy + tileheight,
-                ox + tilewidth, oy
-            ],
-            //       上(0)
-            // 左(1)        右(3)
-            //       下(2)
-            [TileTexType.Rhombus]: [
-                ox + tileHW, oy,
-                ox, oy + tileHH,
-                ox + tileHW, oy + tileheight,
-                ox + tilewidth, oy + tileHH
-            ],
-        };
         while (t < tilecount) {
             let x = margin;
             for (let col = 0; col < columns; col++) {
-                let tileInfo = tiles[t];
-                let type: TileTexType;
-                let polygon = tileInfo?.objectgroup?.objects?.[0]?.polygon;
-                let verts: number[];
-                let imgX = x, imgY = y, imgW = tilewidth, imgH = tileheight;
-                if (polygon && polygon.length == 4) {
-                    let left = tilewidth, right = 0, top = tileheight, bottom = 0;
-                    polygon.forEach(pt => {
-                        let x = Math.clamp(pt.x, 0, tilewidth);
-                        let y = Math.clamp(pt.y, 0, tileheight);
-                        pt.x = x;
-                        pt.y = y;
-                        if (x < left) {
-                            left = x;
-                        }
-                        if (x > right) {
-                            right = x;
-                        }
-                        if (y < top) {
-                            top = y;
-                        }
-                        if (y > bottom) {
-                            bottom = y;
-                        }
-                    })
-
-                    //polygon的图片数据进行缩减
-                    imgX = left;
-                    imgY = top;
-                    imgW = right - left;
-                    imgH = bottom - top;
-
-                    let [p0, p1, p2, p3] = polygon;
-                    verts = [];
-                    verts[0] = p0.x + ox;
-                    verts[1] = p0.y + oy;
-                    verts[2] = p1.x + ox;
-                    verts[3] = p1.y + oy;
-                    verts[4] = p2.x + ox;
-                    verts[5] = p2.y + oy;
-                    verts[6] = p3.x + ox;
-                    verts[7] = p3.y + oy;
-                    type = TileTexType.Polygon;
-
-                } else {
-                    let tileA = setA || getProperty(tileInfo?.properties, Const.RhombusKey);
-                    if (tileA) {//菱形
-                        type = TileTexType.Rhombus;
-                    } else {
-                        type = TileTexType.Rectangle;
-                    }
-                    verts = verDict[type];
-                }
-                let tile = {
-                    uvs: [] as number[],
-                    verts,
-                    type,
-                    id: firstgid,
-                    ox: x,
-                    oy: y,
-                    polygon
-                } as TileInfo;
+                tileList.push(createTileData(cfg, firstgid, tiles[t], x, y, ox, oy, cnt, setA))
                 t++;
                 firstgid++;
                 x += tilewidth + spacing;
-                const data = cnt.getImageData(imgX, imgY, imgW, imgH);
-                tileList.push({
-                    tile,
-                    data,
-                    s
-                });
             }
             y += tileheight + spacing;
         }
@@ -389,7 +299,7 @@ export async function createTileSets(cfgPath: string, basePath: string) {
 }
 
 
-function getProperty(properties: TieldMap.Property[], key: string) {
+function getProperty(properties: TiledMap.Property[], key: string) {
     if (properties) {
         for (const property of properties) {
             if (property.name === key) {
@@ -416,20 +326,23 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
     //简化tile数据
     let dict = {} as { [id: number]: BaseTileInfo };
     const datas = {} as TileDict;
-    for (const { tile: { id, uvs, verts, tid } } of tileList) {
-        dict[id] = {
-            uvs,
-            verts,
-            tid
-        }
-        datas[id] = {
-            uvs,
-            verts,
-            texture: texDict[tid]
+    for (const { tile: { uvs, dict: tileDict, tid } } of tileList) {
+        let texture = texDict[tid];
+        for (let id in tileDict) {
+            let verts = tileDict[id];
+            dict[id] = {
+                uvs,
+                verts,
+                tid
+            }
+            datas[id] = {
+                uvs,
+                verts,
+                texture
+            }
         }
     }
     fs.writeFileSync(path.join(baseTiledDir, TiledConst.TileSetFile), JSON.stringify(dict));
-    makeRotationTiles(datas);
 
     return datas;
     function saveCanvas(canvas: HTMLCanvasElement, file: string) {
@@ -448,24 +361,196 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
     }
 }
 
-function makeRotationTiles(dict: TileDict) {
-    /**
-     * 原始  
-     * 0   3
-     * 1   2
-     */
-    for (let tid in dict) {
-        const { uvs, verts, texture } = dict[tid];
-        let id = +tid;
-        /**
-         * 1   0
-         * 2   3
-         */
-        let nid = ((5 << 29) | id) >>> 0;
+function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Tile, x: number, y: number, ox: number, oy: number, cnt: CanvasRenderingContext2D, setA?: boolean) {
+    const { tilewidth, tileheight } = cfg;
 
+    let polygon = tileInfo?.objectgroup?.objects?.[0]?.polygon;
+    //得到原始，不带偏移量的顶点坐标集
+    let polys: jy.Point[];
+    let type: TileTexType;
+    let imgX = x, imgY = y, imgW = tilewidth, imgH = tileheight;
+    if (polygon && polygon.length == 4) {//多边形
+        let left = tilewidth, right = 0, top = tileheight, bottom = 0;
+        //去除超出边界的点
+        polys = polygon.map(pt => {
+            let x = Math.clamp(pt.x, 0, tilewidth);
+            let y = Math.clamp(pt.y, 0, tileheight);
+            pt.x = x;
+            pt.y = y;
+            if (x < left) {
+                left = x;
+            }
+            if (x > right) {
+                right = x;
+            }
+            if (y < top) {
+                top = y;
+            }
+            if (y > bottom) {
+                bottom = y;
+            }
+            return pt;
+        })
+        //polygon的图片数据进行缩减
+        imgX = left;
+        imgY = top;
+        imgW = right - left;
+        imgH = bottom - top;
+        type = TileTexType.Polygon;
+    } else {
+        //先判断纹理集，再判断单纹理
+        let tileA = setA || getProperty(tileInfo?.properties, Const.RhombusKey);
+        const tileHW = tilewidth * .5;
+        const tileHH = tileheight * .5;
+        if (tileA) {
+            //       上(0)
+            // 左(1)        右(3)
+            //       下(2)
+            polys = [
+                { x: tileHW, y: 0 },
+                { x: 0, y: tileHH },
+                { x: tileHW, y: tileheight },
+                { x: tilewidth, y: tileHH }
+            ]
+            type = TileTexType.Rhombus;
+        } else {
+            // 左上(0)      右上(3)
+            // 
+            // 左下(1)      右下(2)
+            polys = [
+                { x: 0, y: 0 },
+                { x: 0, y: tileheight },
+                { x: tilewidth, y: tileheight },
+                { x: tilewidth, y: 0 }
+            ]
+        }
+    }
+    //根据形势，形成字典
+    const dict = {} as { [tag: number]: number[] }
+    const [p0, p1, p2, p3] = polys;
+
+
+    const [p11, p12, p13, p10] = polys.map(pt => ({
+        x: tileheight - pt.y,
+        y: pt.x
+    }))
+
+    //0
+    dict[getId(0)] = [
+        ox + p0.x,
+        oy + p0.y,
+        ox + p1.x,
+        oy + p1.y,
+        ox + p2.x,
+        oy + p2.y,
+        ox + p3.x,
+        oy + p3.y,
+    ]
+
+    //1
+    dict[getId(1)] = [
+        ox + p11.x,
+        oy + p11.y,
+        ox + p10.x,
+        oy + p10.y,
+        ox + p13.x,
+        oy + p13.y,
+        ox + p12.x,
+        oy + p12.y,
+    ]
+
+    //2
+    dict[getId(2)] = [
+        ox + p1.x,
+        oy + p1.y,
+        ox + p0.x,
+        oy + p0.y,
+        ox + p3.x,
+        oy + p3.y,
+        ox + p2.x,
+        oy + p2.y,
+    ]
+
+    //3
+    dict[getId(3)] = [
+        ox + p12.x,
+        oy + p12.y,
+        ox + p13.x,
+        oy + p13.y,
+        ox + p10.x,
+        oy + p10.y,
+        ox + p11.x,
+        oy + p11.y,
+    ]
+
+    //4
+    dict[getId(4)] = [
+        ox + p3.x,
+        oy + p3.y,
+        ox + p2.x,
+        oy + p2.y,
+        ox + p1.x,
+        oy + p1.y,
+        ox + p0.x,
+        oy + p0.y,
+    ]
+
+    //5
+    dict[getId(5)] = [
+        ox + p10.x,
+        oy + p10.y,
+        ox + p11.x,
+        oy + p11.y,
+        ox + p12.x,
+        oy + p12.y,
+        ox + p13.x,
+        oy + p13.y,
+    ]
+
+    //6
+    dict[getId(6)] = [
+        ox + p2.x,
+        oy + p2.y,
+        ox + p3.x,
+        oy + p3.y,
+        ox + p0.x,
+        oy + p0.y,
+        ox + p1.x,
+        oy + p1.y,
+    ]
+
+    //7
+    dict[getId(7)] = [
+        ox + p13.x,
+        oy + p13.y,
+        ox + p12.x,
+        oy + p12.y,
+        ox + p11.x,
+        oy + p11.y,
+        ox + p10.x,
+        oy + p10.y,
+    ]
+
+    const data = cnt.getImageData(imgX, imgY, imgW, imgH);
+    let tile = {
+        uvs: [] as number[],
+        dict,
+        type,
+        id,
+        ox: x,
+        oy: y,
+        polygon
+    } as TileInfo;
+    return {
+        tile,
+        data,
+        s: Math.sqrt(imgW * imgW + imgH * imgH)
+    };
+
+    function getId(value: number) {
+        return ((5 << 29) | id) >>> 0
     }
 }
-
 
 export async function loadTileset(basePath: string) {
     //尝试加载tile数据
@@ -518,6 +603,5 @@ export async function loadTileset(basePath: string) {
             texture
         }
     }
-    makeRotationTiles(data);
     return data;
 }
