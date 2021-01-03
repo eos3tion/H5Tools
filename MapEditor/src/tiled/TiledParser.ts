@@ -1,18 +1,17 @@
 import { getTiledCfg } from "./getTiledCfg";
-import { Tile } from "./TileSetParser";
 
-export type TiledMapLayerInfo = { [pos: number]: Tile };
+export type TiledMapLayerInfo = Tile[];
 
 export interface TiledMap {
-    width: number;
-    height: number;
+    cols: number;
+    rows: number;
 
     tileWidth: number;
     tileHeight: number;
-    layers: TiledMapLayerInfo[];
+    layerData: number[][];
 }
 
-export async function loadTiledMap(cfgPath: string, tileDict: { [id: number]: Tile }) {
+export async function loadTiledMap(cfgPath: string, tileDict: TileDict) {
     //加载配置
     const cfg = getTiledCfg(cfgPath);
     const { layers, width, height, tilewidth: mtw, tileheight: mth } = cfg;
@@ -32,34 +31,34 @@ export async function loadTiledMap(cfgPath: string, tileDict: { [id: number]: Ti
         throw Error(`TiledMap的配置[${cfgPath}]有误，没有任何有效图层`);
     }
 
-    const tileLayers = [] as TiledMapLayerInfo[];
-
-    for (const layer of layers) {
+    const layerData = [] as number[][];
+    for (let i = 0; i < layers.length; i++) {
+        const layer = layers[i];
         //检查数据 layer.data
-        const { data } = layer;
-        let dict = [] as { [id: number]: Tile };
-        let textures = [] as egret.Texture[];
-        for (let i = 0; i < data.length; i++) {
-            let id = data[i];
-            if (id !== 0) {
-                let tile = tileDict[id];
-                if (tile) {
-                    dict[i] = tile;
-                    textures.pushOnce(tile.texture);
-                }
-            }
+        const { data, name, visible } = layer;
+        if (visible) {
+            checkTiledData(data, tileDict, name);
+            layerData.push(data);
         }
-        tileLayers.push(dict)
     }
 
-
     return {
-        width,
-        height,
+        cols: width,
+        rows: height,
         tileWidth: mtw,
         tileHeight: mth,
-        layers: tileLayers
+        layerData
     } as TiledMap;
-
 }
 
+export function checkTiledData(data: ArrayLike<number>, tileDict: TileDict, idx: string) {
+    for (let i = 0; i < data.length; i++) {
+        let id = data[i];
+        if (id !== 0) {
+            let tile = tileDict[id];
+            if (!tile) {
+                // throw Error(`TiledMap的[layer:${idx}]，上有纹理集中没有的Tile[id:${id}]`);
+            }
+        }
+    }
+}

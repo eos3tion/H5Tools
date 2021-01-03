@@ -466,6 +466,7 @@ function saveMap() {
 
     //将数据写入文件
     let out = currentMap.getSpecObject("path", "ext", "ftype", "pWidth", "pHeight", "maxPicX", "maxPicY") as jy.MapInfo;
+    out.tiledData = Core.tiledMap;
     let solution = PathSolution.current;
     out.pathType = solution.type;
 
@@ -537,16 +538,29 @@ function getMapInfoPB(map: jy.MapInfo) {
     }
     let effs = map.effs;
     let out = [] as MapEffData[];
-    for (let i = 0; i < effs.length; i++) {
-        const eff = effs[i];
-        let group = eff.group;
-        //检查分组
-        if (group && group.startsWith("*")) {
-            continue;
+    if (effs) {
+        for (let i = 0; i < effs.length; i++) {
+            const eff = effs[i];
+            let group = eff.group;
+            //检查分组
+            if (group && group.startsWith("*")) {
+                continue;
+            }
+            out.push(eff);
         }
-        out.push(eff);
     }
     pb.effs = out as jy.MapEffPB[];
+    let tiledMap = Core.tiledMap;
+    if (tiledMap) {
+        let layers = tiledMap.layerData.map(data => new jy.ByteArray(new Uint8Array(data)));
+        pb.tiledMap = {
+            cols: tiledMap.cols,
+            rows: tiledMap.rows,
+            tileWidth: tiledMap.tileWidth,
+            tileHeight: tiledMap.tileHeight,
+            layers
+        } as jy.TiledMapPB;
+    }
     return pb;
 }
 

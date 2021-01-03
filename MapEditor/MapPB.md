@@ -13,6 +13,7 @@ message MapInfoPB {
    optional int32 pWidth=10;//单张底图宽度
    optional int32 pHeight=11;//单张底图高度，当没有此值时，和pWidth一致  
    optional bytes noPic=12;//没有地图数据的数据索引
+   optional TiledMapPB tiledMap=13;//tiled生成的地图数据
 }
 
 message MapPointPB {
@@ -47,6 +48,7 @@ message MapEffPB {
    optional int32 seed=10;//用于同步移动的时间种子
    optional sint32 rotation=11;//旋转
    optional string group=12;//分组名称
+   optional int32 type=13;//类型，0或者没有为ani <br>1 龙骨
 }
 
 message GridMapInfoPB {
@@ -85,5 +87,13 @@ message NavMeshMapInfoPB {
    repeated TPointIdxPB trians=2;//所有三角形对应点的索引数据
    repeated PolyPointIdxPB polys=3;//不可走区域的三角形数据
    repeated MaskPolyPB masks=4;//透明/遮罩区域对应的数据
+}
+
+message TiledMapPB {
+   required int32 cols=1;//总列数
+   required int32 rows=2;//总行数
+   required int32 tileWidth=3;
+   required int32 tileHeight=4;
+   repeated bytes layers=5;//每一层的tile的id的字节数组，一个字节为一个tile的id
 }
 ```

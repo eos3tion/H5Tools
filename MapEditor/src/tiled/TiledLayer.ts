@@ -1,3 +1,4 @@
+import { Core } from "../Core";
 import { TiledMap } from "./TiledParser";
 const enum Const {
     MaxIndicesCount = 12288,
@@ -6,12 +7,13 @@ const enum Const {
 
 
 export function initTiledMap(data: TiledMap) {
-    const layers = data.layers;
+    const tileDict = Core.tileDict;
+    const layers = data.layerData;
     let lid = 1720;
     jy.GameEngine.addLayerConfig(lid, jy.GameLayerID.GameScene, jy.BaseLayer);
     let layer = $engine.getLayer(lid) as jy.BaseLayer;
 
-    const { tileWidth, tileHeight, width: cols, height: rows } = data;
+    const { tileWidth, tileHeight, cols: cols, rows: rows } = data;
     const hh = tileHeight >> 1;
     let hw = tileWidth >> 1;
     let lashHash: number;
@@ -42,47 +44,50 @@ export function initTiledMap(data: TiledMap) {
                 let ci = 0;
                 let mesh: egret.Mesh, count = 0, idx = 0;
                 for (let i = 0; i < layers.length; i++) {
-                    const tileDict = layers[i];
+                    const data = layers[i];
                     for (let y = sy; y < ey; y++) {
                         let s = y * cols;
                         let oy = y * hh;
                         let oxx = y & 1 ? hw : 0;
                         for (let x = sx; x < ex; x++) {
-                            let tile = tileDict[s + x];
-                            if (tile) {
-                                const { uvs: cuvs, verts: cverts, texture } = tile;
-                                let flag = false;
-                                if (lastTexture != texture) {
-                                    lastTexture = texture;
-                                    flag = true;
-                                }
-                                if (!flag) {
-                                    if (mesh && count > Const.MaxIndicesCount - Const.IndicesCount) {
+                            let tid = data[s + x];
+                            if (tid) {
+                                let tile = tileDict[tid];
+                                if (tile) {
+                                    const { uvs: cuvs, verts: cverts, texture } = tile;
+                                    let flag = false;
+                                    if (lastTexture != texture) {
+                                        lastTexture = texture;
                                         flag = true;
                                     }
-                                }
-                                if (flag) {
-                                    if (mesh) {
-                                        (mesh.$renderNode as egret.sys.MeshNode).indices = egret.SharedIndices.subarray(0, count) as any;
-                                        mesh.$updateVertices();
+                                    if (!flag) {
+                                        if (mesh && count > Const.MaxIndicesCount - Const.IndicesCount) {
+                                            flag = true;
+                                        }
                                     }
-                                    mesh = children[ci++] as egret.Mesh;
-                                    if (!mesh) {
-                                        mesh = jy.recyclable(egret.Mesh);
-                                        layer.addChild(mesh, false);
+                                    if (flag) {
+                                        if (mesh) {
+                                            (mesh.$renderNode as egret.sys.MeshNode).indices = egret.SharedIndices.subarray(0, count) as any;
+                                            mesh.$updateVertices();
+                                        }
+                                        mesh = children[ci++] as egret.Mesh;
+                                        if (!mesh) {
+                                            mesh = jy.recyclable(egret.Mesh);
+                                            layer.addChild(mesh, false);
+                                        }
+                                        mesh.texture = texture;
+                                        count = 0;
+                                        idx = 0;
                                     }
-                                    mesh.texture = texture;
-                                    count = 0;
-                                    idx = 0;
+                                    const { uvs, vertices } = mesh.$renderNode as egret.sys.MeshNode;
+                                    let ox = x * tileWidth + oxx;
+                                    for (let xi = 0; xi < 8; xi++) {
+                                        uvs[idx] = cuvs[xi];
+                                        vertices[idx] = cverts[xi] + (xi & 1 ? oy : ox);
+                                        idx++;
+                                    }
+                                    count += Const.IndicesCount;
                                 }
-                                const { uvs, vertices } = mesh.$renderNode as egret.sys.MeshNode;
-                                let ox = x * tileWidth + oxx;
-                                for (let xi = 0; xi < 8; xi++) {
-                                    uvs[idx] = cuvs[xi];
-                                    vertices[idx] = cverts[xi] + (xi & 1 ? oy : ox);
-                                    idx++;
-                                }
-                                count += Const.IndicesCount;
                             }
                         }
                     }

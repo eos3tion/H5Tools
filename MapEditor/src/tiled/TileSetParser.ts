@@ -47,11 +47,7 @@ interface TileInfo extends BaseTileInfo {
 
 }
 
-export interface Tile {
-    uvs: number[];
-    verts: number[];
-    texture: egret.Texture;
-}
+
 
 type TileData = { tile: TileInfo, data: ImageData, s: number }
 
@@ -419,7 +415,7 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
     }
     //简化tile数据
     let dict = {} as { [id: number]: BaseTileInfo };
-    const datas = {} as { [id: number]: Tile };
+    const datas = {} as TileDict;
     for (const { tile: { id, uvs, verts, tid } } of tileList) {
         dict[id] = {
             uvs,
@@ -433,6 +429,8 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
         }
     }
     fs.writeFileSync(path.join(baseTiledDir, TiledConst.TileSetFile), JSON.stringify(dict));
+    makeRotationTiles(datas);
+
     return datas;
     function saveCanvas(canvas: HTMLCanvasElement, file: string) {
         return new Promise<void>((resolve) => {
@@ -447,6 +445,24 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
 
             })
         })
+    }
+}
+
+function makeRotationTiles(dict: TileDict) {
+    /**
+     * 原始  
+     * 0   3
+     * 1   2
+     */
+    for (let tid in dict) {
+        const { uvs, verts, texture } = dict[tid];
+        let id = +tid;
+        /**
+         * 1   0
+         * 2   3
+         */
+        let nid = ((5 << 29) | id) >>> 0;
+
     }
 }
 
@@ -489,7 +505,7 @@ export async function loadTileset(basePath: string) {
     }
 
     //加载数据文件，完成tile字典
-    let data = {} as { [id: number]: Tile };
+    let data = {} as TileDict;
     for (let id in rawData) {
         let { uvs, verts, tid } = rawData[id];
         let texture = texDict[tid];
@@ -502,5 +518,6 @@ export async function loadTileset(basePath: string) {
             texture
         }
     }
+    makeRotationTiles(data);
     return data;
 }

@@ -11,7 +11,7 @@ import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
 import * as $electron from "electron";
 import MapInfo = jy.MapInfo;
-import { loadTiledMap, TiledMap } from "./tiled/TiledParser";
+import { checkTiledData, loadTiledMap, TiledMap } from "./tiled/TiledParser";
 
 const electron: typeof $electron = nodeRequire("electron");
 
@@ -58,7 +58,7 @@ btnCheckTiled.addEventListener("click", async function () {
         if (map) {
             Core.tiledMap = map;
             if (Core.selectMap) {
-                resizeMap(Core.selectMap, map.tileWidth, map.tileHeight, map.width - 1, map.height - 1);
+                resizeMap(Core.selectMap, map.tileWidth, map.tileHeight, map.cols - 1, map.rows - 1);
             }
         }
     }
@@ -253,6 +253,16 @@ function setData(map: MapInfo) {
             }
         }
         map.effs = cfg.effs;
+        let tiledData = cfg.tiledData;
+        if (tiledData) {
+            try {
+                tiledData.layerData?.forEach((data, idx) => checkTiledData(data, Core.tileDict, idx + ""))
+            } catch (e) {
+                return alert(e.message);
+            }
+            Core.tiledMap = tiledData;
+        }
+
         PathSolution.onLoad(map, cfg, sizeNotMatch);
     }
 

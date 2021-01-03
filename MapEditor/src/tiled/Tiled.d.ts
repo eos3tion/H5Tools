@@ -197,3 +197,9 @@ declare const enum TiledConst {
 
     TileSetFile = "tileset.json",
 }
+interface Tile {
+    uvs: number[];
+    verts: number[];
+    texture: egret.Texture;
+}
+declare type TileDict = { [id: number]: Tile };

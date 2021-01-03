@@ -165,8 +165,11 @@ interface ViewState {
     view: HTMLElement;
     setData?(data);
 }
-
+type TiledMap = import("./tiled/TiledParser").TiledMap;
 declare namespace jy {
+    export interface TiledMapJson extends TiledMapPB, TiledMap {
+        layerData: number[][];
+    }
     export interface MapInfo {
         effs: MapEffData[];
 
@@ -196,9 +199,9 @@ declare namespace jy {
         mapBytesB64?: string;
 
         /**
-         * 通过`Tiled`编辑的地图路径
+         * tiled的JSON数据
          */
-        tiledPath: string;
+        tiledData?: TiledMapJson;
     }
 
     export interface GameEngine {
