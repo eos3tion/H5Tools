@@ -18,10 +18,19 @@ const enum TileTexType {
     Polygon = 2,
 }
 
-interface BaseTileInfo {
-    tid?: number;
-    uvs: number[];
-    verts: number[];
+interface BaseTileInfo extends Array<any> {
+    /**
+     * 纹理id
+     */
+    0: number;
+    /**
+     * uvs
+     */
+    1: number[];
+    /**
+     * 顶点数组
+     */
+    2: number[][]
 }
 
 interface TileInfo {
@@ -37,7 +46,7 @@ interface TileInfo {
      */
     polygon?: jy.Point[];
 
-    dict: { [id: number]: number[] }
+    dict: number[][]
 }
 
 
@@ -317,25 +326,21 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
         texDict[i] = tex;
     }
     //简化tile数据
-    let dict = {} as { [id: number]: BaseTileInfo };
+    let tilesJSon = {} as { [id: number]: BaseTileInfo };
     const datas = {} as TileDict;
-    for (const { tile: { uvs, dict: tileDict, tid } } of tileList) {
+    for (const { tile: { uvs, dict, tid, id } } of tileList) {
         let texture = texDict[tid];
-        for (let id in tileDict) {
-            let verts = tileDict[id];
-            dict[id] = {
-                uvs,
-                verts,
-                tid
-            }
-            datas[id] = {
+        tilesJSon[id] = [tid, uvs, dict];
+        for (let v in dict) {
+            let verts = dict[v];
+            datas[getTileId(+v, id)] = {
                 uvs,
                 verts,
                 texture
             }
         }
     }
-    fs.writeFileSync(path.join(baseTiledDir, TiledConst.TileSetFile), JSON.stringify(dict));
+    fs.writeFileSync(path.join(baseTiledDir, TiledConst.TileSetFile), JSON.stringify(tilesJSon));
 
     return datas;
     function saveCanvas(canvas: HTMLCanvasElement, file: string) {
@@ -427,7 +432,7 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
         }
     }
     //根据形势，形成字典
-    const dict = {} as { [tag: number]: number[] }
+    const dict = [] as number[][];
     const [p0, p1, p2, p3] = polys;
 
 
@@ -547,8 +552,12 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
     };
 
     function getId(value: number) {
-        return ((value << 29) | id) >>> 0
+        return value
     }
+}
+
+export function getTileId(value: number, id: number) {
+    return ((value << 29) | id) >>> 0
 }
 
 export async function loadTileset(basePath: string) {
@@ -591,15 +600,18 @@ export async function loadTileset(basePath: string) {
     //加载数据文件，完成tile字典
     let data = {} as TileDict;
     for (let id in rawData) {
-        let { uvs, verts, tid } = rawData[id];
+        let [tid, uvs, dict] = rawData[id];
         let texture = texDict[tid];
         if (!texture) {
             throw Error(`Tile[id:${id}]数据和纹理[tid:${tid}]对应不上`);
         }
-        data[id] = {
-            uvs,
-            verts,
-            texture
+        for (let v in dict) {
+            let verts = dict[v];
+            data[getTileId(+v, +id)] = {
+                uvs,
+                verts,
+                texture
+            }
         }
     }
     return data;
