@@ -423,6 +423,7 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
                 { x: tilewidth, y: tileheight },
                 { x: tilewidth, y: 0 }
             ]
+            type = TileTexType.Rectangle;
         }
     }
     //根据形势，形成字典
