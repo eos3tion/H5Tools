@@ -20,17 +20,17 @@ const enum TileTexType {
 
 interface BaseTileInfo extends Array<any> {
     /**
-     * 纹理id
-     */
-    0: number;
-    /**
      * uvs
      */
-    1: number[];
+    0: number[];
     /**
      * 顶点数组
      */
-    2: number[][]
+    1: number[][];
+    /**
+     * 纹理id
+     */
+    2?: number;
 }
 
 interface TileInfo {
@@ -330,7 +330,11 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
     const datas = {} as TileDict;
     for (const { tile: { uvs, dict, tid, id } } of tileList) {
         let texture = texDict[tid];
-        tilesJSon[id] = [tid, uvs, dict];
+        let list = [uvs, dict] as BaseTileInfo;
+        if (tid != 0) {
+            list[2] = tid;
+        }
+        tilesJSon[id] = list;
         for (let v in dict) {
             let verts = dict[v];
             datas[getTileId(+v, id)] = {
@@ -600,7 +604,8 @@ export async function loadTileset(basePath: string) {
     //加载数据文件，完成tile字典
     let data = {} as TileDict;
     for (let id in rawData) {
-        let [tid, uvs, dict] = rawData[id];
+        let [uvs, dict, tid] = rawData[id];
+        tid = tid | 0;
         let texture = texDict[tid];
         if (!texture) {
             throw Error(`Tile[id:${id}]数据和纹理[tid:${tid}]对应不上`);
