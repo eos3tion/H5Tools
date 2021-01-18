@@ -58,7 +58,7 @@ btnCheckTiled.addEventListener("click", async function () {
         if (map) {
             Core.tiledMap = map;
             if (Core.selectMap) {
-                resizeMap(Core.selectMap, map.tileWidth, map.tileHeight, map.cols - 1, map.rows - 1);
+                resizeMap(Core.selectMap, map.tileWidth, map.tileHeight, map.cols - 1, Math.ceil(map.rows / 2) - 1);
             }
         }
     }
