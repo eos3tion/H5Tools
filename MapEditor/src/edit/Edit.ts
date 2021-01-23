@@ -252,6 +252,9 @@ function mousePt2MapPt(mouseX: number, mouseY: number) {
 }
 
 function checkDragStart(e: MouseEvent) {
+    if (!(e.target instanceof HTMLCanvasElement)) {
+        return
+    }
     let button = e.button;
     dragState = button;
     dragSt = getNow();
