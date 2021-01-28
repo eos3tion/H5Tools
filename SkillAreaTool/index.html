@@ -1,0 +1,101 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/default/easyui.css" />
+    <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/icon.css" />
+    <script>
+        if (typeof window.require === "function") {
+            // 重命名 Electron 提供的 require
+            window.nodeRequire = window.require;
+            delete window.require;
+            delete window.exports;
+            delete window.module;
+        }
+        const $g = document.getElementById.bind(document);
+    </script>
+    <meta charset="utf-8">
+    <meta name="viewport"
+        content="width=device-width,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="full-screen" content="true" />
+    <meta name="screen-orientation" content="portrait" />
+    <meta name="x5-fullscreen" content="true" />
+    <meta name="360-fullscreen" content="true" />
+    <!-- <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/default/easyui.css" /> -->
+    <link rel="stylesheet" type="text/css" href="../helpers/easyui/themes/icon.css" />
+    <link rel="stylesheet" href="../helpers/bootstrap.css" type="text/css" data-for="result">
+    <style>
+        body {
+            margin: 5px;
+            font-family: 微软雅黑;
+            font-size: 13px;
+            line-height: 25px;
+        }
+
+        input:required:invalid {
+            background: #c66;
+        }
+
+        input:required:valid {
+            background: #393;
+        }
+
+        input[type="text"] {
+            height: 20px;
+        }
+
+        .all {
+            width: 100%;
+            position: relative;
+        }
+
+        .left {
+            float: left;
+        }
+    </style>
+    <script type="text/javascript" src="../helpers/jquery.min.js"></script>
+    <script type="text/javascript" src="../helpers/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../helpers/Extend.js"></script>
+    <script type="text/javascript" src="../helpers/cookie.js"></script>
+    <script src="dist/Main.js" type="module"></script>
+</head>
+
+<body>
+
+    <div class="all">
+        <div class="left" style="width: 20%;padding: 5px;">
+            配置文件路径：
+            <input id="txtCfg" type="text" width="80%" value="" />
+            <input id="btnLoad" type="button" value="加载" /><br /><br />
+            <ul id="dlSkillList" class="easyui-datalist" title="技能列表" style="width:90%;height:300px">
+            </ul><br />
+            <ul id="dlPosList" class="easyui-datalist" title="坐标列表" style="width:90%;height:500px">
+            </ul>
+        </div>
+        <div class="left" style="width:45%">
+            <canvas id="canvas" style="width:100%;height:100%;" width="2000" height="2000"></canvas>
+        </div>
+        <div class="left" style="width: 25%;">
+            <input id="btnAdd" type="button" value="添加技能" /><br /><br />
+            格位大小(像素)：<label id="lblGridSize"></label>
+
+            技能攻击范围类型：
+            <div id="areaType">
+
+            </div>
+            <div id="areaCtrl">
+
+            </div>
+
+            <input id="btnEdit" type="button" value="编辑节点" /><br /><br />
+            <input id="btnReset" type="button" value="重置节点" /><br /><br />
+            <input id="btnGenJson" type="button" value="生成Json文件" /><br />
+
+        </div>
+    </div>
+
+</body>
+
+</html>

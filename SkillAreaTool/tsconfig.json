@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "module": "ES2020",
+        "target": "es2018",
+        "noImplicitAny": false,
+        "sourceMap": false,
+        "rootDir": "src",
+        "outDir": "dist"
+    },
+    "exclude": [
+        "node_modules",
+        "dist",
+        "xlsx",
+        "bck"
+    ]
+}

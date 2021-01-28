@@ -1,0 +1,16 @@
+{
+    "source": "e:/test/Skill.json",
+    "dist": "e:/test/SkillArea.json",
+    "gridSize": 80,
+    "keyDict": {
+        "type": "areatype",
+        "range": "area",
+        "param1": "area1",
+        "param2": "area2",
+        "typeDict": {
+            "1": 0,
+            "2": 2,
+            "3": 1
+        }
+    }
+}
