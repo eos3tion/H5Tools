@@ -101,13 +101,16 @@ export async function createTileSets(cfgPath: string, basePath: string) {
         cnt.drawImage(img, 0, 0);
         let t = 0;
         let y = margin;
-        let ox = 0, oy = 0;
-        let oy1 = 0;
+        let tox = 0, toy = 0;
         if (tileoffset) {
-            ox = tileoffset.x;
-            oy = -(tileheight - mth - tileoffset.y);
-            oy1 = -(tilewidth - mth - tileoffset.y);
+            tox = tileoffset.x;
+            toy = tileoffset.y;
         }
+        let ox = tox;
+        toy = mth + toy;
+        let oy = toy - tileheight;
+        let oy1 = toy - tilewidth;
+
         while (t < tilecount) {
             let x = margin;
             for (let col = 0; col < columns; col++) {
