@@ -21,11 +21,13 @@ export function initTiledMap(data: TiledMap) {
         setRect({ left, top, right, bottom }: egret.Rectangle) {
             let sx = left / tileWidth | 0;
             let sy = top / hh | 0;
-            if (sy > 0) {
-                sy--;
+            sy -= 3;
+            if (sy < 0) {
+                sy = 0;
             }
-            if (sx > 0) {
-                sx--;
+            sx -= 3;
+            if (sx < 0) {
+                sy = 0;
             }
             let ex = Math.ceil(right / tileWidth) + 1;
             let ey = Math.ceil(bottom / hh) + 1;
@@ -42,7 +44,7 @@ export function initTiledMap(data: TiledMap) {
                 let lastTexture: egret.Texture;
                 let children = layer.$children;
                 let ci = 0;
-                let mesh: egret.Mesh, count = 0, idx = 0;
+                let mesh: egret.Mesh, uvs: number[], vertices: number[], count = 0, idx = 0;
                 for (let i = 0; i < layers.length; i++) {
                     const data = layers[i];
                     for (let y = sy; y < ey; y++) {
@@ -68,6 +70,7 @@ export function initTiledMap(data: TiledMap) {
                                     if (flag) {
                                         if (mesh) {
                                             (mesh.$renderNode as egret.sys.MeshNode).indices = egret.SharedIndices.subarray(0, count) as any;
+                                            vertices.length = idx;
                                             mesh.$updateVertices();
                                         }
                                         mesh = children[ci++] as egret.Mesh;
@@ -79,7 +82,7 @@ export function initTiledMap(data: TiledMap) {
                                         count = 0;
                                         idx = 0;
                                     }
-                                    const { uvs, vertices } = mesh.$renderNode as egret.sys.MeshNode;
+                                    ({ uvs, vertices } = mesh.$renderNode as egret.sys.MeshNode);
                                     let ox = x * tileWidth + oxx;
                                     for (let xi = 0; xi < 8; xi++) {
                                         uvs[idx] = cuvs[xi];
@@ -94,6 +97,7 @@ export function initTiledMap(data: TiledMap) {
                 }
                 if (mesh) {
                     (mesh.$renderNode as egret.sys.MeshNode).indices = egret.SharedIndices.subarray(0, count) as any;
+                    vertices.length = idx;
                     mesh.$updateVertices();
                 }
                 //移除多余的
