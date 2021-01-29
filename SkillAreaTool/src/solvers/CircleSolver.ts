@@ -6,6 +6,8 @@ const enum Const {
     MaxGridCount = 10,
 }
 
+const PI2 = Math.PI * 2;
+
 let radius: number;
 let view: HTMLDivElement;
 let radiusInput: NumberInputElement;
@@ -30,18 +32,39 @@ function setParam(data: SkillParam) {
 }
 
 function setRadius(value: number) {
+    let grids = Core.grids;
+    if (!grids) {
+        return
+    }
     if (radius != value) {
         radius = value;
-        const gridSize = Core.cfg.gridSize;
+        const { x: centerX, y: centerY } = grids.getCenter();
+        const { gridSize, percent = 0 } = Core.cfg;
+        const checker = getChecker(centerX, centerY, radius * radius)
         let areas = Pos0_0.areas;
         areas.length = 0;
         //重新计算areas
         let halfGrid = Math.ceil((radius / gridSize) * .5);
         for (let x = -halfGrid; x <= halfGrid; x++) {
             for (let y = -halfGrid; y <= halfGrid; y++) {
-
+                let rect = grids.getGridBounds(x, y);
+                //遍历检查每点是否在范围内
+                let count = rect.checkVertexs(checker)
+                if (count > 0) {
+                    if (percent == 0 || count == 4 || rect.checkArea(checker, percent)) {
+                        areas.push({ x, y });
+                    }
+                }
             }
         }
+    }
+}
+
+function getChecker(fx: number, fy: number, sqRadius: number) {
+    return function (x: number, y: number) {
+        let dx = fx - x;
+        let dy = fy - y;
+        return dx * dx + dy * dy < sqRadius;
     }
 }
 
@@ -57,7 +80,31 @@ function getTargets(): PosArea[] {
 }
 
 function getGraphPath() {
-    return null
+    let path = new Path2D();
+    let grids = Core.grids;
+    let pt = grids.getCenter();
+    path.arc(pt.x, pt.y, radius, 0, PI2);
+    return path;
+}
+
+function getIdentityData(cfg: SkillInput, dict: SkillIdentityDict) {
+    let { range, param1 } = cfg;
+    let id1 = getId(range);
+    let cfg1 = dict[id1];
+    if (!cfg1) {
+        dict[id1] = cfg;
+    }
+    if (param1 && param1 != range) {
+        let id2 = getId(param1);
+        let cfg2 = dict[id2];
+        if (!cfg2) {
+            dict[id2] = cfg;
+        }
+    }
+}
+
+function getId(radius: number) {
+    return `${SkillAreaType.Circle}_${radius}`;
 }
 
 export default {
@@ -66,7 +113,8 @@ export default {
     getEditView,
     setParam,
     getTargets,
-    getGraphPath
+    getGraphPath,
+    getIdentityData,
 } as AreaSolver
 
 

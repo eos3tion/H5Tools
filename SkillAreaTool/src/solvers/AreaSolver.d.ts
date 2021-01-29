@@ -1,5 +1,11 @@
 interface AreaSolver {
     /**
+     * 检查数据
+     * @param data 要检查的数据
+     * @param dict 传入的字典
+     */
+    getIdentityData(data: SkillInput, dict: SkillIdentityDict);
+    /**
      * 范围类型
      */
     readonly type: SkillAreaType;
@@ -33,3 +39,5 @@ interface AreaSolver {
      */
     getGraphPath(target: Point): Path2D;
 }
+
+declare type SkillIdentityDict = { [id: string]: SkillInput }

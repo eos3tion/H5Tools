@@ -24,7 +24,7 @@ function showAreaSolvers() {
      */
     const solvers = {
         [SkillAreaType.Circle]: CircleSolver,
-    }
+    } as { [type in SkillAreaType]: AreaSolver }
 
     const name = "areaType";
     const parent = $g("areaType");
@@ -102,13 +102,24 @@ function loadCfg() {
 
 
     let rawDatas = getInput(cfg);
+    /**
+     * 技能全局命名字典
+     */
+    const dict = {} as SkillIdentityDict
     let outputData = getOutput(cfg);
     let solvers = showAreaSolvers();
     if (rawDatas) {
         for (let i = 0; i < rawDatas.length; i++) {
             const data = rawDatas[i];
-            solvers.get(data.type)
+            let solver = solvers.get(data.type);
+            if (solver) {
+                solver.getIdentityData(data, dict);
+            }
         }
+    }
+    //检查输出数据，查看是否已经有配置好的数据
+    if (outputData) {
+        
     }
 }
 

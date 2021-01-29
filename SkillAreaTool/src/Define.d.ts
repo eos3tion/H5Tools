@@ -17,7 +17,10 @@ interface GlobalCfg {
      * 输出的配置路径
      */
     dist: string;
-
+    /**
+     * 面积百分比，超过此面积的时候，才可放入，默认为 `0` 
+     */
+    percent: number;
     /**
      * 单格大小
      */
