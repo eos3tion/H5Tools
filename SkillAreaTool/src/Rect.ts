@@ -21,39 +21,38 @@ export class Rect {
     }
 
     /**
-     * 左上的点
+     * 检查矩形的四个顶点，是否符合规范，返回符合范围的顶点数量
+     * @param checker 
      */
-    get tl(): Readonly<Point> {
-        tmpPoint.x = this.left;
-        tmpPoint.y = this.top;
-        return tmpPoint;
+    checkVertexs(checker: { (x: number, y: number): boolean }) {
+        const { left, top, right, bottom } = this;
+        let i = 0;
+        checker(left, top) && i++;
+        checker(right, top) && i++;
+        checker(left, bottom) && i++;
+        checker(right, bottom) && i++;
+        return i;
     }
 
     /**
-     * 右上的点
+     * 检查范围内所有点
+     * @param checker 
+     * @param percent 超过此百分比，返回真
      */
-    get tr(): Readonly<Point> {
-        tmpPoint.x = this.right;
-        tmpPoint.y = this.top;
-        return tmpPoint;
-    }
-
-    /**
-     * 左下的点
-     */
-    get bl(): Readonly<Point> {
-        tmpPoint.x = this.left;
-        tmpPoint.y = this.bottom;
-        return tmpPoint;
-    }
-
-    /**
-     * 右下的点
-     */
-    get br(): Readonly<Point> {
-        tmpPoint.x = this.right;
-        tmpPoint.y = this.bottom;
-        return tmpPoint;
+    checkArea(checker: { (x: number, y: number): boolean }, percent: number) {
+        const { left, top, right, bottom, width, height } = this;
+        let i = 0;
+        let count = width * height * percent | 0;
+        for (let x = left; x <= right; x++) {
+            for (let y = top; y <= bottom; y++) {
+                if (checker(x, y)) {
+                    i++;
+                    if (i > count) {
+                        return true
+                    }
+                }
+            }
+        }
     }
 
     contains(x: number, y: number) {
