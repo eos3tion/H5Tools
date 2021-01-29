@@ -154,7 +154,7 @@ declare namespace TiledMap {
     interface Property {
         name: string;
         type: string;
-        value: boolean;
+        value: any;
     }
 
 

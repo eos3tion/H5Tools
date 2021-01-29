@@ -6,6 +6,8 @@ const fs: typeof import("fs") = nodeRequire("fs");
 
 const enum Const {
     RhombusKey = "a",
+    WidthKey = "w",
+    HeightKey = "h",
     Size = 2048,
 }
 
@@ -51,7 +53,13 @@ interface TileInfo {
 
 
 
-type TileData = { tile: TileInfo, data: ImageData, s: number }
+type TileData = {
+    tile: TileInfo;
+    data: ImageData;
+    s: number;
+    w: number;
+    h: number;
+}
 
 export async function createTileSets(cfgPath: string, basePath: string) {
 
@@ -68,7 +76,7 @@ export async function createTileSets(cfgPath: string, basePath: string) {
         await prepareTileSet(tilesets[i], tileList, baseDir)
     }
     //合并纹理
-    const canvases = mergeTiles(tileList.concat());
+    const canvases = await mergeTiles(tileList.concat());
     //创建纹理和tile数据
     const dict = await createFiles(basePath, canvases, tileList);
 
@@ -90,6 +98,8 @@ export async function createTileSets(cfgPath: string, basePath: string) {
             tiles = [];
         }
         let setA = getProperty(cfg.properties, Const.RhombusKey);
+        let setW = getProperty(cfg.properties, Const.WidthKey);
+        let setH = getProperty(cfg.properties, Const.HeightKey);
         let imgPath = path.join(baseDir, image);
         let item = await loadRes({ uri: imgPath, url: imgPath });
         let texture = item.data;
@@ -114,7 +124,7 @@ export async function createTileSets(cfgPath: string, basePath: string) {
         while (t < tilecount) {
             let x = margin;
             for (let col = 0; col < columns; col++) {
-                tileList.push(createTileData(cfg, firstgid, tiles[t], x, y, ox, oy, oy1, cnt, setA))
+                tileList.push(createTileData(cfg, firstgid, tiles[t], x, y, ox, oy, oy1, cnt, setA, setW, setH))
                 t++;
                 firstgid++;
                 x += tilewidth + spacing;
@@ -122,7 +132,7 @@ export async function createTileSets(cfgPath: string, basePath: string) {
             y += tileheight + spacing;
         }
     }
-    function mergeTiles(tileList: TileData[]) {
+    async function mergeTiles(tileList: TileData[]) {
         let canvases = [] as HTMLCanvasElement[];
         //按照对角线长度，由大到小排列
         tileList.doSort("s", true);
@@ -136,10 +146,9 @@ export async function createTileSets(cfgPath: string, basePath: string) {
             canvas.width = canvas.height = Const.Size;
             let j = 0;
             for (const tile of tileList) {
-                let data = tile.data;
-                let bin = binPacker.insert(data.width, data.height);
+                let bin = binPacker.insert(tile.w, tile.h);
                 if (bin) {
-                    resetTile(tile, bin, cid, cnt);
+                    await resetTile(tile, bin, cid, cnt);
                 } else {
                     tileList[j++] = tile;
                 }
@@ -151,15 +160,19 @@ export async function createTileSets(cfgPath: string, basePath: string) {
         return canvases;
     }
 
-    function resetTile({ tile, data }: TileData, bin: jy.Bin, cid: number, cnt: CanvasRenderingContext2D) {
+    async function resetTile({ tile, data, w, h }: TileData, bin: jy.Bin, cid: number, cnt: CanvasRenderingContext2D) {
         tile.tid = cid;
         let uvs = tile.uvs;
         let type = tile.type;
         const { x: ox, y: oy, rot } = bin;
-        let dw = data.width;
-        let dh = data.height;
+        let ow = w;
+        let oh = h;
         //重设UV值
         if (rot) {
+            let dw = data.width;
+            let dh = data.height;
+            ow = h;
+            oh = w;
             //旋转数据
             let ndata = cnt.createImageData(dh, dw);
             // 0--→  转为   2 1 0
@@ -178,11 +191,11 @@ export async function createTileSets(cfgPath: string, basePath: string) {
                     ndat[st + 3] = dat[ost + 3];//A
                 }
             }
-            cnt.putImageData(ndata, ox, oy);
+            data = ndata;
             let left = ox / Const.Size;
             let top = oy / Const.Size;
-            let right = (ox + dh) / Const.Size;
-            let bottom = (oy + dw) / Const.Size;
+            let right = (ox + h) / Const.Size;
+            let bottom = (oy + w) / Const.Size;
 
             if (type == TileTexType.Rectangle) {
                 // 左下(1)      左上(0)
@@ -206,8 +219,8 @@ export async function createTileSets(cfgPath: string, basePath: string) {
                 //    下(2)  上(0)
                 //
                 //       右(3)
-                let mv = (oy + dw * .5) / Const.Size;
-                let mh = (ox + dh * .5) / Const.Size;
+                let mv = (oy + w * .5) / Const.Size;
+                let mh = (ox + h * .5) / Const.Size;
 
                 //上(0)
                 uvs[0] = right;
@@ -223,7 +236,7 @@ export async function createTileSets(cfgPath: string, basePath: string) {
                 uvs[7] = bottom;
             } if (type == TileTexType.Polygon) {
                 let polygon = tile.polygon.map(pt => ({
-                    x: (dh - pt.y + ox) / Const.Size,
+                    x: (h - pt.y + ox) / Const.Size,
                     y: (pt.x + oy) / Const.Size
                 }));
                 let [p1, p2, p3, p0] = polygon;
@@ -238,14 +251,12 @@ export async function createTileSets(cfgPath: string, basePath: string) {
 
                 uvs[6] = p3.x;
                 uvs[7] = p3.y;
-
             }
         } else {
-            cnt.putImageData(data, ox, oy);
             let left = ox / Const.Size;
             let top = oy / Const.Size;
-            let right = (ox + dw) / Const.Size;
-            let bottom = (oy + dh) / Const.Size;
+            let right = (ox + w) / Const.Size;
+            let bottom = (oy + h) / Const.Size;
             if (type == TileTexType.Rectangle) {
                 // 左上(0)      右上(3)
                 // 
@@ -266,8 +277,8 @@ export async function createTileSets(cfgPath: string, basePath: string) {
                 //       上(0)
                 // 左(1)        右(3)
                 //       下(2)
-                let mv = (oy + dh * .5) / Const.Size;
-                let mh = (ox + dw * .5) / Const.Size;
+                let mv = (oy + h * .5) / Const.Size;
+                let mh = (ox + w * .5) / Const.Size;
 
                 //上(0)
                 uvs[0] = mh;
@@ -300,6 +311,7 @@ export async function createTileSets(cfgPath: string, basePath: string) {
                 uvs[7] = p3.y;
             }
         }
+        cnt.drawImage(await createImageBitmap(data), 0, 0, data.width, data.height, ox, oy, ow, oh);
     }
 }
 
@@ -366,9 +378,9 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
     }
 }
 
-function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Tile, x: number, y: number, ox: number, oy: number, oy1: number, cnt: CanvasRenderingContext2D, setA?: boolean) {
+function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Tile, x: number, y: number, ox: number, oy: number, oy1: number, cnt: CanvasRenderingContext2D, setA?: boolean, setW?: number, setH?: number) {
     const { tilewidth, tileheight } = cfg;
-
+    let properties = tileInfo?.properties;
     let pInfo = tileInfo?.objectgroup?.objects?.[0];
     let polygon = pInfo?.polygon;
     //得到原始，不带偏移量的顶点坐标集
@@ -411,7 +423,7 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
         type = TileTexType.Polygon;
     } else {
         //先判断纹理集，再判断单纹理
-        let tileA = setA || getProperty(tileInfo?.properties, Const.RhombusKey);
+        let tileA = setA || getProperty(properties, Const.RhombusKey);
         const tileHW = tilewidth * .5;
         const tileHH = tileheight * .5;
         if (tileA) {
@@ -544,7 +556,23 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
         oy1 + p10.y,
     ]
 
-    const data = cnt.getImageData(imgX, imgY, imgW, imgH);
+    let data = cnt.getImageData(imgX, imgY, imgW, imgH);
+    let w = setW || getProperty(properties, Const.WidthKey);
+    let h = setH || getProperty(properties, Const.HeightKey);
+    if (w && h) {
+        //得到缩放值
+        let scaleX = w / tilewidth;
+        let scaleY = h / tileheight;
+        imgW = Math.ceil(imgW * scaleX);
+        imgH = Math.ceil(imgH * scaleY);
+        if (polygon) {
+            polygon = polygon.map(pt => ({
+                x: Math.round(pt.x * scaleX),
+                y: Math.round(pt.y * scaleY)
+            }))
+        }
+    }
+
     let tile = {
         uvs: [] as number[],
         dict,
@@ -555,7 +583,9 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
     return {
         tile,
         data,
-        s: Math.sqrt(imgW * imgW + imgH * imgH)
+        s: Math.sqrt(imgW * imgW + imgH * imgH),
+        w: imgW,
+        h: imgH
     };
 
     function getId(value: number) {
