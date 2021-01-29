@@ -236,7 +236,9 @@ function setData(map: MapInfo) {
         let sizeNotMatch = false;
         let changeSize = false;
         if (cfgPHeight != pHeight || cfgPWidth != pWidth) {
-            changeSize = confirm(`检查到地图配置[${mapCfgFile}]中图片大小为[${cfgPWidth}×${cfgPHeight}]和实际图片大小[${pWidth}×${pHeight}]不一致，是否已实际图片大小为准`);
+            if (!cfg.tiledData) {
+                changeSize = confirm(`检查到地图配置[${mapCfgFile}]中图片大小为[${cfgPWidth}×${cfgPHeight}]和实际图片大小[${pWidth}×${pHeight}]不一致，是否已实际图片大小为准`);
+            }
             if (changeSize) {
                 cfgPWidth = pWidth;
                 cfgPHeight = pHeight;
