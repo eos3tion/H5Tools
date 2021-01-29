@@ -5,6 +5,7 @@ const enum GridStyle {
 
     AreaStrokeColor = AreaColor,
 
+    GridStrikeColor = "#ffffff",
     AreaStrokeAlpha = 1,
 
     /**
@@ -67,7 +68,13 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
     const cnt = canvas.getContext("2d");
     const gridWidth = gridSize;
     const gridHeight = gridSize;
+    /**
+     * 中心格子坐标X
+     */
     const centerX = Math.ceil(cols * .5);
+    /**
+     * 中心格子坐标Y
+     */
     const centerY = Math.ceil(rows * .5);
     const grids = [] as Grid[][];
     let _area: Path2D;
@@ -112,8 +119,13 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
         setAreaGraph(area: Path2D) {
             _area = area;
         },
+        /**
+         * 获取中心点像素坐标
+         */
         getCenter() {
-            centerX * gridSize + halfGridSize;
+            tempPt.x = centerX * gridSize + halfGridSize;
+            tempPt.y = centerY * gridSize + halfGridSize;
+            return tempPt;
         }
     }
 
@@ -126,6 +138,9 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
 
     function doRender() {
         cnt.clearRect(0, 0, width, height);
+        cnt.save();
+        cnt.lineWidth = padding;
+        cnt.strokeStyle = GridStyle.GridStrikeColor;
         //绘制格子
         for (let x = 0; x < cols; x++) {
             for (let y = 0; y < rows; y++) {
@@ -135,9 +150,12 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
                 let cy = rect.y;
                 cnt.fillStyle = grid.color;
                 cnt.rect(cx, cy, gridWidth, gridHeight);
+                cnt.strokeRect(cx, cy, gridWidth, gridHeight);
                 cnt.fill();
             }
         }
+        cnt.restore();
+
         //绘制选取范围
         if (_area) {
             cnt.save();
@@ -184,8 +202,8 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
     }
 
     function getGridBounds(x: number, y: number) {
-        tempRect.x = x * (gridSize + padding) + padding;
-        tempRect.y = y * (gridSize + padding) + padding;
+        tempRect.x = x * gridSize;
+        tempRect.y = y * gridSize;
         tempRect.width = gridSize;
         tempRect.height = gridSize;
         return tempRect;
