@@ -41,7 +41,7 @@ function prepare(key: string, dataPath?: string, imgPath?: string) {
             imgPath = path.join(Core.basePath, Core.cfg.effectPath, key, ConstString.AniImageFile);
         }
         if (!fs.existsSync(dataPath)) {
-            return alert(`找不到指定的特效配置文件[${dataPath}]`)
+            return console.log(`找不到指定的特效配置文件[${dataPath}]`)
         }
         let str = fs.readFileSync(dataPath, "utf8");
         let data;
@@ -53,7 +53,8 @@ function prepare(key: string, dataPath?: string, imgPath?: string) {
         ani = new jy.AniInfo();
         ani.init(key, data);
         if (!ani.actionInfo.isCircle) {
-            return alert(`特效配置文件不是循环动画，请检查`);
+            ani.actionInfo.isCircle = true;
+            // return alert(`特效配置文件不是循环动画，请检查`);
         }
         let filename = path.basename(imgPath);
         addRes(`${jy.ResPrefix.Ani}${key}/${filename}`, imgPath);
