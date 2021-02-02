@@ -38,6 +38,17 @@ interface AreaSolver {
      * @param y 
      */
     getGraphPath(target: Point): Path2D;
+
+    /**
+     * 获取当前正在编辑的数据的唯一标识
+     */
+    getCurId(): string;
+    /**
+     * 根据当前控件的值，生成一个技能
+     */
+    getTemp(): SkillInput;
+
+    reset();
 }
 
 declare type SkillIdentityDict = { [id: string]: SkillInput }

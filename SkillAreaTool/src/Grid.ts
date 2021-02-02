@@ -4,8 +4,6 @@ const enum GridStyle {
     AreaAlpha = 0.5,
 
     AreaStrokeColor = AreaColor,
-
-    GridStrikeColor = "#ffffff",
     AreaStrokeAlpha = 1,
 
     /**
@@ -71,11 +69,11 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
     /**
      * 中心格子坐标X
      */
-    const centerX = Math.ceil(cols * .5);
+    const centerX = cols >> 1;
     /**
      * 中心格子坐标Y
      */
-    const centerY = Math.ceil(rows * .5);
+    const centerY = rows >> 1;
     const grids = [] as Grid[][];
     let _area: Path2D;
     let _target: PosArea;
@@ -99,14 +97,14 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
          * 绘制主目标
          */
         setTarget(pos: PosArea) {
-            const { target: { x: tx = centerX, y: ty = centerY } = noTarget, areas } = pos;
+            let { target: { x: tx = 0, y: ty = 0 } = noTarget, areas } = pos;
             _target = pos;
-            setGrid(tx, ty, GridStyle.MainTargetColor);
+            setGrid(tx + centerX, ty + centerY, GridStyle.MainTargetColor);
             if (areas) {
                 for (let i = 0; i < areas.length; i++) {
                     const { x, y } = areas[i];
                     if (x != tx || y != ty) {
-                        setGrid(x, y, GridStyle.TargetColor);
+                        setGrid(x + centerX, y + centerY, GridStyle.TargetColor);
                     }
                 }
             }
@@ -122,9 +120,17 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
         /**
          * 获取中心点像素坐标
          */
-        getCenter() {
+        getCenterPX() {
             tempPt.x = centerX * gridSize + halfGridSize;
             tempPt.y = centerY * gridSize + halfGridSize;
+            return tempPt;
+        },
+        /**
+         * 获取中心点格位坐标
+         */
+        getCenter() {
+            tempPt.x = centerX;
+            tempPt.y = centerY;
             return tempPt;
         }
     }
@@ -137,10 +143,12 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
     }
 
     function doRender() {
+        //中心点，永远绘制施法者
+        setGrid(centerX, centerY, GridStyle.CasterColor);
         cnt.clearRect(0, 0, width, height);
         cnt.save();
         cnt.lineWidth = padding;
-        cnt.strokeStyle = GridStyle.GridStrikeColor;
+        const padding2 = 2 * padding;
         //绘制格子
         for (let x = 0; x < cols; x++) {
             for (let y = 0; y < rows; y++) {
@@ -149,9 +157,7 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
                 let cx = rect.x;
                 let cy = rect.y;
                 cnt.fillStyle = grid.color;
-                cnt.rect(cx, cy, gridWidth, gridHeight);
-                cnt.strokeRect(cx, cy, gridWidth, gridHeight);
-                cnt.fill();
+                cnt.fillRect(cx + padding, cy + padding, gridWidth - padding2, gridHeight - padding2);
             }
         }
         cnt.restore();
@@ -170,6 +176,7 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
             cnt.fill(_area);
             cnt.restore();
         }
+        _changed = false;
     }
 
     /**

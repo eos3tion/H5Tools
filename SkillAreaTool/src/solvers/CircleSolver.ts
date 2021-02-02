@@ -1,5 +1,7 @@
 import { Core } from "../Core.js";
 import { createNumberInput, NumberInputElement } from "../HtmlUtils.js";
+import { PointRuntime } from "../PointRuntime.js";
+import { PosAreaRuntime } from "../PosArea.js";
 const enum Const {
     MinGridCount = 0,
     DefaultGridCount = 3,
@@ -9,6 +11,17 @@ const enum Const {
 const PI2 = Math.PI * 2;
 
 let radius: number;
+let Pos0_0: PosArea;
+let Targets: PosArea[];
+
+function reset() {
+    radius = undefined;
+    Pos0_0 = new PosAreaRuntime({ x: 0, y: 0 });
+    Targets = [Pos0_0];
+}
+reset();
+
+
 let view: HTMLDivElement;
 let radiusInput: NumberInputElement;
 function getEditView() {
@@ -38,21 +51,23 @@ function setRadius(value: number) {
     }
     if (radius != value) {
         radius = value;
-        const { x: centerX, y: centerY } = grids.getCenter();
         const { gridSize, percent = 0 } = Core.cfg;
-        const checker = getChecker(centerX, centerY, radius * radius)
+        let halfGridSize = gridSize * .5;
+        const checker = getChecker(halfGridSize, halfGridSize, radius * radius)
         let areas = Pos0_0.areas;
         areas.length = 0;
         //重新计算areas
-        let halfGrid = Math.ceil((radius / gridSize) * .5);
-        for (let x = -halfGrid; x <= halfGrid; x++) {
-            for (let y = -halfGrid; y <= halfGrid; y++) {
+        let halfGrid = Math.ceil((radius / gridSize) * .5) + 1;
+        const ex = halfGrid;
+        const ey = halfGrid;
+        for (let x = - halfGrid; x <= ex; x++) {
+            for (let y = - halfGrid; y <= ey; y++) {
                 let rect = grids.getGridBounds(x, y);
                 //遍历检查每点是否在范围内
                 let count = rect.checkVertexs(checker)
                 if (count > 0) {
                     if (percent == 0 || count == 4 || rect.checkArea(checker, percent)) {
-                        areas.push({ x, y });
+                        areas.push(new PointRuntime(x, y));
                     }
                 }
             }
@@ -69,8 +84,6 @@ function getChecker(fx: number, fy: number, sqRadius: number) {
 }
 
 
-const Pos0_0 = { target: { x: 0, y: 0 }, areas: [] } as PosArea;
-const Targets = [Pos0_0]
 
 /**
  * 获取目标/范围的数据列表
@@ -82,7 +95,7 @@ function getTargets(): PosArea[] {
 function getGraphPath() {
     let path = new Path2D();
     let grids = Core.grids;
-    let pt = grids.getCenter();
+    let pt = grids.getCenterPX();
     path.arc(pt.x, pt.y, radius, 0, PI2);
     return path;
 }
@@ -115,6 +128,22 @@ export default {
     getTargets,
     getGraphPath,
     getIdentityData,
+    getCurId() {
+        return getId(radius);
+    },
+    getTemp() {
+        reset();
+        const tempRadius = 240;
+        let cfg = {
+            id: getId(tempRadius),
+            type: SkillAreaType.Circle,
+            range: tempRadius
+        } as SkillCfg;
+        setParam(cfg);
+        cfg.area = getTargets();
+        return cfg;
+    },
+    reset
 } as AreaSolver
 
 
