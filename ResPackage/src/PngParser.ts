@@ -115,10 +115,10 @@ export class PngParser implements IBlock {
                         }
                     }
                 }
-                let w = right - left;
-                if (w < 0) w = 0;
-                let h = bottom - top;
-                if (h < 0) h = 0;
+                let w = right - left + 1;
+                if (w < 1) w = 1;
+                let h = bottom - top + 1;
+                if (h < 1) h = 1;
                 img.width = w;
                 img.height = h;
                 let nB = new Buffer(w * h * 4);
@@ -158,7 +158,7 @@ export class PngParser implements IBlock {
                 console.timeEnd(img.name);
                 console.log(this);
                 Core.progress.endTask();
-                resolve();
+                resolve(null);
             });
         });
     }
