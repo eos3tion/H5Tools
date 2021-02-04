@@ -14,6 +14,7 @@ import { prepareEffs, checkDrop, createEff, regMapEffFactorys } from "./effs/Map
 const enum CtrlName {
     MapPathCtrl = "divMapPath",
     EffectList = "divEffList",
+    AreaGroup = "divAreaGroup",
 }
 
 let curCtrl: string;
@@ -25,12 +26,12 @@ function mapPathCtrlInit() {
 
     const drawMapPathControl = current.drawMapPathControl;
     $("#divMapPath").append(drawMapPathControl.view);
-    ctrlDict["divMapPath"] = drawMapPathControl;
+    ctrlDict[CtrlName.MapPathCtrl] = drawMapPathControl;
 
     const areaGroupControl = current.areaGroupControl;
     if (areaGroupControl) {
         $("#divAreaGroup").append(areaGroupControl.view);
-        ctrlDict["divAreaGroup"] = areaGroupControl;
+        ctrlDict[CtrlName.AreaGroup] = areaGroupControl;
     }
 
     $("#accControl").accordion({
@@ -64,11 +65,15 @@ function mapPathCtrlInit() {
             let old = ctrlDict[curCtrl];
             if (old) {
                 old.onToggle(false);
+            } else if (curCtrl == CtrlName.EffectList) {
+                $gm.$showMapGrid = false;
             }
             curCtrl = ctxId;
             let ctrl = ctrlDict[curCtrl];
             if (ctrl) {
                 ctrl.onToggle(true);
+            } else if (curCtrl == CtrlName.EffectList) {
+                $gm.$showMapGrid = true;
             }
             $engine.invalidate();
         }
