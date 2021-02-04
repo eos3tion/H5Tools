@@ -416,6 +416,8 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
             y: pt.y - top
         }))
         //polygon的图片数据进行缩减
+        right++;
+        bottom++;
         imgX = x + left;
         imgY = y + top;
         imgW = right - left;
@@ -441,11 +443,42 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
             // 左上(0)      右上(3)
             // 
             // 左下(1)      右下(2)
+            let left = tilewidth, right = 0, top = tileheight, bottom = 0, idx = 0;
+            //矩形检查图像全透明范围
+            const { data } = cnt.getImageData(imgX, imgY, imgW, imgH);
+            for (let y = 0; y < imgH; y++) {
+                for (let x = 0; x < imgW; x++) {
+                    idx += 3;
+                    const alpha = data[idx++];
+                    if (alpha > 0) {
+                        if (x < left) {
+                            left = x;
+                        }
+                        if (x > right) {
+                            right = x;
+                        }
+                        if (y < top) {
+                            top = y;
+                        }
+                        if (y > bottom) {
+                            bottom = y;
+                        }
+                    }
+                }
+            }
+            right++;
+            bottom++;
+            imgX = x + left;
+            imgY = y + top;
+            imgW = right - left;
+            imgH = bottom - top;
+
+
             polys = [
-                { x: 0, y: 0 },
-                { x: 0, y: tileheight },
-                { x: tilewidth, y: tileheight },
-                { x: tilewidth, y: 0 }
+                { x: left, y: top },
+                { x: left, y: bottom },
+                { x: right, y: bottom },
+                { x: right, y: top }
             ]
             type = TileTexType.Rectangle;
         }
