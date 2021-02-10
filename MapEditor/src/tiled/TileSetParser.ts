@@ -66,7 +66,7 @@ export async function createTileSets(cfgPath: string, basePath: string) {
 
     const cfg = getTiledCfg(cfgPath);
 
-    const { tilesets, tileheight: mth } = cfg;
+    const { tilesets, tileheight: mth, tilewidth: mtw } = cfg;
     if (!tilesets || !tilesets.length) {
         throw Error(`TiledMap的配置[${cfgPath}]有误，没有任何有纹理集`);
     }
@@ -116,15 +116,27 @@ export async function createTileSets(cfgPath: string, basePath: string) {
             tox = tileoffset.x;
             toy = tileoffset.y;
         }
+
+        //```
+        //  基于格子左下定位
+        //  |←--------mtw-------→|
+        //  ┌────────────────────┐---
+        //  │←-ox-→|             │ ↑
+        //  │------┐---          │mth
+        //  │      | oy          │ ↓
+        //  └────────────────────┘---
+        //  ↑
+        //  格子起点
+        //  纹理转向得到新的纹理宽，高，然后基于格子左下起点，+ox和+oy进行偏移
         let ox = tox;
-        toy = mth + toy;
         let oy = toy - tileheight;
         let oy1 = toy - tilewidth;
+        let ox1 = ox;
 
         while (t < tilecount) {
             let x = margin;
             for (let col = 0; col < columns; col++) {
-                tileList.push(createTileData(cfg, firstgid, tiles[t], x, y, ox, oy, oy1, cnt, setA, setW, setH))
+                tileList.push(createTileData(cfg, firstgid, tiles[t], x, y, ox, oy, ox1, oy1, cnt, setA, setW, setH))
                 t++;
                 firstgid++;
                 x += tilewidth + spacing;
@@ -378,7 +390,7 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
     }
 }
 
-function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Tile, x: number, y: number, ox: number, oy: number, oy1: number, cnt: CanvasRenderingContext2D, setA?: boolean, setW?: number, setH?: number) {
+function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Tile, x: number, y: number, ox: number, oy: number, ox1: number, oy1: number, cnt: CanvasRenderingContext2D, setA?: boolean, setW?: number, setH?: number) {
     const { tilewidth, tileheight } = cfg;
     let properties = tileInfo?.properties;
     let pInfo = tileInfo?.objectgroup?.objects?.[0];
@@ -488,12 +500,14 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
     const [p0, p1, p2, p3] = polys;
 
 
-    const [p11, p12, p13, p10] = polys.map(pt => ({
+    const [p10, p11, p12, p13] = polys.map(pt => ({
         x: tileheight - pt.y,
         y: pt.x
     }))
 
-    //0
+    //0(正常) 横向
+    //0 3
+    //1 2
     dict[getId(0)] = [
         ox + p0.x,
         oy + p0.y,
@@ -505,19 +519,23 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
         oy + p3.y,
     ]
 
-    //1
+    //1(对角) 纵向
+    //0 1
+    //3 2
     dict[getId(1)] = [
-        ox + p11.x,
+        ox1 + p11.x,
         oy1 + p11.y,
-        ox + p10.x,
+        ox1 + p10.x,
         oy1 + p10.y,
-        ox + p13.x,
+        ox1 + p13.x,
         oy1 + p13.y,
-        ox + p12.x,
+        ox1 + p12.x,
         oy1 + p12.y,
     ]
 
-    //2
+    //2（上下）横向
+    //1 2
+    //0 3
     dict[getId(2)] = [
         ox + p1.x,
         oy + p1.y,
@@ -529,19 +547,23 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
         oy + p2.y,
     ]
 
-    //3
+    //3(垂直+对角) 纵向
+    //3 2
+    //0 1
     dict[getId(3)] = [
-        ox + p12.x,
+        ox1 + p12.x,
         oy1 + p12.y,
-        ox + p13.x,
+        ox1 + p13.x,
         oy1 + p13.y,
-        ox + p10.x,
+        ox1 + p10.x,
         oy1 + p10.y,
-        ox + p11.x,
+        ox1 + p11.x,
         oy1 + p11.y,
     ]
 
-    //4
+    //4(水平) 横向
+    //3 0
+    //2 1
     dict[getId(4)] = [
         ox + p3.x,
         oy + p3.y,
@@ -553,19 +575,23 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
         oy + p0.y,
     ]
 
-    //5
+    //5(水平+对角) 纵向
+    //1 0
+    //2 3
     dict[getId(5)] = [
-        ox + p10.x,
+        ox1 + p10.x,
         oy1 + p10.y,
-        ox + p11.x,
+        ox1 + p11.x,
         oy1 + p11.y,
-        ox + p12.x,
+        ox1 + p12.x,
         oy1 + p12.y,
-        ox + p13.x,
+        ox1 + p13.x,
         oy1 + p13.y,
     ]
 
-    //6
+    //6(水平+上下) 横向
+    //2 1
+    //3 0
     dict[getId(6)] = [
         ox + p2.x,
         oy + p2.y,
@@ -577,15 +603,17 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
         oy + p1.y,
     ]
 
-    //7
+    //7(水平+上线+对角) 纵向
+    //2 3
+    //1 0
     dict[getId(7)] = [
-        ox + p13.x,
+        ox1 + p13.x,
         oy1 + p13.y,
-        ox + p12.x,
+        ox1 + p12.x,
         oy1 + p12.y,
-        ox + p11.x,
+        ox1 + p11.x,
         oy1 + p11.y,
-        ox + p10.x,
+        ox1 + p10.x,
         oy1 + p10.y,
     ]
 
