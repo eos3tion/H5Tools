@@ -399,6 +399,7 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
     let polys: jy.Point[];
     let type: TileTexType;
     let imgX = x, imgY = y, imgW = tilewidth, imgH = tileheight;
+    let pLeft = 0, pRight = 0, pTop = 0, pBottom = 0;
     if (polygon && polygon.length == 4) {//多边形
         let { x: px, y: py } = pInfo
         let left = tilewidth, right = 0, top = tileheight, bottom = 0;
@@ -434,6 +435,10 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
         imgY = y + top;
         imgW = right - left;
         imgH = bottom - top;
+        pLeft = left;
+        pRight = tilewidth - right;
+        pTop = top;
+        pBottom = tileheight - bottom;
         type = TileTexType.Polygon;
     } else {
         //先判断纹理集，再判断单纹理
@@ -485,6 +490,10 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
             imgW = right - left;
             imgH = bottom - top;
 
+            pLeft = left;
+            pRight = tilewidth - right;
+            pTop = top;
+            pBottom = tileheight - bottom;
 
             polys = [
                 { x: left, y: top },
@@ -505,116 +514,117 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
         y: pt.x
     }))
 
+
     //0(正常) 横向
     //0 3
     //1 2
     dict[getId(0)] = [
-        ox + p0.x,
-        oy + p0.y,
-        ox + p1.x,
-        oy + p1.y,
-        ox + p2.x,
-        oy + p2.y,
-        ox + p3.x,
-        oy + p3.y,
+        ox + p0.x + pLeft,
+        oy + p0.y + pTop,
+        ox + p1.x + pLeft,
+        oy + p1.y + pTop,
+        ox + p2.x + pLeft,
+        oy + p2.y + pTop,
+        ox + p3.x + pLeft,
+        oy + p3.y + pTop,
     ]
 
     //1(对角) 纵向
     //0 1
     //3 2
     dict[getId(1)] = [
-        ox1 + p11.x,
-        oy1 + p11.y,
-        ox1 + p10.x,
-        oy1 + p10.y,
-        ox1 + p13.x,
-        oy1 + p13.y,
-        ox1 + p12.x,
-        oy1 + p12.y,
+        ox1 + p11.x - pBottom,
+        oy1 + p11.y + pLeft,
+        ox1 + p10.x - pBottom,
+        oy1 + p10.y + pLeft,
+        ox1 + p13.x - pBottom,
+        oy1 + p13.y + pLeft,
+        ox1 + p12.x - pBottom,
+        oy1 + p12.y + pLeft,
     ]
 
     //2（上下）横向
     //1 2
     //0 3
     dict[getId(2)] = [
-        ox + p1.x,
-        oy + p1.y,
-        ox + p0.x,
-        oy + p0.y,
-        ox + p3.x,
-        oy + p3.y,
-        ox + p2.x,
-        oy + p2.y,
+        ox + p1.x + pLeft,
+        oy + p1.y + pBottom,
+        ox + p0.x + pLeft,
+        oy + p0.y + pBottom,
+        ox + p3.x + pLeft,
+        oy + p3.y + pBottom,
+        ox + p2.x + pLeft,
+        oy + p2.y + pBottom,
     ]
 
     //3(垂直+对角) 纵向
     //3 2
     //0 1
     dict[getId(3)] = [
-        ox1 + p12.x,
-        oy1 + p12.y,
-        ox1 + p13.x,
-        oy1 + p13.y,
-        ox1 + p10.x,
-        oy1 + p10.y,
-        ox1 + p11.x,
-        oy1 + p11.y,
+        ox1 + p12.x - pBottom,
+        oy1 + p12.y + pRight,
+        ox1 + p13.x - pBottom,
+        oy1 + p13.y + pRight,
+        ox1 + p10.x - pBottom,
+        oy1 + p10.y + pRight,
+        ox1 + p11.x - pBottom,
+        oy1 + p11.y + pRight,
     ]
 
     //4(水平) 横向
     //3 0
     //2 1
     dict[getId(4)] = [
-        ox + p3.x,
-        oy + p3.y,
-        ox + p2.x,
-        oy + p2.y,
-        ox + p1.x,
-        oy + p1.y,
-        ox + p0.x,
-        oy + p0.y,
+        ox + p3.x + pRight,
+        oy + p3.y + pTop,
+        ox + p2.x + pRight,
+        oy + p2.y + pTop,
+        ox + p1.x + pRight,
+        oy + p1.y + pTop,
+        ox + p0.x + pRight,
+        oy + p0.y + pTop,
     ]
 
     //5(水平+对角) 纵向
     //1 0
     //2 3
     dict[getId(5)] = [
-        ox1 + p10.x,
-        oy1 + p10.y,
-        ox1 + p11.x,
-        oy1 + p11.y,
-        ox1 + p12.x,
-        oy1 + p12.y,
-        ox1 + p13.x,
-        oy1 + p13.y,
+        ox1 + p10.x + pTop,
+        oy1 + p10.y + pLeft,
+        ox1 + p11.x + pTop,
+        oy1 + p11.y + pLeft,
+        ox1 + p12.x + pTop,
+        oy1 + p12.y + pLeft,
+        ox1 + p13.x + pTop,
+        oy1 + p13.y + pLeft,
     ]
 
     //6(水平+上下) 横向
     //2 1
     //3 0
     dict[getId(6)] = [
-        ox + p2.x,
-        oy + p2.y,
-        ox + p3.x,
-        oy + p3.y,
-        ox + p0.x,
-        oy + p0.y,
-        ox + p1.x,
-        oy + p1.y,
+        ox + p2.x + pRight,
+        oy + p2.y + pBottom,
+        ox + p3.x + pRight,
+        oy + p3.y + pBottom,
+        ox + p0.x + pRight,
+        oy + p0.y + pBottom,
+        ox + p1.x + pRight,
+        oy + p1.y + pBottom,
     ]
 
     //7(水平+上线+对角) 纵向
     //2 3
     //1 0
     dict[getId(7)] = [
-        ox1 + p13.x,
-        oy1 + p13.y,
-        ox1 + p12.x,
-        oy1 + p12.y,
-        ox1 + p11.x,
-        oy1 + p11.y,
-        ox1 + p10.x,
-        oy1 + p10.y,
+        ox1 + p13.x + pTop,
+        oy1 + p13.y + pRight,
+        ox1 + p12.x + pTop,
+        oy1 + p12.y + pRight,
+        ox1 + p11.x + pTop,
+        oy1 + p11.y + pRight,
+        ox1 + p10.x + pTop,
+        oy1 + p10.y + pRight,
     ]
 
     let data = cnt.getImageData(imgX, imgY, imgW, imgH);
