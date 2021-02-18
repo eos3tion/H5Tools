@@ -1,10 +1,10 @@
 interface AreaSolver {
-    /**
-     * 检查数据
-     * @param data 要检查的数据
-     * @param dict 传入的字典
-     */
-    getIdentityData(data: SkillInput, dict: SkillIdentityDict);
+    // /**
+    //  * 检查数据
+    //  * @param data 要检查的数据
+    //  * @param dict 传入的字典
+    //  */
+    // getIdentityData(data: SkillInput, dict: SkillIdentityDict);
     /**
      * 范围类型
      */
@@ -39,10 +39,6 @@ interface AreaSolver {
      */
     getGraphPath(target: Point): Path2D;
 
-    /**
-     * 获取当前正在编辑的数据的唯一标识
-     */
-    getCurId(): string;
     /**
      * 根据当前控件的值，生成一个技能
      */

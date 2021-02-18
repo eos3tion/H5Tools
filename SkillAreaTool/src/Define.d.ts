@@ -93,7 +93,12 @@ interface SkillAreaOutput {
 /**
  * 内存中运行时使用的数据
  */
-interface SkillCfg extends SkillInput, SkillAreaOutput { }
+interface SkillCfg extends SkillInput, SkillAreaOutput {
+    /**
+     * 技能配置是否变更
+     */
+    changed?: boolean;
+}
 
 /**
  * 技能指定落点时，对应的区域  

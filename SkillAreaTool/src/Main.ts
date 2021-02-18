@@ -20,6 +20,8 @@ btnLoad.addEventListener("click", loadCfg);
 const btnAdd = $g("btnAdd") as HTMLInputElement;
 btnAdd.addEventListener("click", addSkill);
 
+const txtName = $g("txtName") as HTMLInputElement;
+
 let editing = false;
 let curSkill: SkillCfg;
 let solvers: ReturnType<typeof showAreaSolvers>;
@@ -39,19 +41,36 @@ function addSkill() {
     if (!curSolver) {
         return
     }
+    let nameDisplay: string, btnLable: string;
     if (editing) {//正在编辑
         //保存
-        btnAdd.value = "添加技能";
+        btnLable = "添加技能";
         if (curSkill) {
-            //重新计算技能id
-            curSkill.id = curSolver.getCurId();
             curSkill.area = curSolver.getTargets();
         }
+        nameDisplay = "block";
     } else {
-        //开始编辑
-        btnAdd.value = "保存技能";
+
         if (!curSkill) {
+            let name = txtName.value.trim();
+            if (!name) {
+                alert(`请先设置技能范围标识`);
+                txtName.focus();
+                return
+            }
+            //检查名字是否已经存在
+            if (skillList.find(sk => sk.id === name)) {
+                alert(`已经有此技能范围标识，请更换`);
+                txtName.focus();
+                return
+            }
+
+            //创建技能，并设置名字
             curSkill = curSolver.getTemp() as SkillCfg;
+            if (name) {
+                curSkill.id = name;
+            }
+            curSkill.changed = true;
             Object.setPrototypeOf(curSkill, SkillRuntime);
             //将数据显示到列表，并选中
             skillList.push(curSkill);
@@ -61,7 +80,12 @@ function addSkill() {
             curSolver.reset();
             curSolver.setParam(curSkill);
         }
+        //开始编辑
+        btnLable = "保存技能";
+        nameDisplay = "none";
     }
+    btnAdd.value = btnLable;
+    txtName.style.display = nameDisplay;
     editing = !editing;
 }
 
@@ -177,10 +201,17 @@ function initCtrl() {
     if (rawDatas) {
         for (let i = 0; i < rawDatas.length; i++) {
             const data = rawDatas[i];
-            let solver = solvers.get(data.type);
-            if (solver) {
-                solver.getIdentityData(data, dict);
+            const id = data.id;
+            if (!outputData[id]) {
+                let solver = solvers.get(data.type);
+                if (solver) {//只处理有处理器的数据
+                    outputData[id] = data;
+                }
             }
+            // let solver = solvers.get(data.type);
+            // if (solver) {
+            //     solver.getIdentityData(data, dict);
+            // }
         }
     }
     //检查输出数据，查看是否已经有配置好的数据
@@ -270,6 +301,6 @@ function refreshGrids() {
  */
 const SkillRuntime = {
     get text() {
-        return this.id;
+        return this.id + (this.changed ? "*" : "");
     }
 }
