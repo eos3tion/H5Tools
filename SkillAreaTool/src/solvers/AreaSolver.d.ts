@@ -47,7 +47,11 @@ interface AreaSolver {
      * 根据当前控件的值，生成一个技能
      */
     getTemp(): SkillInput;
-
+    /**
+     * 用于上抛重新绘制的事件
+     * @param viewChange 重新绘制的回调
+     */
+    bindViewChange(viewChange: { () });
     reset();
 }
 

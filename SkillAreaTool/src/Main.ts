@@ -23,6 +23,10 @@ btnAdd.addEventListener("click", addSkill);
 let editing = false;
 let curSkill: SkillCfg;
 let solvers: ReturnType<typeof showAreaSolvers>;
+/**
+ * 当前正在绘制的区域
+ */
+let curPosArea: PosAreaRuntime;
 
 /**
  * 技能数据列表
@@ -80,6 +84,7 @@ function showAreaSolvers() {
     for (let type in solvers) {
         const solver = solvers[type];
         createRadio(solver.name, solver.type, name, parent, false, onChange);
+        solver.bindViewChange(refreshGrids);
     }
     let v = document.querySelector(`[name=${name}]`) as HTMLInputElement;
     if (v) {
@@ -148,6 +153,10 @@ function loadCfg() {
         return alert(`无法正确解析配置文件[${file}]，请检查。\n错误：${e.message}`);
     }
     cookie.setCookie(Const.PathCookieKey, file);
+
+    const { percent = 0, gridSize = 80 } = cfg;
+    $g("lblGridSize").innerText = gridSize + "";
+    $g("lblPercent").innerText = percent * 100 + "%";
 
     Core.cfg = cfg;
     const grids = getGrids({ gridSize: cfg.gridSize }, $g("canvas") as HTMLCanvasElement);
@@ -227,12 +236,8 @@ function getSkillList() {
     })
     dlProList.datalist({
         onSelect(_: number, row: PosAreaRuntime) {
-            //显示对应数据
-            const graph = solvers?.curSolver?.getGraphPath(row.target);
-            const grids = Core.grids;
-            grids.reset();
-            grids.setAreaGraph(graph);
-            grids.setTarget(row);
+            curPosArea = row;
+            refreshGrids()
         }
     })
     return {
@@ -245,6 +250,18 @@ function getSkillList() {
         refresh() {
             dlSkillList.datalist(datas);
         }
+    }
+}
+/**
+ * 显示对应数据
+ */
+function refreshGrids() {
+    if (curPosArea) {
+        const graph = solvers?.curSolver?.getGraphPath(curPosArea.target);
+        const grids = Core.grids;
+        grids.reset();
+        grids.setAreaGraph(graph);
+        grids.setTarget(curPosArea);
     }
 }
 

@@ -115,4 +115,8 @@ interface PosArea {
 interface Point {
     x: number;
     y: number;
+    /**
+     * 手动干预的点，如果此点为`true`，则屏蔽此坐标
+     */
+    disabled?: boolean;
 }

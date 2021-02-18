@@ -19,7 +19,7 @@ const enum GridStyle {
     /**
      * 命中格位颜色
      */
-    TargetColor = "#330000",
+    TargetColor = "#aa0000",
 
     /**
      * 正常格位颜色
@@ -61,8 +61,13 @@ const tempPt = { x: 0, y: 0 };
 
 export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
     const { gridSize, cols = 21, rows = 21, padding = 1, color = "#aaaaaa" } = opt;
+    const size = gridSize;
+    const width = cols * size;
+    const height = rows * size;
+    canvas.width = width;
+    canvas.height = height;
     const halfGridSize = gridSize * .5;
-    const { width, height } = canvas;
+    canvas.addEventListener("click", onClick);
     const cnt = canvas.getContext("2d");
     const gridWidth = gridSize;
     const gridHeight = gridSize;
@@ -109,7 +114,7 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
                 }
             }
         },
-
+        invalidate,
         /**
          * 设置范围
          * @param area 
@@ -132,6 +137,32 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
             tempPt.x = centerX;
             tempPt.y = centerY;
             return tempPt;
+        }
+    }
+
+    function onClick(ev: MouseEvent) {
+        //得到点击坐标，检查点击的当前格子
+        //检查当前目标区域
+        if (_target) {
+            const { offsetX, offsetY } = ev;
+            const { offsetWidth, offsetHeight } = canvas;
+            const x = offsetX / offsetWidth * width;
+            const y = offsetY / offsetHeight * height;
+            let { x: rgx, y: rgy } = pixel2Grid(x, y);
+            let gx = rgx - centerX;
+            let gy = rgx - centerY;
+            const areas = _target.areas;
+            //尝试重设当前区域中的值
+            for (let i = 0; i < areas.length; i++) {
+                const area = areas[i];
+                if (area.x == gx && area.y == gy) {
+                    let flag = !area.disabled;
+                    area.disabled = flag;
+                    setGrid(rgx, rgy, flag ? GridStyle.NormalColor : GridStyle.TargetColor);
+                    invalidate();
+                    break;
+                }
+            }
         }
     }
 
@@ -214,6 +245,13 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
         tempRect.width = gridSize;
         tempRect.height = gridSize;
         return tempRect;
+    }
+
+    function pixel2Grid(x: number, y: number) {
+        return {
+            x: x / gridSize >> 0,
+            y: y / gridSize >> 0
+        }
     }
 }
 

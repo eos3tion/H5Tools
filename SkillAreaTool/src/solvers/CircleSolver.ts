@@ -13,6 +13,7 @@ const PI2 = Math.PI * 2;
 let radius: number;
 let Pos0_0: PosArea;
 let Targets: PosArea[];
+let _viewChange = function () { };
 
 function reset() {
     radius = undefined;
@@ -72,6 +73,7 @@ function setRadius(value: number) {
                 }
             }
         }
+        _viewChange();
     }
 }
 
@@ -120,6 +122,10 @@ function getId(radius: number) {
     return `${SkillAreaType.Circle}_${radius}`;
 }
 
+function bindViewChange(viewChange: { () }) {
+    _viewChange = viewChange;
+}
+
 export default {
     type: SkillAreaType.Circle,
     name: "圆形",
@@ -128,6 +134,7 @@ export default {
     getTargets,
     getGraphPath,
     getIdentityData,
+    bindViewChange,
     getCurId() {
         return getId(radius);
     },
