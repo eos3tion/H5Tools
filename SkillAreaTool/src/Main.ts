@@ -5,6 +5,7 @@ import { getInput } from "./Input.js";
 import { getOutput } from "./Output.js";
 import { PosAreaRuntime } from "./PosArea.js";
 import CircleSolver from "./solvers/CircleSolver.js";
+import SectorSolver from "./solvers/SectorSolver.js";
 
 const enum Const {
     PathCookieKey = "SkillAreaTool_Path",
@@ -97,6 +98,7 @@ function showAreaSolvers() {
      */
     const solvers = {
         [SkillAreaType.Circle]: CircleSolver,
+        [SkillAreaType.Sector]: SectorSolver,
     } as { [type in SkillAreaType]: AreaSolver }
 
     const name = "areaType";

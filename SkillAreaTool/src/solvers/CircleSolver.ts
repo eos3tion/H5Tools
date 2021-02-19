@@ -133,11 +133,11 @@ export default {
     setParam,
     getTargets,
     getGraphPath,
-    getIdentityData,
+    // getIdentityData,
     bindViewChange,
-    getCurId() {
-        return getId(radius);
-    },
+    // getCurId() {
+    //     return getId(radius);
+    // },
     getTemp() {
         reset();
         const tempRadius = 240;

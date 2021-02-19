@@ -2,6 +2,7 @@
     "source": "e:/test/Skill.json",
     "dist": "e:/test/SkillArea.json",
     "gridSize": 80,
+    "targetRange": 5,
     "percent": 0.4,
     "keyDict": {
         "type": "areatype",

@@ -26,6 +26,10 @@ interface GlobalCfg {
      */
     gridSize: number;
     /**
+     * 目标范围
+     */
+    targetRange: number;
+    /**
      * 字典映射
      */
     keyDict?: {
