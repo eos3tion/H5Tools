@@ -560,7 +560,7 @@ function getMapInfoPB(map: jy.MapInfo) {
     pb.effs = out as jy.MapEffPB[];
     let tiledMap = Core.tiledMap;
     if (tiledMap) {
-        let layers = tiledMap.layerData.map(data => new jy.ByteArray(new Uint8Array(data)));
+        let layers = tiledMap.layerData.map(data => new jy.ByteArray(new Uint32Array(data).buffer));
         pb.tiledMap = {
             cols: tiledMap.cols,
             rows: tiledMap.rows,
