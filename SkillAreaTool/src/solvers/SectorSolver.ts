@@ -17,13 +17,12 @@ let decInput: NumberInputElement;
 let radius: number;
 let rad: number;
 let Targets: PosArea[];
-let _halfGridCount: number;
 
 let _viewChange = function () { };
 const PI = Math.PI;
-const PI_1_2 = PI * .5;
 const PI2 = PI * 2;
-const DEC2Rad = PI / 180;
+const Dec2Rad = PI / 180;
+const Rad2Dec = 180 / PI;
 function getEditView() {
     if (!view) {
         view = document.createElement("div");
@@ -41,7 +40,7 @@ function getEditView() {
 }
 
 function setDec(value: number) {
-    value *= DEC2Rad;
+    value *= Dec2Rad;
     if (rad != value) {
         rad = value;
         invalidate();
@@ -209,15 +208,15 @@ export default {
     getGraphPath,
     bindViewChange,
     getTemp() {
-        reset();
-        const tempRadius = 240;
-        const rad = 90;
+        const tempRadius = radius || 240;
+        const tempRad = rad || 90;
         let cfg = {
-            id: `${SkillAreaType.Sector}_${tempRadius}_${rad}`,
+            id: `${SkillAreaType.Sector}_${tempRadius}_${tempRad}`,
             type: SkillAreaType.Sector,
             range: tempRadius,
-            param1: rad
+            param1: tempRad * Rad2Dec
         } as SkillCfg;
+        reset();
         setParam(cfg);
         cfg.area = getTargets();
         return cfg;

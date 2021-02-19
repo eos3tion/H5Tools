@@ -139,13 +139,13 @@ export default {
     //     return getId(radius);
     // },
     getTemp() {
-        reset();
-        const tempRadius = 240;
+        const tempRadius = radius || 240;
         let cfg = {
             id: getId(tempRadius),
             type: SkillAreaType.Circle,
             range: tempRadius
         } as SkillCfg;
+        reset();
         setParam(cfg);
         cfg.area = getTargets();
         return cfg;
