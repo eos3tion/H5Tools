@@ -209,7 +209,7 @@ export default {
     bindViewChange,
     getTemp() {
         const tempRadius = radius || 240;
-        const tempRad = rad || 90;
+        const tempRad = rad || 90 * Dec2Rad;
         let cfg = {
             id: `${SkillAreaType.Sector}_${tempRadius}_${tempRad}`,
             type: SkillAreaType.Sector,
