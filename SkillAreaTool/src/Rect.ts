@@ -42,17 +42,16 @@ export class Rect {
     checkArea(checker: { (x: number, y: number): boolean }, percent: number) {
         const { left, top, right, bottom, width, height } = this;
         let i = 0;
-        let count = width * height * percent | 0;
-        for (let x = left; x <= right; x++) {
-            for (let y = top; y <= bottom; y++) {
+        let count = width * height * percent;
+        for (let x = left; x < right; x++) {
+            for (let y = top; y < bottom; y++) {
                 if (checker(x, y)) {
                     i++;
-                    if (i > count) {
-                        return true
-                    }
                 }
             }
         }
+        // console.log(left, top, width, height, i);
+        return i >= count;
     }
 
     contains(x: number, y: number) {
