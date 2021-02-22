@@ -1,3 +1,4 @@
+import { PointRuntime } from "./PointRuntime.js";
 import { Rect } from "./Rect.js";
 const enum GridStyle {
     AreaColor = "#0000ff",
@@ -104,7 +105,6 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
         setTarget(pos: PosArea) {
             let { target: { x: tx = 0, y: ty = 0 } = noTarget, areas } = pos;
             _target = pos;
-            setGrid(tx + centerX, ty + centerY, GridStyle.MainTargetColor);
             if (areas) {
                 for (let i = 0; i < areas.length; i++) {
                     const { x, y } = areas[i];
@@ -150,19 +150,25 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
             const y = offsetY / offsetHeight * height;
             let { x: rgx, y: rgy } = pixel2Grid(x, y);
             let gx = rgx - centerX;
-            let gy = rgx - centerY;
+            let gy = rgy - centerY;
             const areas = _target.areas;
+            let find = false;
+            let flag = false;
             //尝试重设当前区域中的值
             for (let i = 0; i < areas.length; i++) {
                 const area = areas[i];
                 if (area.x == gx && area.y == gy) {
-                    let flag = !area.disabled;
+                    flag = !area.disabled;
                     area.disabled = flag;
-                    setGrid(rgx, rgy, flag ? GridStyle.NormalColor : GridStyle.TargetColor);
-                    invalidate();
+                    find = true;
                     break;
                 }
             }
+            if (!find) {
+                areas.push(new PointRuntime(gx, gy));
+            }
+            setGrid(rgx, rgy, flag ? GridStyle.NormalColor : GridStyle.TargetColor);
+            invalidate();
         }
     }
 
@@ -175,7 +181,6 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
 
     function doRender() {
         //中心点，永远绘制施法者
-        setGrid(centerX, centerY, GridStyle.CasterColor);
         cnt.clearRect(0, 0, width, height);
         cnt.save();
         cnt.lineWidth = padding;
@@ -192,6 +197,29 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
             }
         }
         cnt.restore();
+
+        //绘制中心点
+        cnt.save();
+        cnt.fillStyle = GridStyle.CasterColor;
+        let pt = grid2Pixel(centerX, centerY);
+        cnt.beginPath();
+        cnt.arc(pt.x, pt.y, halfGridSize, 0, Math.PI * 2);
+        cnt.closePath();
+        cnt.fill();
+        cnt.restore();
+
+        //绘制主目标
+        if (_target) {
+            cnt.save();
+            cnt.fillStyle = GridStyle.MainTargetColor;
+            const { target: { x: tx, y: ty } } = _target;
+            let pt = grid2Pixel(centerX + tx, centerY + ty);
+            cnt.beginPath();
+            cnt.arc(pt.x, pt.y, halfGridSize, 0, Math.PI * 2);
+            cnt.closePath();
+            cnt.fill();
+            cnt.restore();
+        }
 
         //绘制选取范围
         if (_area) {
@@ -220,7 +248,6 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
                 setGrid(x, y, color);
             }
         }
-        setGrid(centerX, centerY, GridStyle.CasterColor);
         invalidate();
     }
 
@@ -251,6 +278,13 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
         return {
             x: x / gridSize >> 0,
             y: y / gridSize >> 0
+        }
+    }
+
+    function grid2Pixel(x: number, y: number) {
+        return {
+            x: x * gridSize + halfGridSize,
+            y: y * gridSize + halfGridSize
         }
     }
 }
