@@ -23,7 +23,6 @@ btnAdd.addEventListener("click", addSkill);
 
 const txtName = $g("txtName") as HTMLInputElement;
 
-let editing = false;
 let curSkill: SkillCfg;
 let solvers: ReturnType<typeof showAreaSolvers>;
 /**
@@ -42,52 +41,35 @@ function addSkill() {
     if (!curSolver) {
         return
     }
-    let nameDisplay: string, btnLable: string;
-    if (editing) {//正在编辑
-        //保存
-        btnLable = "添加技能";
-        if (curSkill) {
-            curSkill.area = curSolver.getTargets();
+
+    if (!curSkill) {
+        let name = txtName.value.trim();
+        if (!name) {
+            alert(`请先设置技能范围标识`);
+            txtName.focus();
+            return
         }
-        nameDisplay = "block";
+        //检查名字是否已经存在
+        if (skillList.find(sk => sk.id === name)) {
+            alert(`已经有此技能范围标识，请更换`);
+            txtName.focus();
+            return
+        }
+
+        //创建技能，并设置名字
+        curSkill = curSolver.getTemp() as SkillCfg;
+        if (name) {
+            curSkill.id = name;
+        }
+        Object.setPrototypeOf(curSkill, SkillRuntime);
+        //将数据显示到列表，并选中
+        skillList.push(curSkill);
+        dgSkillList.refresh();
+        dgSkillList.select(curSkill);
     } else {
-
-        if (!curSkill) {
-            let name = txtName.value.trim();
-            if (!name) {
-                alert(`请先设置技能范围标识`);
-                txtName.focus();
-                return
-            }
-            //检查名字是否已经存在
-            if (skillList.find(sk => sk.id === name)) {
-                alert(`已经有此技能范围标识，请更换`);
-                txtName.focus();
-                return
-            }
-
-            //创建技能，并设置名字
-            curSkill = curSolver.getTemp() as SkillCfg;
-            if (name) {
-                curSkill.id = name;
-            }
-            curSkill.changed = true;
-            Object.setPrototypeOf(curSkill, SkillRuntime);
-            //将数据显示到列表，并选中
-            skillList.push(curSkill);
-            dgSkillList.refresh();
-            dgSkillList.select(curSkill);
-        } else {
-            curSolver.reset();
-            curSolver.setParam(curSkill);
-        }
-        //开始编辑
-        btnLable = "保存技能";
-        nameDisplay = "none";
+        curSolver.reset();
+        curSolver.setParam(curSkill);
     }
-    btnAdd.value = btnLable;
-    txtName.style.display = nameDisplay;
-    editing = !editing;
 }
 
 
@@ -303,6 +285,6 @@ function refreshGrids() {
  */
 const SkillRuntime = {
     get text() {
-        return this.id + (this.changed ? "*" : "");
+        return this.id;
     }
 }

@@ -65,12 +65,15 @@
 <body>
 
     <div class="all">
-        <div class="left" style="padding: 5px;width: 200px;">
+        <div class="left" style="padding: 5px;width: 250px;">
             配置文件路径：
-            <input id="txtCfg" type="text" width="80%" value="" />
-            <input id="btnLoad" type="button" value="加载" /><br /><br />
+            <input id="txtCfg" type="text" width="70%" value="" />
+            <input id="btnLoad" type="button" value="加载" /><br />
+            <input id="btnSave" type="button" value="保存数据" /><br />
             <ul id="dlSkillList" class="easyui-datalist" title="技能列表" style="width:90%;height:300px">
-            </ul><br />
+            </ul>
+            <input id="txtName" type="text" style="width: 100px;"> <input id="btnAdd" type="button"
+                value="新增技能" /><br /><br />
             <ul id="dlPosList" class="easyui-datalist" title="坐标列表" style="width:90%;height:500px">
             </ul>
         </div>
@@ -78,8 +81,6 @@
             <canvas id="canvas" style="width:100%;height:100%;" width="2000" height="2000"></canvas>
         </div>
         <div class="left" style="width:200px;padding:5px;">
-            <input id="txtName" type="text" style="width: 100px;"> <input id="btnAdd" type="button"
-                value="添加技能" /><br /><br />
             格位大小(像素)：<label id="lblGridSize"></label><br />
             命中面积百分比：<label id="lblPercent"></label><br />
             技能攻击范围类型：
