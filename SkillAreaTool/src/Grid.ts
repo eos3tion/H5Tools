@@ -103,12 +103,12 @@ export function getGrids(opt: GridOption, canvas: HTMLCanvasElement) {
          * 绘制主目标
          */
         setTarget(pos: PosArea) {
-            let { target: { x: tx = 0, y: ty = 0 } = noTarget, areas } = pos;
+            let { areas } = pos;
             _target = pos;
             if (areas) {
                 for (let i = 0; i < areas.length; i++) {
-                    const { x, y } = areas[i];
-                    if (x != tx || y != ty) {
+                    const { x, y, disabled } = areas[i];
+                    if (!disabled) {
                         setGrid(x + centerX, y + centerY, GridStyle.TargetColor);
                     }
                 }

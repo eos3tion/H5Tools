@@ -104,7 +104,8 @@ function showAreaSolvers() {
         },
         get curSolver() {
             return curSolver;
-        }
+        },
+        setType
     }
 
     function onChange(e: Event) {
@@ -236,6 +237,8 @@ function getSkillList() {
             curTar = row;
             _idx = idx;
             let area = row.area;
+            solvers.setType(row.type);
+            solvers.curSolver.setParam(row);
             dlProList.datalist({
                 data: area
             })

@@ -1,3 +1,4 @@
+import { cursorTo } from "readline";
 import { Core } from "../Core.js";
 import { getNewTargets } from "../getNewTargets.js";
 import { createNumberInput, NumberInputElement } from "../HtmlUtils.js";
@@ -23,6 +24,7 @@ const PI = Math.PI;
 const PI2 = PI * 2;
 const Dec2Rad = PI / 180;
 const Rad2Dec = 180 / PI;
+let curSkill: SkillParam;
 function getEditView() {
     if (!view) {
         view = document.createElement("div");
@@ -58,11 +60,12 @@ function setRadius(value: number) {
 
 function setParam(data: SkillParam) {
     let radius = data.range;
-    let rad = data.param1;
+    let dec = data.param1;
+    curSkill = data;
     radiusInput.setValue(radius);
-    decInput.setValue(rad);
+    decInput.setValue(dec);
     setRadius(radius);
-    setDec(rad);
+    setDec(dec);
 }
 
 let validating = false;
@@ -74,6 +77,10 @@ function invalidate() {
 }
 
 function validate() {
+    if (curSkill) {
+        curSkill.range = radius;
+        curSkill.param1 = rad * Rad2Dec;
+    }
     //遍历所有目标数组
     if (Targets) {
         Targets.forEach(checkTargetArea);
@@ -87,6 +94,7 @@ function bindViewChange(viewChange: { () }) {
 }
 
 function reset() {
+    curSkill = undefined;
     if (Targets) {
         Targets.forEach(posArea => posArea.areas.length = 0);
     }

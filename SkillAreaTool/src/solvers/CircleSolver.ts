@@ -10,12 +10,14 @@ const enum Const {
 
 const PI2 = Math.PI * 2;
 
+let curSkill: SkillParam;
 let radius: number;
 let Pos0_0: PosArea;
 let Targets: PosArea[];
 let _viewChange = function () { };
 
 function reset() {
+    curSkill = undefined;
     radius = undefined;
     Pos0_0 = new PosAreaRuntime({ x: 0, y: 0 });
     Targets = [Pos0_0];
@@ -74,6 +76,9 @@ function setRadius(value: number) {
             }
         }
         _viewChange();
+    }
+    if (curSkill) {
+        curSkill.range = radius;
     }
 }
 
