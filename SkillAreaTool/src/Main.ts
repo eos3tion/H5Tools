@@ -21,6 +21,12 @@ btnLoad.addEventListener("click", loadCfg);
 const btnAdd = $g("btnAdd") as HTMLInputElement;
 btnAdd.addEventListener("click", addSkill);
 
+const btnDel = $g("btnDel") as HTMLInputElement;
+btnDel.addEventListener("click", delSkill);
+
+const btnSave = $g("btnSave") as HTMLInputElement;
+btnSave.addEventListener("click", saveSkills);
+
 const txtName = $g("txtName") as HTMLInputElement;
 
 let curSkill: SkillCfg;
@@ -66,8 +72,37 @@ function addSkill() {
     dgSkillList.refresh();
     dgSkillList.select(curSkill);
 
+    txtName.name = "";
 }
 
+function delSkill() {
+    if (!curSkill) {
+        return alert(`没有选中任何技能，无法删除`)
+    }
+    skillList.splice(skillList.indexOf(curSkill), 1);
+    dgSkillList.refresh();
+}
+
+function saveSkills() {
+    const dist = Core.cfg?.dist;
+    if (!dist) {
+        return
+    }
+    let output = [] as SkillCfg[];
+    for (let i = 0; i < skillList.length; i++) {
+        const skill = skillList[i] as SkillCfg;
+        const area = skill.area;
+        if (area) {
+            output.push(skill);
+            area.forEach(pos => {
+                pos.areas = pos.areas.filter(sk => !sk.disabled);
+            })
+        }
+    }
+
+    fs.writeFileSync(dist, JSON.stringify(output));
+    alert(`技能配置保存至[${dist}]`);
+}
 
 function showAreaSolvers() {
     let view: HTMLElement;
