@@ -16,7 +16,7 @@ let radiusInput: NumberInputElement;
 let decInput: NumberInputElement;
 
 let radius: number;
-let rad: number;
+let dec: number;
 let Targets: PosArea[];
 
 let _viewChange = function () { };
@@ -42,9 +42,8 @@ function getEditView() {
 }
 
 function setDec(value: number) {
-    value *= Dec2Rad;
-    if (rad != value) {
-        rad = value;
+    if (dec != value) {
+        dec = value;
         invalidate();
     }
 }
@@ -58,12 +57,16 @@ function setRadius(value: number) {
 
 
 
-function setParam(data: SkillParam) {
+function setParam(data: SkillCfg) {
     let radius = data.range;
     let dec = data.param1;
     curSkill = data;
     radiusInput.setValue(radius);
     decInput.setValue(dec);
+    let area = data.area;
+    if (area) {
+        Targets = area;
+    }
     setRadius(radius);
     setDec(dec);
 }
@@ -79,7 +82,7 @@ function invalidate() {
 function validate() {
     if (curSkill) {
         curSkill.range = radius;
-        curSkill.param1 = rad * Rad2Dec;
+        curSkill.param1 = dec;
     }
     //遍历所有目标数组
     if (Targets) {
@@ -99,7 +102,7 @@ function reset() {
         Targets.forEach(posArea => posArea.areas.length = 0);
     }
     radius = undefined;
-    rad = undefined;
+    dec = undefined;
 }
 
 /**
@@ -123,7 +126,7 @@ function getGraphPath(target: Point) {
     //计算范围内格子
     const { gridSize } = Core.cfg;
     let rd = Math.atan2(y, x);
-    let halfRad = rad * .5;
+    let halfRad = dec * Dec2Rad * .5;
     let rada = rd + halfRad;
     let radb = rd - halfRad;
     let pax = radius * Math.cos(rada);
@@ -150,7 +153,7 @@ function checkTargetArea(target: PosArea) {
     const { gridSize, percent = 0 } = Core.cfg;
     let halfGridSize = gridSize * .5;
     let rd = Math.atan2(y, x);
-    let halfRad = rad * .5;
+    let halfRad = dec * Dec2Rad * .5;
     let rada = rd + halfRad;
     let radb = rd - halfRad;
 
@@ -165,7 +168,7 @@ function checkTargetArea(target: PosArea) {
     let halfGrid = Math.ceil((radius / gridSize) * .5) + 1;
     const ex = halfGrid;
     const ey = halfGrid;
-    const checker = getChecker(halfGridSize, halfGridSize, radius, rad, pax, pay, pbx, pby);
+    const checker = getChecker(halfGridSize, halfGridSize, radius, dec * Dec2Rad, pax, pay, pbx, pby);
     const areas = target.areas;
     areas.length = 0;
     for (let x = - halfGrid; x <= ex; x++) {
@@ -217,12 +220,12 @@ export default {
     bindViewChange,
     getTemp() {
         const tempRadius = radius || 240;
-        const tempRad = rad || 90 * Dec2Rad;
+        const tempDec = dec || 90;
         let cfg = {
-            id: `${SkillAreaType.Sector}_${tempRadius}_${tempRad}`,
+            id: `${SkillAreaType.Sector}_${tempRadius}_${tempDec}`,
             type: SkillAreaType.Sector,
             range: tempRadius,
-            param1: tempRad * Rad2Dec
+            param1: tempDec
         } as SkillCfg;
         reset();
         setParam(cfg);
