@@ -12,15 +12,12 @@ const PI2 = Math.PI * 2;
 
 let curSkill: SkillParam;
 let radius: number;
-let Pos0_0: PosArea;
 let Targets: PosArea[];
 let _viewChange = function () { };
 
 function reset() {
     curSkill = undefined;
     radius = undefined;
-    Pos0_0 = new PosAreaRuntime({ x: 0, y: 0 });
-    Targets = [Pos0_0];
 }
 reset();
 
@@ -41,9 +38,13 @@ function getEditView() {
 
 
 
-function setParam(data: SkillParam) {
+function setParam(data: SkillCfg) {
     let radius = data.range;
     radiusInput.setValue(radius);
+    let area = data.area;
+    if (area) {
+        Targets = data.area;
+    }
     setRadius(radius);
 }
 
@@ -54,10 +55,13 @@ function setRadius(value: number) {
     }
     if (radius != value) {
         radius = value;
+        if (!Targets || !Targets[0]) {
+            return
+        }
         const { gridSize, percent = 0 } = Core.cfg;
         let halfGridSize = gridSize * .5;
-        const checker = getChecker(halfGridSize, halfGridSize, radius * radius)
-        let areas = Pos0_0.areas;
+        const checker = getChecker(halfGridSize, halfGridSize, radius * radius);
+        let areas = Targets[0].areas;
         areas.length = 0;
         //重新计算areas
         let halfGrid = Math.ceil((radius / gridSize) * .5) + 1;
@@ -96,7 +100,7 @@ function getChecker(fx: number, fy: number, sqRadius: number) {
  * 获取目标/范围的数据列表
  */
 function getTargets(): PosArea[] {
-    return Targets;
+    return [new PosAreaRuntime({ x: 0, y: 0 })];
 }
 
 function getGraphPath() {
@@ -151,8 +155,8 @@ export default {
             range: tempRadius
         } as SkillCfg;
         reset();
-        setParam(cfg);
         cfg.area = getTargets();
+        setParam(cfg);
         return cfg;
     },
     reset

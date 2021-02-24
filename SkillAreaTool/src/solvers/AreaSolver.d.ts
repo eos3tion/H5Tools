@@ -25,7 +25,7 @@ interface AreaSolver {
      * 设置初始数据
      * @param data 
      */
-    setParam(data: SkillParam);
+    setParam(data: SkillCfg);
 
     /**
      * 获取目标/范围的数据列表
