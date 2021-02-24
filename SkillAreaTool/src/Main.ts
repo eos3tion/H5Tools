@@ -42,34 +42,30 @@ function addSkill() {
         return
     }
 
-    if (!curSkill) {
-        let name = txtName.value.trim();
-        if (!name) {
-            alert(`请先设置技能范围标识`);
-            txtName.focus();
-            return
-        }
-        //检查名字是否已经存在
-        if (skillList.find(sk => sk.id === name)) {
-            alert(`已经有此技能范围标识，请更换`);
-            txtName.focus();
-            return
-        }
-
-        //创建技能，并设置名字
-        curSkill = curSolver.getTemp() as SkillCfg;
-        if (name) {
-            curSkill.id = name;
-        }
-        Object.setPrototypeOf(curSkill, SkillRuntime);
-        //将数据显示到列表，并选中
-        skillList.push(curSkill);
-        dgSkillList.refresh();
-        dgSkillList.select(curSkill);
-    } else {
-        curSolver.reset();
-        curSolver.setParam(curSkill);
+    let name = txtName.value.trim();
+    if (!name) {
+        alert(`请先设置技能范围标识`);
+        txtName.focus();
+        return
     }
+    //检查名字是否已经存在
+    if (skillList.find(sk => sk.id === name)) {
+        alert(`已经有此技能范围标识，请更换`);
+        txtName.focus();
+        return
+    }
+
+    //创建技能，并设置名字
+    curSkill = curSolver.getTemp() as SkillCfg;
+    if (name) {
+        curSkill.id = name;
+    }
+    Object.setPrototypeOf(curSkill, SkillRuntime);
+    //将数据显示到列表，并选中
+    skillList.push(curSkill);
+    dgSkillList.refresh();
+    dgSkillList.select(curSkill);
+
 }
 
 
