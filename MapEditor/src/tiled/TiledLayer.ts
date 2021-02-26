@@ -49,7 +49,7 @@ export function initTiledMap(data: TiledMap) {
                     const data = layers[i];
                     for (let y = sy; y < ey; y++) {
                         let s = y * cols;
-                        let oy = y * hh;
+                        let oy = y * hh + tileHeight;
                         let oxx = y & 1 ? hw : 0;
                         for (let x = sx; x < ex; x++) {
                             let tid = data[s + x];
