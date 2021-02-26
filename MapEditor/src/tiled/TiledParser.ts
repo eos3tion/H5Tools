@@ -1,3 +1,4 @@
+import { log } from "console";
 import { getTiledCfg } from "./getTiledCfg";
 
 export type TiledMapLayerInfo = Tile[];
@@ -57,7 +58,7 @@ export function checkTiledData(data: ArrayLike<number>, tileDict: TileDict, idx:
         if (id !== 0) {
             let tile = tileDict[id];
             if (!tile) {
-                throw Error(`TiledMap的[layer:${idx}]，上有纹理集中没有的Tile[id:${id}]`);
+                console.error(`TiledMap的[layer:${idx}]，上有纹理集中没有的Tile[id:${id}]`);
             }
         }
     }
