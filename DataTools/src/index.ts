@@ -400,7 +400,7 @@ class XLSXDecoder {
 
     }
     async init(gcfg: GlobalCfg, file: File, cPath: string, sPath: string, idx: number, cb: { (file: File, error: boolean, hasExtra: { hasClient?: boolean, hasServer?: boolean }) }, configKeyInfo: { cFileNames: Map<string, ConfigKeyBin>, sFileNames: Map<string, ConfigKeyBin> }, newSForbidden: { [index: string]: boolean }, useESModule: boolean) {
-       
+
         loadTiaoJian(gcfg);
         cPath = cPath || "";
         sPath = sPath || "";
@@ -755,7 +755,7 @@ class XLSXDecoder {
                             let { server, client } = def;
                             if (server) {
                                 let scell = cell == undefined ? def.def : cell;
-                                if (scell) {
+                                if (scell != undefined) {
                                     let dat = def.checker.serverCheck(scell || "");
                                     sRow[def.name] = dat;
                                 }
@@ -763,7 +763,7 @@ class XLSXDecoder {
                             }
                             if (client) {
                                 let ccell = cell == undefined ? def.def : cell;
-                                if (ccell) {
+                                if (ccell != undefined) {
                                     let dat = def.checker.check(cell || "");
                                     cRawRow[def.name] = dat;
                                 }
