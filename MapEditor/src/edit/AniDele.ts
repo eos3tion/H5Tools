@@ -19,14 +19,14 @@ document.addEventListener("keyup", onKeyUp);
 let shiftDown = false;
 let ctrlDown = false;
 function onKeyDown(e: KeyboardEvent) {
-    shiftDown = e.shiftKey;
-    ctrlDown = e.ctrlKey;
+    shiftDown = e.key === "Shift";
+    ctrlDown = e.key === "Control";
 }
 function onKeyUp(e: KeyboardEvent) {
-    if (e.shiftKey) {
+    if (e.key === "Shift") {
         shiftDown = false;
     }
-    if (e.ctrlKey) {
+    if (e.key === "Control") {
         ctrlDown = false;
     }
 }
