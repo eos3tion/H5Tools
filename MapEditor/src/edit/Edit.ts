@@ -18,6 +18,8 @@ const enum CtrlName {
 }
 
 let curCtrl: string;
+
+
 const ctrlDict = {} as { [id: string]: EditMapControl };
 
 function mapPathCtrlInit() {
@@ -66,14 +68,14 @@ function mapPathCtrlInit() {
             if (old) {
                 old.onToggle(false);
             } else if (curCtrl == CtrlName.EffectList) {
-                $gm.$showMapGrid = false;
+                $gm.$showMapGrid = chkShowMapGrid.checked;
             }
             curCtrl = ctxId;
             let ctrl = ctrlDict[curCtrl];
             if (ctrl) {
                 ctrl.onToggle(true);
             } else if (curCtrl == CtrlName.EffectList) {
-                $gm.$showMapGrid = true;
+                $gm.$showMapGrid = chkShowMapGrid.checked;
             }
             $engine.invalidate();
         }
@@ -172,6 +174,13 @@ divEffectPro.hide();
 
 
 const dlEffectList = $("#dlEffectList");
+let chkShowMapGrid = $g("chkShowMapGrid") as HTMLInputElement;
+chkShowMapGrid.addEventListener("change", onChkMapGridShowChange);
+
+function onChkMapGridShowChange() {
+    $gm.$showMapGrid = chkShowMapGrid.checked;
+    $engine.invalidate();
+}
 function effListFun(...args) {
     return dlEffectList.tree(...args);
 }

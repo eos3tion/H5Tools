@@ -13,6 +13,23 @@ const lblAniPos = $("#lblAniPos");
 const txtAniSeed = $("#txtAniSeed");
 const btnAniSeed = $("#btnAniSeed");
 
+document.addEventListener("keydown", onKeyDown);
+document.addEventListener("keyup", onKeyUp);
+
+let shiftDown = false;
+let ctrlDown = false;
+function onKeyDown(e: KeyboardEvent) {
+    shiftDown = e.shiftKey;
+    ctrlDown = e.ctrlKey;
+}
+function onKeyUp(e: KeyboardEvent) {
+    if (e.shiftKey) {
+        shiftDown = false;
+    }
+    if (e.ctrlKey) {
+        ctrlDown = false;
+    }
+}
 
 function getSimpleButton(lable: string, color?: number, ox = 0, oy = 0) {
     let btn = new egret.TextField();
@@ -315,13 +332,17 @@ export class AniDele extends egret.Sprite {
     }
 
     private startMove(e: egret.TouchEvent) {
-        this._mt = Date.now();
-        this.lx = e.stageX;
-        this.ly = e.stageY;
-        this.stage.on(EgretEvent.TOUCH_MOVE, this.dragMove, this);
-        this.stage.on(EgretEvent.TOUCH_END, this.dragEnd, this);
-        this.touching = true;
-        jy.dispatch(MapEvent.StartDragEff);
+        if (ctrlDown) {
+            this.copy();
+        } else {
+            this._mt = Date.now();
+            this.lx = e.stageX;
+            this.ly = e.stageY;
+            this.stage.on(EgretEvent.TOUCH_MOVE, this.dragMove, this);
+            this.stage.on(EgretEvent.TOUCH_END, this.dragEnd, this);
+            this.touching = true;
+            jy.dispatch(MapEvent.StartDragEff);
+        }
     }
 
     private dragMove(e: egret.TouchEvent) {
