@@ -53,7 +53,7 @@ export class DBoneMapEffRender implements MapEffRender {
     arm: Armature;
 
     get uri() {
-        return `${this.folder}|${getStr(this.armature)}|${getStr(this.ani)}`
+        return getDBMapEffUri(this.folder, this.armature, this.ani);
     }
 
     create(folder: string) {
@@ -243,8 +243,20 @@ function init() {
 
 let dbFactorys = {} as { [uri: string]: DBFactory }
 
-async function prepare(key: string) {
+export function getDBMapEffInfo(key: string) {
     const [uri, armature, ani] = key.split("|");
+    return {
+        uri,
+        armature,
+        ani
+    }
+}
+
+export function getDBMapEffUri(uri: string, armature: string, ani: string) {
+    return `${uri}|${getStr(armature)}|${getStr(ani)}`
+}
+async function prepare(key: string) {
+    const { uri, armature, ani } = getDBMapEffInfo(key);
     let p = getPath(uri);
     if (await prepareAndCheck(p)) {
         return { fullPath: p, uri, armature, ani };

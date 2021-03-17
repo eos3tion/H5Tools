@@ -1,3 +1,4 @@
+import { DBoneMapEffRender, getDBMapEffInfo, getDBMapEffUri } from "./effs/DBoneMapEffDisplay";
 import { MapEffRender } from "./effs/MapEffDisplay";
 
 const divEffectPro = $("#divEffectPro");
@@ -334,6 +335,23 @@ export class AniDele extends egret.Sprite {
     private startMove(e: egret.TouchEvent) {
         if (ctrlDown) {
             this.copy();
+        } else if (shiftDown) {
+            let data = this.data;
+            let uri = this.render.uri || data.uri;
+            data.uri = uri;
+            let nData = data.$clone() as MapEffData;
+            let render = this.render;
+            if (render instanceof DBoneMapEffRender) {
+                let { folder, armature } = render;
+                let armData = render.factory.getArmatureData(armature);
+                let anis = armData.animationNames;
+                if (anis.length > 0) {
+                    let ani = anis.random();
+                    uri = getDBMapEffUri(folder, armature, ani);
+                }
+            }
+            nData.uri = uri;
+            jy.dispatch(AppEvent.CopyEffect, nData);
         } else {
             this._mt = Date.now();
             this.lx = e.stageX;
