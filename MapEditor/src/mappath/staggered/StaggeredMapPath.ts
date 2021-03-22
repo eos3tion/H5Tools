@@ -82,23 +82,48 @@ function calGrids() {
     lblRows.innerText = rows + "";
     currentMap.gridHeight = gridHeight;
     currentMap.gridWidth = gridWidth;
+    checkMapSize();
+}
+
+function checkMapSize() {
     let cfg = Core.mapCfg as MapInfo;
     if (cfg) {
+        let currentMap = getMap();
+        let { columns, rows, pdatabit: bit } = currentMap;
         /**
          * 尺寸是否匹配
          */
-        let sizeNotMatch = false, bitNotMatch = false;
+        let sizeNotMatch = false;
         if (cfg.columns != columns || cfg.rows != rows) {
             sizeNotMatch = confirm(`检查到地图配置中地图格子尺寸[${cfg.columns}×${cfg.rows}]和计算的尺寸[${currentMap.columns}×${currentMap.rows}]不匹配，请检查。\n点击确定，将会弃用原地图路径点数据`);
         }
         let oldBit = cfg.pdatabit || 1;
-        if (oldBit != bit) {
-            bitNotMatch = confirm(`检查到地图配置中地图格子级数[${oldBit}]和计算的尺寸[${bit}]不匹配，请检查。\n点击确定，将会弃用原地图路径点数据`);
-        }
-        if (!sizeNotMatch && !bitNotMatch) {
+
+        if (!sizeNotMatch) {
             let b64 = cfg.pathdataB64;
             if (b64) {
-                currentMap.pathdata = new Uint8Array(egret.Base64Util.decode(b64));
+                let bytes = new Uint8Array(egret.Base64Util.decode(b64));
+                if (oldBit != bit) {//扩展数据
+                    let oldData = getMapDataHelper(columns, rows, oldBit, bytes);
+                    let newData = getMapDataHelper(columns, rows, bit);
+                    let outOfRange = false;
+                    let maxV = (1 << bit) - 1;
+                    for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c < columns; c++) {
+                            let oldv = oldData.get(c, r);
+                            if (oldv > maxV) {
+                                oldv = 0;
+                                outOfRange = true;
+                            }
+                            newData.set(c, r, oldv);
+                        }
+                    }
+                    bytes = newData.data as Uint8Array;
+                    if (outOfRange) {
+                        alert(`检查到有格位数据会超出现有位数，这些格位数据会重置为不可走，请自行调整`)
+                    }
+                }
+                currentMap.pathdata = bytes;
             }
         } else {
             currentMap.pathdata = undefined;
