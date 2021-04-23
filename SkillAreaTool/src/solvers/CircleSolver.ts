@@ -45,10 +45,10 @@ function setParam(data: SkillCfg) {
     if (area) {
         Targets = data.area;
     }
-    setRadius(radius);
+    setRadius(radius, true);
 }
 
-function setRadius(value: number) {
+function setRadius(value: number, keepAreas?: boolean) {
     let grids = Core.grids;
     if (!grids) {
         return
@@ -58,23 +58,25 @@ function setRadius(value: number) {
         if (!Targets || !Targets[0]) {
             return
         }
-        const { gridSize, percent = 0 } = Core.cfg;
-        let halfGridSize = gridSize * .5;
-        const checker = getChecker(halfGridSize, halfGridSize, radius * radius);
         let areas = Targets[0].areas;
-        areas.length = 0;
-        //重新计算areas
-        let halfGrid = Math.ceil((radius / gridSize) * .5) + 1;
-        const ex = halfGrid;
-        const ey = halfGrid;
-        for (let x = - halfGrid; x <= ex; x++) {
-            for (let y = - halfGrid; y <= ey; y++) {
-                let rect = grids.getGridBounds(x, y);
-                //遍历检查每点是否在范围内
-                let count = rect.checkVertexs(checker)
-                if (count > 0) {
-                    if (percent == 0 || count == 4 || rect.checkArea(checker, percent)) {
-                        areas.push(new PointRuntime(x, y));
+        if (!keepAreas || areas.length == 0) {
+            areas.length = 0;
+            const { gridSize, percent = 0 } = Core.cfg;
+            let halfGridSize = gridSize * .5;
+            const checker = getChecker(halfGridSize, halfGridSize, radius * radius);
+            //重新计算areas
+            let halfGrid = Math.ceil((radius / gridSize) * .5) + 1;
+            const ex = halfGrid;
+            const ey = halfGrid;
+            for (let x = - halfGrid; x <= ex; x++) {
+                for (let y = - halfGrid; y <= ey; y++) {
+                    let rect = grids.getGridBounds(x, y);
+                    //遍历检查每点是否在范围内
+                    let count = rect.checkVertexs(checker)
+                    if (count > 0) {
+                        if (percent == 0 || count == 4 || rect.checkArea(checker, percent)) {
+                            areas.push(new PointRuntime(x, y));
+                        }
                     }
                 }
             }

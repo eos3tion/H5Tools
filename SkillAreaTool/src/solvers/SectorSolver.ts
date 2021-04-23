@@ -41,17 +41,21 @@ function getEditView() {
     return view;
 }
 
-function setDec(value: number) {
+function setDec(value: number, keepAreas?: boolean) {
     if (dec != value) {
         dec = value;
-        invalidate();
+        if (!keepAreas) {
+            invalidate();
+        }
     }
 }
 
-function setRadius(value: number) {
+function setRadius(value: number, keepAreas?: boolean) {
     if (radius != value) {
         radius = value;
-        invalidate();
+        if (!keepAreas) {
+            invalidate();
+        }
     }
 }
 
@@ -67,8 +71,9 @@ function setParam(data: SkillCfg) {
     if (area) {
         Targets = area;
     }
-    setRadius(radius);
-    setDec(dec);
+    setRadius(radius, true);
+    setDec(dec, true);
+    validate(0, true);
 }
 
 let validating = false;
@@ -79,14 +84,16 @@ function invalidate() {
     }
 }
 
-function validate() {
+function validate(_: number, keepAreas?: boolean) {
     if (curSkill) {
         curSkill.range = radius;
         curSkill.param1 = dec;
     }
     //遍历所有目标数组
     if (Targets) {
-        Targets.forEach(checkTargetArea);
+        for (const target of Targets) {
+            checkTargetArea(target, keepAreas);
+        }
     }
     validating = false;
     _viewChange();
@@ -142,43 +149,45 @@ function getGraphPath(target: Point) {
     return path;
 }
 
-function checkTargetArea(target: PosArea) {
+function checkTargetArea(target: PosArea, keepAreas: boolean) {
     let grids = Core.grids;
     if (!grids) {
         return
     }
     //得到夹角
-    let { target: { x, y } } = target;
-    //计算范围内格子
-    const { gridSize, percent = 0 } = Core.cfg;
-    let halfGridSize = gridSize * .5;
-    let rd = Math.atan2(y, x);
-    let halfRad = dec * Dec2Rad * .5;
-    let rada = rd + halfRad;
-    let radb = rd - halfRad;
-
-    let pax = radius * Math.cos(rada);
-    let pay = radius * Math.sin(rada);
-
-    let pbx = radius * Math.cos(radb);
-    let pby = radius * Math.sin(radb);
-
-
-    //重新计算areas
-    let halfGrid = Math.ceil((radius / gridSize) * .5) + 1;
-    const ex = halfGrid;
-    const ey = halfGrid;
-    const checker = getChecker(halfGridSize, halfGridSize, radius, dec * Dec2Rad, pax, pay, pbx, pby);
     const areas = target.areas;
-    areas.length = 0;
-    for (let x = - halfGrid; x <= ex; x++) {
-        for (let y = - halfGrid; y <= ey; y++) {
-            let rect = grids.getGridBounds(x, y);
-            //遍历检查每点是否在范围内
-            let count = rect.checkVertexs(checker)
-            if (count > 0) {
-                if (percent == 0 || count == 4 || rect.checkArea(checker, percent)) {
-                    areas.push(new PointRuntime(x, y));
+    if (!keepAreas || areas.length == 0) {
+        let { target: { x, y } } = target;
+        //计算范围内格子
+        const { gridSize, percent = 0 } = Core.cfg;
+        let halfGridSize = gridSize * .5;
+        let rd = Math.atan2(y, x);
+        let halfRad = dec * Dec2Rad * .5;
+        let rada = rd + halfRad;
+        let radb = rd - halfRad;
+
+        let pax = radius * Math.cos(rada);
+        let pay = radius * Math.sin(rada);
+
+        let pbx = radius * Math.cos(radb);
+        let pby = radius * Math.sin(radb);
+
+
+        //重新计算areas
+        let halfGrid = Math.ceil((radius / gridSize) * .5) + 1;
+        const ex = halfGrid;
+        const ey = halfGrid;
+        const checker = getChecker(halfGridSize, halfGridSize, radius, dec * Dec2Rad, pax, pay, pbx, pby);
+        areas.length = 0;
+        for (let x = - halfGrid; x <= ex; x++) {
+            for (let y = - halfGrid; y <= ey; y++) {
+                let rect = grids.getGridBounds(x, y);
+                //遍历检查每点是否在范围内
+                let count = rect.checkVertexs(checker)
+                if (count > 0) {
+                    if (percent == 0 || count == 4 || rect.checkArea(checker, percent)) {
+                        areas.push(new PointRuntime(x, y));
+                    }
                 }
             }
         }

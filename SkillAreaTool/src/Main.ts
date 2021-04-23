@@ -213,15 +213,22 @@ function initCtrl() {
      */
     const dict = {} as SkillIdentityDict;
     let outputData = getOutput(cfg);
+    //检查输出数据，查看是否已经有配置好的数据
+    if (outputData) {
+        for (let i = 0; i < outputData.length; i++) {
+            const cfg = outputData[i];
+            dict[cfg.id] = cfg;
+        }
+    }
     solvers = showAreaSolvers();
     if (rawDatas) {
         for (let i = 0; i < rawDatas.length; i++) {
             const data = rawDatas[i];
             const id = data.id;
-            if (!outputData[id]) {
+            if (!dict[id]) {
                 let solver = solvers.get(data.type);
                 if (solver) {//只处理有处理器的数据
-                    outputData[id] = data;
+                    dict[id] = data;
                 }
             }
             // let solver = solvers.get(data.type);
@@ -230,17 +237,18 @@ function initCtrl() {
             // }
         }
     }
-    //检查输出数据，查看是否已经有配置好的数据
-    if (outputData) {
-        for (let id in outputData) {
-            dict[id] = outputData[id];
-        }
-    }
+
 
 
     for (let id in dict) {
         const cfg = dict[id];
-        Object.setPrototypeOf(cfg, SkillRuntime)
+        Object.setPrototypeOf(cfg, SkillRuntime);
+        const area = (cfg as SkillCfg).area;
+        if (area && Array.isArray(area)) {
+            area.forEach(a => {
+                Object.setPrototypeOf(a, PosAreaRuntime.prototype);
+            })
+        }
         skillList.push(cfg);
     }
     //装载数据

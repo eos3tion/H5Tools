@@ -25,7 +25,7 @@ function verifyCfg(cfg: GlobalCfg) {
 
 function load(cfg: GlobalCfg) {
     let dist = cfg.dist;
-    let rawData: { [id: number]: SkillCfg };
+    let rawData: SkillCfg[];
     if (fs.existsSync(dist)) {
         let file = fs.readFileSync(dist, "utf8");
         try {
@@ -35,7 +35,7 @@ function load(cfg: GlobalCfg) {
         }
     }
     if (!rawData) {
-        rawData = {};
+        rawData = [];
     }
     return rawData;
 }
