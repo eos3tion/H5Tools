@@ -8,6 +8,14 @@ const enum Const {
     RhombusKey = "a",
     WidthKey = "w",
     HeightKey = "h",
+    /**
+     * 纹理集中为了调整刷地形概率，使用相同资源的纹理，需要将`cid`配置相同  
+     */
+    SameIdKey = "cid",
+    /**
+     * 不需要导出的纹理
+     */
+    NoUsedKey = "no",
     Size = 2048,
 }
 
@@ -54,11 +62,19 @@ interface TileInfo {
 
 
 type TileData = {
-    tile: TileInfo;
-    data: ImageData;
-    s: number;
-    w: number;
-    h: number;
+    /**
+     * Tile的id
+     */
+    id: number;
+    /**
+     * 父级的Tile的id
+     */
+    parent?: TileData;
+    tile?: TileInfo;
+    data?: ImageData;
+    s?: number;
+    w?: number;
+    h?: number;
 }
 
 export async function createTileSets(cfgPath: string, basePath: string) {
@@ -76,7 +92,7 @@ export async function createTileSets(cfgPath: string, basePath: string) {
         await prepareTileSet(tilesets[i], tileList, baseDir)
     }
     //合并纹理
-    const canvases = await mergeTiles(tileList.concat());
+    const canvases = await mergeTiles(tileList);
     //创建纹理和tile数据
     const dict = await createFiles(basePath, canvases, tileList);
 
@@ -132,11 +148,33 @@ export async function createTileSets(cfgPath: string, basePath: string) {
         let oy = toy - tileheight;
         let oy1 = toy - tilewidth;
         let ox1 = ox;
-
+        let sameDict = {} as { [cid: number]: TileData }
         while (t < tilecount) {
             let x = margin;
             for (let col = 0; col < columns; col++) {
-                tileList.push(createTileData(cfg, firstgid, tiles[t], x, y, ox, oy, ox1, oy1, cnt, setA, setW, setH))
+                let tile = tiles[t];
+                let properties = tile && tile.properties;
+                let no = getProperty(properties, Const.NoUsedKey);
+                if (!no) {
+                    let sameId = getProperty(properties, Const.SameIdKey);
+                    let data: TileData;
+                    if (sameId !== undefined) {
+                        let rawData = sameDict[sameId]
+                        if (rawData) {
+                            data = {
+                                id: firstgid,
+                                parent: rawData
+                            }
+                        }
+                    }
+                    if (!data) {
+                        data = createTileData(cfg, firstgid, tile, x, y, ox, oy, ox1, oy1, cnt, setA, setW, setH);
+                        if (sameId !== undefined) {
+                            sameDict[sameId] = data;
+                        }
+                    }
+                    tileList.push(data)
+                }
                 t++;
                 firstgid++;
                 x += tilewidth + spacing;
@@ -146,26 +184,28 @@ export async function createTileSets(cfgPath: string, basePath: string) {
     }
     async function mergeTiles(tileList: TileData[]) {
         let canvases = [] as HTMLCanvasElement[];
+        //过滤掉那些走引用的
+        let tiles = tileList.filter(tile => tile.data);
         //按照对角线长度，由大到小排列
-        tileList.doSort("s", true);
+        tiles.doSort("s", true);
         let cid = 0;
         //尝试装箱
         //创建2048*2048箱体
-        while (tileList.length) {
+        while (tiles.length) {
             let binPacker = new jy.ShortSideBinPacker(Const.Size, Const.Size, true);
             let canvas = document.createElement("canvas");
             let cnt = canvas.getContext("2d");
             canvas.width = canvas.height = Const.Size;
             let j = 0;
-            for (const tile of tileList) {
+            for (const tile of tiles) {
                 let bin = binPacker.insert(tile.w, tile.h);
                 if (bin) {
                     await resetTile(tile, bin, cid, cnt);
                 } else {
-                    tileList[j++] = tile;
+                    tiles[j++] = tile;
                 }
             }
-            tileList.length = j;
+            tiles.length = j;
             canvases[cid++] = canvas;
         }
 
@@ -353,15 +393,24 @@ async function createFiles(basePath: string, canvases: HTMLCanvasElement[], tile
         texDict[i] = tex;
     }
     //简化tile数据
-    let tilesJSon = {} as { [id: number]: BaseTileInfo };
+    let tilesJSon = {} as { [id: number]: BaseTileInfo | number };
     const datas = {} as TileDict;
-    for (const { tile: { uvs, dict, tid, id } } of tileList) {
-        let texture = texDict[tid];
-        let list = [uvs, dict] as BaseTileInfo;
-        if (tid != 0) {
-            list[2] = tid;
+    for (const tileInfo of tileList) {
+        let rawTile = tileInfo.parent;
+        let id = tileInfo.id;
+        if (rawTile) {
+            tilesJSon[id] = rawTile.id;
+        } else {
+            const { tile: { uvs, dict, tid } } = tileInfo;
+            let list = [uvs, dict] as BaseTileInfo;
+            if (tid != 0) {
+                list[2] = tid;
+            }
+            tilesJSon[id] = list;
+            rawTile = tileInfo;
         }
-        tilesJSon[id] = list;
+        const { tile: { uvs, dict, tid } } = rawTile;
+        let texture = texDict[tid];
         for (let v in dict) {
             let verts = dict[v];
             datas[getTileId(+v, id)] = {
@@ -653,6 +702,7 @@ function createTileData(cfg: TiledMap.Tileset, id: number, tileInfo: TiledMap.Ti
     } as TileInfo;
     return {
         tile,
+        id,
         data,
         s: Math.sqrt(imgW * imgW + imgH * imgH),
         w: imgW,
@@ -681,7 +731,7 @@ export async function loadTileset(basePath: string) {
         throw Error(`tiled数据文件[${dataPath}]不存在`);
     }
     let fileContent = fs.readFileSync(dataPath, "utf8");
-    let rawData: { [id: number]: BaseTileInfo };
+    let rawData: { [id: number]: BaseTileInfo | number };
     try {
         rawData = JSON.parse(fileContent);
     } catch {
@@ -708,7 +758,14 @@ export async function loadTileset(basePath: string) {
     //加载数据文件，完成tile字典
     let data = {} as TileDict;
     for (let id in rawData) {
-        let [uvs, dict, tid] = rawData[id];
+        let p = rawData[id];
+        let dat: BaseTileInfo;
+        if (typeof p === "number") {
+            dat = rawData[p] as BaseTileInfo;
+        } else {
+            dat = p;
+        }
+        let [uvs, dict, tid] = dat;
         tid = tid | 0;
         let texture = texDict[tid];
         if (!texture) {
