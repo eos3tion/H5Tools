@@ -40,6 +40,7 @@ function getEditView() {
 
 function setParam(data: SkillCfg) {
     let radius = data.range;
+    curSkill = data;
     radiusInput.setValue(radius);
     let area = data.area;
     if (area) {
