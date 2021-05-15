@@ -30,6 +30,12 @@ function onKeyUp(e: KeyboardEvent) {
     if (e.key === "Control") {
         ctrlDown = false;
     }
+    if (e.key === "Delete") {
+        if (current) {
+            current.dispose();
+            current = null;
+        }
+    }
 }
 
 function getSimpleButton(lable: string, color?: number, ox = 0, oy = 0) {
@@ -55,6 +61,7 @@ function getSimpleButton(lable: string, color?: number, ox = 0, oy = 0) {
 }
 
 let currentShow: AniDele;
+let current: AniDele;
 let initedEffectPro: boolean;
 let isProShow: boolean;
 let setView: boolean;
@@ -315,6 +322,7 @@ export class AniDele extends egret.Sprite {
         const showBtn = !this.showBtn;
         if (showBtn) {
             this.checkLayer();
+            current = this;
         }
         this.btnCopy.visible = this.btnPro.visible = this.btnDel.visible = this.showBtn = showBtn;
     }
