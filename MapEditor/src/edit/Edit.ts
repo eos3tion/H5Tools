@@ -181,7 +181,27 @@ function onChkMapGridShowChange() {
     $gm.$showMapGrid = chkShowMapGrid.checked;
     $engine.invalidate();
 }
+
+const chkHideEffectList = $g("chkHideEffectList") as HTMLInputElement;
+chkHideEffectList.addEventListener("change", onChkHideEffectListChange);
+let _hideEffList = false;
+function onChkHideEffectListChange() {
+    if (_hideEffList !== chkHideEffectList.checked) {
+        _hideEffList = chkHideEffectList.checked;
+        if (!_hideEffList) {
+            refreshEffectList();
+            dlEffectList.show();
+        } else {
+            dlEffectList.hide();
+        }
+    }
+
+}
+
 function effListFun(...args) {
+    if (_hideEffList) {
+        return
+    }
     return dlEffectList.tree(...args);
 }
 effListFun({
@@ -428,6 +448,9 @@ function refreshEffectList() {
     refreshing = setTimeout($refreshEffectList, 100) as any;
 }
 function $refreshEffectList() {
+    if (_hideEffList) {
+        return
+    }
     let effs = $engine.effs;
     let groups = {} as { [group: number]: { text: string, children: AniDele[] } }
     for (let i = 0; i < effs.length; i++) {
