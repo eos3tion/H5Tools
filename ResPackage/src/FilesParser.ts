@@ -94,7 +94,7 @@ export class FilesParser {
         for (let i = 0; i < paths.length; i++) {
             let path = paths[i];
             let ret = pathUtil.parse(path);
-            let ext = ret.ext;
+            let ext = ret.ext.toLowerCase();
             if (ext != ".png") {// 输入图片必须为png
                 continue;
             }
@@ -242,7 +242,7 @@ export class FilesParser {
     }
 
     parseFile(files: Array<PngParser>, key: string) {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             console.time(key);
             let c = <PromiseControl>{};
             this._current = c;
@@ -378,4 +378,4 @@ class EmptyBlock implements IBlock {
     clone() {
         return new EmptyBlock();
     }
-} 
+}
