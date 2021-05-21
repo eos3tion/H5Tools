@@ -6,6 +6,7 @@ import "google/protobuf/descriptor.proto";
 extend google.protobuf.MessageOptions {
     optional int32 cmd = 51000;
     optional int32 climit = 51001;
+    optional int32 nofun = 51002;
 }
 
 extend google.protobuf.FileOptions {

@@ -16,41 +16,41 @@ const path: typeof import("path") = nodeRequire("path");
 
 
 interface Func {
-	/**
-	 * 函数名称
-	 * 
-	 * @type {string}
-	 * @memberOf Func
-	 */
+    /**
+     * 函数名称
+     * 
+     * @type {string}
+     * @memberOf Func
+     */
     name: string;
-	/**
-	 * 函数内容
-	 * 
-	 * @type {string}
-	 * @memberOf Func
-	 */
+    /**
+     * 函数内容
+     * 
+     * @type {string}
+     * @memberOf Func
+     */
     lines: string[];
-	/**
-	 * 方法的类型
-	 * 0/undefined 是send方法
-	 * 1		   是recieve回调
-	 * @type {number}
-	 * @memberOf Func
-	 */
+    /**
+     * 方法的类型
+     * 0/undefined 是send方法
+     * 1		   是recieve回调
+     * @type {number}
+     * @memberOf Func
+     */
     type: number;
-	/**
-	 * 
-	 * 是否是服务器函数
-	 * @type {boolean}
-	 * @memberOf Func
-	 */
+    /**
+     * 
+     * 是否是服务器函数
+     * @type {boolean}
+     * @memberOf Func
+     */
     isServer: boolean;
-	/**
-	 * wiki的原始内容
-	 * 
-	 * @type {string}
-	 * @memberOf Func
-	 */
+    /**
+     * wiki的原始内容
+     * 
+     * @type {string}
+     * @memberOf Func
+     */
     wiki: string;
 }
 
@@ -159,6 +159,7 @@ export function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let cpath: string = options[Options.ClientPath] || fcpath;
         let cmodule: string = options[Options.ClientModule] || fcmodule;
         let cmddata: any = options[Options.CMD];
+        let nofunc = options[Options.NoFunction] !== undefined;
         let climit: number = +options[Options.ClientLimit];
         //如果设置的不是整数，则让climit为undefined
         isNaN(climit) && (climit = undefined);
@@ -206,9 +207,9 @@ export function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         // 根据CMD 生成通信代码
         // 生成代码
         let className: string = msg.name;
-		/**
-		 * 是否需要生成消息
-		 */
+        /**
+         * 是否需要生成消息
+         */
         let isCreateMsg = true;
         // 进行消息检查
         // 会生成ProtoBuf Message的情况：
@@ -226,13 +227,15 @@ export function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
             isCreateMsg = !isOptMsg || fleng > 1 || (fleng == 1 && repeatedCount > 0)
         }
 
-        let handlerName = className[0].toLowerCase() + className.substring(1);
-        if (c) { // client to server
-            hasService = true;
-            makeCSendFunction(fieldDatas, className, handlerName, cSends, cmds[0], msg.source, cmdDict, climit);
-        } else if (s) { // server to client
-            hasService = true;
-            makeReciveFunc(className, handlerName, cRegs, cRecvs, cmds, fieldDatas, false, msg.source, cmdDict, service);
+        if (!nofunc) {
+            let handlerName = className[0].toLowerCase() + className.substring(1);
+            if (c) { // client to server
+                hasService = true;
+                makeCSendFunction(fieldDatas, className, handlerName, cSends, cmds[0], msg.source, cmdDict, climit);
+            } else if (s) { // server to client
+                hasService = true;
+                makeReciveFunc(className, handlerName, cRegs, cRecvs, cmds, fieldDatas, false, msg.source, cmdDict, service);
+            }
         }
 
         if (isCreateMsg) { //需要生成消息
@@ -319,9 +322,9 @@ export function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
  */
 function getManualCodeInfo(file: string) {
     let manuals: { [index: string]: string } = {};
-	/**
-	 * 注释的字典
-	 */
+    /**
+     * 注释的字典
+     */
     let comments: { [index: string]: string } = {};
     if (file && fs.existsSync(file)) {
         //读取文件内容
@@ -646,25 +649,25 @@ ${indent}/*-*end ${key}*-*/`
  * 手写代码的默认提示
  */
 const ManualCodeDefaultComment = {
-	/**
-	 * 类上方提示
-	 */
+    /**
+     * 类上方提示
+     */
     $area1: "//这里填写类上方的手写内容",
-	/**
-	 * 类中提示
-	 */
+    /**
+     * 类中提示
+     */
     $area2: "//这里填写类里面的手写内容",
-	/**
-	 * 类下方提示
-	 */
+    /**
+     * 类下方提示
+     */
     $area3: "//这里填写类下发的手写内容",
-	/**
-	 * onRegister方法中
-	 */
+    /**
+     * onRegister方法中
+     */
     $onRegister: "//这里写onRegister中手写内容",
-	/**
-	 * 处理函数提示
-	 */
+    /**
+     * 处理函数提示
+     */
     $handler: "//这里填写方法中的手写内容",
 }
 
@@ -674,13 +677,13 @@ const ManualCodeDefaultComment = {
  * @param {Func} func
  */
 function getDefaultComments(func: Func) {
-	/**【xHandler】
-	 * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ wiki ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-	 * wiki......
-	 * ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ wiki ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-	 *
-	 * 这里写手写的注释
-	 */
+    /**【xHandler】
+     * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ wiki ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+     * wiki......
+     * ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ wiki ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     *
+     * 这里写手写的注释
+     */
     let wikiContents: string[] = [`/**【${func.name}】`];
     getWikiComments(wikiContents, func.wiki);
     wikiContents.push(` *`);

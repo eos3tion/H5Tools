@@ -1,23 +1,27 @@
 const enum Options {
-	/**
-	 * 服务名称
-	 */
+    /**
+     * 服务名称
+     */
     ServiceName = "(service)",
-	/**
-	 * 客户端模块
-	 */
+    /**
+     * 客户端模块
+     */
     ClientModule = "(cmodule)",
-	/**
-	 * 客户端路径，和前缀路径拼接得到文件生成路径地址
-	 */
+    /**
+     * 客户端路径，和前缀路径拼接得到文件生成路径地址
+     */
     ClientPath = "(cpath)",
-	/**
-	 * 通信用指令
-	 */
+    /**
+     * 通信用指令
+     */
     CMD = "(cmd)",
-	/**
-	 * 客户端发送限制
-	 */
+    /**
+     * 不自动生成函数
+     */
+    NoFunction = "(nofun)",
+    /**
+     * 客户端发送限制
+     */
     ClientLimit = "(climit)",
     /**
      * 页面名称
@@ -179,7 +183,7 @@ const enum ConstString {
     ServiceNameFile = "ServiceName.d.ts",
 
     PBDictFileName = "PBDict.ts",
-    
+
     PBDictName = "PBDict",
 
     PBDictKeyName = "PBDictKey",
