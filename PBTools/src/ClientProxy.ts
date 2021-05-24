@@ -227,15 +227,15 @@ export function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
             isCreateMsg = !isOptMsg || fleng > 1 || (fleng == 1 && repeatedCount > 0)
         }
 
-        if (!nofunc) {
-            let handlerName = className[0].toLowerCase() + className.substring(1);
-            if (c) { // client to server
+        let handlerName = className[0].toLowerCase() + className.substring(1);
+        if (c) { // client to server
+            if (!nofunc) {
                 hasService = true;
                 makeCSendFunction(fieldDatas, className, handlerName, cSends, cmds[0], msg.source, cmdDict, climit);
-            } else if (s) { // server to client
-                hasService = true;
-                makeReciveFunc(className, handlerName, cRegs, cRecvs, cmds, fieldDatas, false, msg.source, cmdDict, service);
             }
+        } else if (s) { // server to client
+            hasService = true;
+            makeReciveFunc(className, handlerName, cRegs, cRecvs, cmds, fieldDatas, false, msg.source, cmdDict, service, nofunc);
         }
 
         if (isCreateMsg) { //需要生成消息
@@ -511,15 +511,7 @@ function makeCSendFunction(fnames: FieldData[], className: string, handlerName: 
     lines.push(`}`)
 }
 
-function makeReciveFunc(className: string, handlerName: string, regs: string[], recvs: Func[], cmds: number[], fnames: FieldData[], isServer: boolean, wiki: string, cmdDict: { [name: string]: number }, service?: string) {
-    let func = <Func>{};
-    recvs.push(func);
-    let lines: string[] = [];
-    func.name = handlerName;
-    func.lines = lines;
-    func.wiki = wiki;
-    func.type = 1;
-    func.isServer = isServer;
+function makeReciveFunc(className: string, handlerName: string, regs: string[], recvs: Func[], cmds: number[], fnames: FieldData[], isServer: boolean, wiki: string, cmdDict: { [name: string]: number }, service?: string, noFun?: boolean) {
     let len = fnames.length;
     // let strCMD = cmds.length == 1 ? cmds[0] : `[${cmds.join(", ")}]`;
     let strCMD: string;
@@ -563,16 +555,25 @@ function makeReciveFunc(className: string, handlerName: string, regs: string[], 
     if (len > 1) {
         strType = `${ConstString.PBDictKeyName}.${className}`;
     }
-    regs.push(`\t${strCMD}, ${strType}, ${handlerName},`);
-
-    lines.push(`function ${handlerName}(this: ${service}, _data: NetData) {`);
-    if (len > 1) {
-        lines.push(`\tlet msg: ${className} = _data.data;`);
-    } else if (len == 1) { //创建数据
-        lines.push(`\tlet _${p.fieldName}: ${p.fieldType} = _data.data;`);
+    regs.push(`\t${strCMD}, ${strType}, ${noFun ? 0 : handlerName},`);
+    if (!noFun) {
+        let func = <Func>{};
+        recvs.push(func);
+        let lines: string[] = [];
+        func.name = handlerName;
+        func.lines = lines;
+        func.wiki = wiki;
+        func.type = 1;
+        func.isServer = isServer;
+        lines.push(`function ${handlerName}(this: ${service}, _data: NetData) {`);
+        if (len > 1) {
+            lines.push(`\tlet msg: ${className} = _data.data;`);
+        } else if (len == 1) { //创建数据
+            lines.push(`\tlet _${p.fieldName}: ${p.fieldType} = _data.data;`);
+        }
+        lines.push(`/*|${handlerName}|*/`);
+        lines.push(`}`);
     }
-    lines.push(`/*|${handlerName}|*/`);
-    lines.push(`}`);
 }
 
 
