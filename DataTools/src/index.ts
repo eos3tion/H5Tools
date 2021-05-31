@@ -754,20 +754,26 @@ class XLSXDecoder {
                         if (def) {
                             let { server, client } = def;
                             if (server) {
-                                let scell = cell == undefined ? def.def : cell;
+                                let scell = def.def;
+                                if (cell != undefined) {
+                                    scell = cell;
+                                    hasServer = true;
+                                }
                                 if (scell != undefined) {
                                     let dat = def.checker.serverCheck(scell || "");
                                     sRow[def.name] = dat;
                                 }
-                                hasServer = true;
                             }
                             if (client) {
-                                let ccell = cell == undefined ? def.def : cell;
+                                let ccell = def.def;
+                                if (cell != undefined) {
+                                    ccell = cell;
+                                    hasClientRaw = true;
+                                }
                                 if (ccell != undefined) {
                                     let dat = def.checker.check(cell || "");
                                     cRawRow[def.name] = dat;
                                 }
-                                hasClientRaw = true;
                             }
                             if (cell != undefined) {
                                 let checker = def.checker;
