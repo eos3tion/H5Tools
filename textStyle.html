@@ -33,6 +33,7 @@
 			var bold = isBold ? "bold " : "normal ";
 			var isItalic = $g("isItalic").checked;
 			var italic = isItalic ? "italic " : "normal ";
+			var textColor = "#" + $g("textColor").value;
 			context.restore();
 			context.clearRect(0, 0, canvas.width, canvas.height);
 			context.fillStyle = "#" + $g("bgColor").value;
@@ -64,7 +65,7 @@
 				}
 				outData.gradients = colorStopData;
 			}
-			context.fillStyle = style || "#ffff00";
+			context.fillStyle = style || textColor;
 			var shadowBlur = +$g("shadowBlur").value;
 			if (shadowBlur) {
 				var shadowColor = $g("shadowColor").value;
@@ -147,17 +148,26 @@
 			<tr>
 				<td>背景色：</td>
 				<td>
-					<input id="bgColor" onchange="repaint()" class="jscolor" value="ffffff"> </td>
+					<input id="bgColor" onchange="repaint()" class="jscolor" value="ffffff">
+				</td>
+			</tr>
+			<tr>
+				<td>文本颜色色：</td>
+				<td>
+					<input id="textColor" onchange="repaint()" class="jscolor" value="ffff00">
+				</td>
 			</tr>
 			<tr>
 				<td>测试文字的内容：</td>
 				<td>
-					<input onchange="repaint()" type="text" id="text" value="测试文字" /> </td>
+					<input onchange="repaint()" type="text" id="text" value="测试文字" />
+				</td>
 			</tr>
 			<tr>
 				<td>字体：</td>
 				<td>
-					<input onchange="repaint()" type="text" id="font-family" value="微软雅黑" /> </td>
+					<input onchange="repaint()" type="text" id="font-family" value="微软雅黑" />
+				</td>
 			</tr>
 			<tr style="height:80px">
 				<td>字号：</td>
@@ -188,24 +198,28 @@
 				<td>投影模糊：</td>
 				<td>
 					<input id="shadowBlur" class="easyui-numberspinner" style="width:50px;"
-						data-options="min:0,max:20,editable:false,onChange:repaint" value="0"> </td>
+						data-options="min:0,max:20,editable:false,onChange:repaint" value="0">
+				</td>
 			</tr>
 			<tr>
 				<td>投影颜色：</td>
 				<td>
-					<input id="shadowColor" onchange="repaint()" class="jscolor" value="000000"> </td>
+					<input id="shadowColor" onchange="repaint()" class="jscolor" value="000000">
+				</td>
 			</tr>
 			<tr>
 				<td>投影偏移X：</td>
 				<td>
 					<input id="shadowOffsetX" class="easyui-numberspinner" style="width:50px;"
-						data-options="min:0,max:20,editable:false,onChange:repaint" value="0"> </td>
+						data-options="min:0,max:20,editable:false,onChange:repaint" value="0">
+				</td>
 			</tr>
 			<tr>
 				<td>投影偏移Y：</td>
 				<td>
 					<input id="shadowOffsetY" class="easyui-numberspinner" style="width:50px;"
-						data-options="min:0,max:20,editable:false,onChange:repaint" value="0"> </td>
+						data-options="min:0,max:20,editable:false,onChange:repaint" value="0">
+				</td>
 			</tr>
 		</table>
 		<div id="colorStops">
