@@ -67,20 +67,20 @@
 			}
 			context.fillStyle = style || textColor;
 			var shadowBlur = +$g("shadowBlur").value;
-			if (shadowBlur) {
+			var shadowOffsetX = +$g("shadowOffsetX").value || 0;
+			var shadowOffsetY = +$g("shadowOffsetY").value || 0;
+			if (shadowBlur || shadowOffsetX || shadowOffsetY) {
 				var shadowColor = $g("shadowColor").value;
-				var shadowOffsetX = +$g("shadowOffsetX").value || 0;
-				var shadowOffsetY = +$g("shadowOffsetY").value || 0;
 				context.shadowColor = "#" + $g("shadowColor").value;
-				context.shadowBlur = shadowBlur;
-				context.shadowOffsetX = shadowOffsetX;
-				context.shadowOffsetY = shadowOffsetY;
 				var shadow = [shadowBlur];
 				shadow[1] = +shadowColor != 0 ? "#" + $g("shadowColor").value : 0;
 				shadow[2] = shadowOffsetX || 0;
 				shadow[3] = shadowOffsetY || 0;
 				outData.shadow = shadow;
 			}
+			context.shadowBlur = shadowBlur;
+			context.shadowOffsetX = shadowOffsetX;
+			context.shadowOffsetY = shadowOffsetY;
 			var stroke = +strokeWidth.value;
 			if (stroke) {
 				context.strokeStyle = "#" + strokeColor.value;
