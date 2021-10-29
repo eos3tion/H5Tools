@@ -12,6 +12,7 @@ class Main extends egret.DisplayObjectContainer {
         this.addEventListener(EgretEvent.ADDED_TO_STAGE, this.onAddToStage, this);
         $("#btnSave").on("click", saveCallback);
         $("#bgColor").on("change", onbgColorChange);
+        $("#btnSplit").on("click", splitCallback);
         jy.Global.initTick();
     }
 
@@ -84,6 +85,41 @@ function saveCallback() {
     rawData[0][2] = obj;
     // 将数据写回文件
     fs.writeFileSync(dataFile, JSON.stringify(rawData));
+}
+
+const canvas = document.createElement("canvas");
+const cnt = canvas.getContext("2d");
+
+function splitCallback() {
+    if (cPst) {
+
+        let res = cPst.getResource();
+        //@ts-ignore
+        let datas = res._datas as { [action: number]: egret.Texture[][] };
+        for (let action in datas) {
+            let actionTexes = datas[action];
+            for (let direction = 0; direction < actionTexes.length; direction++) {
+                const frames = actionTexes[direction];
+                for (let frame = 0; frame < frames.length; frame++) {
+                    const tex = frames[frame];
+                    extractImage(tex, action, direction, frame);
+                }
+            }
+        }
+    }
+
+    function extractImage(tex: egret.Texture, action: string, direction: number, frame: number) {
+        let img = tex.bitmapData.source as HTMLImageElement;
+        const width = tex.textureWidth;
+        const height = tex.textureHeight;
+        canvas.width = width;
+        canvas.height = height;
+        cnt.drawImage(img, tex.$bitmapX, tex.$bitmapY, width, height, 0, 0, width, height);
+        const fs: typeof import("fs") = nodeRequire("fs");
+        const path: typeof import("path") = nodeRequire("path");
+        let filename = path.join(path.dirname(dataFile), `${action}_${direction}_${frame}.png`);
+        fs.writeFileSync(filename, new Buffer(canvas.toDataURL("image/png").slice(22), "base64"));
+    }
 }
 
 function onDragOver(e: DragEvent) {

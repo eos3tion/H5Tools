@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <script>
+    <script>        
         var $g = id => document.getElementById(id);
         if (typeof window.require === "function") {
             // 重命名 Electron 提供的 require
@@ -13,6 +13,7 @@
         }
     </script>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="block-all-mixed-content">
     <meta name="viewport"
         content="width=device-width,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -190,6 +191,7 @@
                 class="easyui-linkbutton">撤销偏移</a><br />
             <br />
             <a id="btnSave" href="#" data-options="iconCls:'icon-save'" class="easyui-linkbutton">保存数据到文件</a>
+            <a id="btnSplit" href="#" data-options="iconCls:'icon-save'" class="easyui-linkbutton">重新输出成多帧png</a>
         </div>
     </div>
 </body>
