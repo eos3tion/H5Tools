@@ -316,6 +316,9 @@ function dragMove(e: MouseEvent) {
     if (dragState == 2) {
         let dx = lx - clientX;
         let dy = ly - clientY;
+        const scale = $engine.scale;
+        dx /= scale;
+        dy /= scale;
         lx = clientX;
         ly = clientY;
         let camera = $engine.camera;
