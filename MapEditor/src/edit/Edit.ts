@@ -381,14 +381,35 @@ let checkingSelectionData = false;
 function checkSelection() {
     checkingSelectionData = true;
     const effs = $engine.effs;
-    for (let i = 0; i < effs.length; i++) {
+    const needUncheckTargets = [];
+    const checkedEffs: AniDele[] = effListFun("getChecked");
+    for (let i = 0; i < checkedEffs.length; i++) {
         const eff = effs[i];
-        let target = $("#" + (eff as any).domId)[0];
-        if (target) {
-            effListFun(eff.selected ? "check" : "uncheck", target);
+        if (!eff.selected) {
+            let target = $("#" + (eff as any).domId)[0];
+            if (target) {
+                needUncheckTargets.push(target);
+            }
         }
     }
+    const willCheckTargets = [];
 
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        if (eff.selected && !checkedEffs.includes(eff)) {
+
+            let target = $("#" + (eff as any).domId)[0];
+            if (target) {
+                willCheckTargets.push(target);
+            }
+        }
+    }
+    for (const target of needUncheckTargets) {
+        effListFun("uncheck", target);
+    }
+    for (const target of willCheckTargets) {
+        effListFun("check", target);
+    }
     checkingSelectionData = false;
 }
 
