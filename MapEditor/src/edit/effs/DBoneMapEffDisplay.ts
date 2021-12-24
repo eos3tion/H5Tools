@@ -3,7 +3,7 @@ import * as $path from "path";
 const path: typeof $path = nodeRequire("path");
 import * as $fs from "fs";
 const fs: typeof $fs = nodeRequire("fs");
-import { Core } from "../../Core";
+import { Core, log } from "../../Core";
 import { addRes } from "../../res/Res";
 interface DBFactory extends dragonBones.EgretFactory {
     $ske: DBoneSke;
@@ -67,7 +67,7 @@ export class DBoneMapEffRender implements MapEffRender {
             this.armature = undefined;
             this.arm = undefined;
             if (!factory) {
-                return alert(`无效的[folder:${folder}]`);
+                return log(`无效的[folder:${folder}]`);
             }
         }
     }
@@ -97,7 +97,7 @@ export class DBoneMapEffRender implements MapEffRender {
                 }
                 this.arm = arm;
                 if (!arm) {
-                    return alert(`无效的[armature:${armature}]`);
+                    return log(`无效的[armature:${armature}]`);
                 }
                 let db = factory.buildArmatureDisplay(armature);
                 this.db = db;
@@ -115,7 +115,7 @@ export class DBoneMapEffRender implements MapEffRender {
             if (ani != this.ani) {
                 this.ani = ani;
                 if (!ani) {
-                    return alert(`无效的[animation:${ani}]`);
+                    return log(`无效的[animation:${ani}]`);
                 }
                 if (ani) {
                     db.animation.play(ani);
@@ -269,11 +269,11 @@ function getPath(uri: string) {
 
 async function prepareAndCheck(p: string) {
     if (!fs.existsSync(p)) {
-        return alert(`无法找到龙骨文件夹[${p}]`);
+        return log(`无法找到龙骨文件夹[${p}]`);
     }
     let fstats = fs.statSync(p);
     if (!fstats.isDirectory()) {
-        return alert(`龙骨文件夹不正确`)
+        return log(`龙骨文件夹不正确`)
     }
     let uri = path.basename(p);
     if (!dbFactorys[uri]) {
@@ -281,7 +281,7 @@ async function prepareAndCheck(p: string) {
         let texFile = path.join(p, DBFile.Texture);
         let texDataFile = path.join(p, DBFile.TextureData);
         if (!fs.existsSync(skeFile) || !fs.existsSync(texFile) || !fs.existsSync(texDataFile)) {
-            return alert(`龙骨文件夹[${p}]中文件不正确，请检查是否有"${DBFile.Skeleton}","${DBFile.Texture}","${DBFile.TextureData}"`);
+            return log(`龙骨文件夹[${p}]中文件不正确，请检查是否有"${DBFile.Skeleton}","${DBFile.Texture}","${DBFile.TextureData}"`);
         }
         addRes(skeFile, skeFile);
         addRes(texFile, texFile);

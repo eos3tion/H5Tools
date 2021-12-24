@@ -75,3 +75,7 @@ export function createRadio(title: string, value: any, name: string, parent: Nod
     let word = doc.createTextNode(title);
     label.appendChild(word);
 }
+
+export function log(msg: string) {
+    console.log(msg);
+}
