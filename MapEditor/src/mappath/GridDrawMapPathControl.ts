@@ -72,11 +72,11 @@ export function getDrawMapPathControl(view: HTMLElement, opt: MapPathControlOpti
     }
 
     function checkComponent() {
-        createRadio("不可走", 0, Const.radioName, div, false);
-        createRadio("可走", 1, Const.radioName, div, true);
+        createRadio("不可走", jy.MapConst.MapData_Block, Const.radioName, div, false);
+        createRadio("可走", jy.MapConst.MapData_Walkable, Const.radioName, div, true);
         const gridLevel = opt.getMap().gridLevel;
-        for (let i = 2; i <= gridLevel; i++) {
-            createRadio(`可走${i}`, i, Const.radioName, div, true);
+        for (let i = jy.MapConst.MapData_Walkable + 1; i <= gridLevel; i++) {
+            createRadio(`类型${i}`, i, Const.radioName, div, true);
         }
         checked = true;
     }

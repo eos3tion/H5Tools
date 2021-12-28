@@ -138,9 +138,7 @@ function setType(type: any) {
             current.onEditHide();
         }
         current = path;
-        if (_map) {
-            onLoad(_map, _cfg);
-        }
+
         const tdPathDetail = $g(Const.idConDetail) as HTMLTableCellElement;
         if (currentMapEditCtrl) {
             let parent = currentMapEditCtrl.parentNode;
@@ -152,8 +150,9 @@ function setType(type: any) {
         if (currentMapEditCtrl) {
             tdPathDetail.appendChild(currentMapEditCtrl);
         }
-        if (current && current.loaded && current.onEditShow) {
-            current.onEditShow();
+        if (_map) {
+            onLoad(_map, _cfg, true);
+            current.setMapData(_map);
         }
     }
 }
