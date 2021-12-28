@@ -138,6 +138,9 @@ function setType(type: any) {
             current.onEditHide();
         }
         current = path;
+        if (_map) {
+            onLoad(_map, _cfg);
+        }
         const tdPathDetail = $g(Const.idConDetail) as HTMLTableCellElement;
         if (currentMapEditCtrl) {
             let parent = currentMapEditCtrl.parentNode;
@@ -179,16 +182,22 @@ function initType(value: number) {
     setType(value);
 }
 
+let _map: MapInfo;
+let _cfg: Partial<MapInfo>;
+
+function onLoad<T extends MapInfo>(map: T, cfg: Partial<T>, sizeNotMatch?: boolean) {
+    _map = map;
+    _cfg = cfg;
+    current.loaded = true;
+    current.onLoad(map, cfg, sizeNotMatch);
+}
 
 export const PathSolution = {
     regMapPath,
     get current() {
         return current;
     },
-    onLoad<T extends MapInfo>(map: T, cfg: Partial<T>, sizeNotMatch?: boolean) {
-        current.loaded = true;
-        current.onLoad(map, cfg, sizeNotMatch);
-    },
+    onLoad,
     showGroups,
     initType,
     onBeforeEdit(map: MapInfo) {
