@@ -5,6 +5,7 @@ interface MapInfo extends GridableMapInfo {
 
 
 export class GridMapPath extends GridablePath<MapInfo> {
+    readonly type = jy.MapPathType.Grid;
 
     readonly name = "格子路径";
 

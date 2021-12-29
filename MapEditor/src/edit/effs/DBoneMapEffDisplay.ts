@@ -122,7 +122,7 @@ export class DBoneMapEffRender implements MapEffRender {
                 }
             }
         }
-        jy.dispatch(AppEvent.EffectChange);
+        jy.dispatch(AppEvent.EffectChange, this);
     }
 
     onRecycle() {

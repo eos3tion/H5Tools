@@ -105,104 +105,133 @@ export interface PathSolution<T extends MapInfo> {
      * 在`编辑地图信息模式`时，切换为显示状态
      */
     onEditShow?(): void;
+
+    hashCode?: number;
 }
 
 export declare type $PathSolution = PathSolution<MapInfo>
 
-const enum Const {
-    idConDetail = "tdPathDetail",
-    idConPathType = "tdPathType",
-    idPathType = "radPathType",
-}
 
-const dict: { [index: number]: $PathSolution } = {};
+let insId = 1;
+export function getPathSolution({ tdPathDetail, tdPathType }: { tdPathDetail: HTMLElement, tdPathType: HTMLElement }) {
+    const idPathType = "radPathType";
+    // const dict: { [index: number]: $PathSolution } = {};
+    const factory: { [index: number]: { new(): $PathSolution } } = {};
 
-let currentMapEditCtrl: Node;
-let current: $PathSolution;
+    let currentMapEditCtrl: Node;
+    let current: $PathSolution;
 
-function regMapPath(type: jy.MapPathType, mapPath: $PathSolution) {
-    //@ts-ignore
-    mapPath.type = type;
-    dict[type] = mapPath;
-}
+    let _map: MapInfo;
+    let _cfg: Partial<MapInfo>;
+    return {
+        // regMapPath,
+        get current() {
+            return current;
+        },
+        get map() {
+            return _map;
+        },
+        reset() {
+            current = undefined;
+            _map = undefined;
+        },
+        onLoad,
+        showGroups,
+        initType,
+        onBeforeEdit(map: MapInfo) {
+            map.pathType = current.type;
+            if (current.onBeforeEdit) {
+                current.onBeforeEdit(map);
+            }
+        },
+        regMapPathFactory
+    }
 
-function onChange(e: Event) {
-    let radio = e.currentTarget as HTMLInputElement;
-    setType(radio.value);
-}
+    function regMapPathFactory(type: jy.MapPathType, mapPathFactory: { new(): $PathSolution }) {
+        factory[type] = mapPathFactory;
+    }
 
-function setType(type: any) {
-    let path = dict[type];
-    if (path != current) {
-        if (current && current.onEditHide) {
-            current.onEditHide();
+    // function regMapPath(type: jy.MapPathType, mapPath: $PathSolution) {
+    //     //@ts-ignore
+    //     mapPath.type = type;
+    //     dict[type] = mapPath;
+    // }
+
+    function get(type: any) {
+        // let path = dict[type];
+        // if (!path) {
+        let fac = factory[type];
+        if (fac) {
+            const path = new fac;
+            path.hashCode = insId++;
+            // dict[type] = path;
+            return path;
         }
-        current = path;
+        // }
+    }
 
-        const tdPathDetail = $g(Const.idConDetail) as HTMLTableCellElement;
-        if (currentMapEditCtrl) {
-            let parent = currentMapEditCtrl.parentNode;
-            if (parent) {
-                parent.removeChild(currentMapEditCtrl);
+    function onChange(e: Event) {
+        let radio = e.currentTarget as HTMLInputElement;
+        setType(radio.value);
+    }
+
+    function setType(type: any) {
+        if (!current || type != current.type) {
+            let path = get(type);
+            if (current && current.onEditHide) {
+                current.onEditHide();
+            }
+            current = path;
+
+            if (currentMapEditCtrl) {
+                let parent = currentMapEditCtrl.parentNode;
+                if (parent) {
+                    parent.removeChild(currentMapEditCtrl);
+                }
+            }
+            currentMapEditCtrl = path.editMapInfoControl;
+            if (currentMapEditCtrl) {
+                tdPathDetail.appendChild(currentMapEditCtrl);
+            }
+            if (_map) {
+                onLoad(_map, _cfg, true);
+                current.setMapData(_map);
             }
         }
-        currentMapEditCtrl = path.editMapInfoControl;
-        if (currentMapEditCtrl) {
-            tdPathDetail.appendChild(currentMapEditCtrl);
+    }
+
+    function showGroups() {
+        for (let type in factory) {
+            const mp = get(type);
+            if (mp) {
+                createRadio(mp.name, type, idPathType, tdPathType, false, onChange);
+            }
         }
-        if (_map) {
-            onLoad(_map, _cfg, true);
-            current.setMapData(_map);
+        //默认选中第一个
+        let v = tdPathType.querySelector(`[name=${idPathType}]`) as HTMLInputElement;
+        if (v) {
+            v.checked = true;
+            setType(v.value);
+        }
+    }
+
+    function initType(value: number) {
+        let input = tdPathType.querySelector(`input[name="${idPathType}"][value="${value}"]`) as HTMLInputElement;
+        if (input) {
+            input.checked = true;
+        }
+        setType(value);
+    }
+
+
+    function onLoad<T extends MapInfo>(map: T, cfg: Partial<T>, sizeNotMatch?: boolean) {
+        _map = map;
+        _cfg = cfg;
+        if (current) {
+            current.loaded = true;
+            current.onLoad(map, cfg);
         }
     }
 }
 
-function showGroups() {
-    const tdPathType = $g(Const.idConPathType) as HTMLTableCellElement;
-    for (let type in dict) {
-        const mp = dict[type];
-        if (mp) {
-            createRadio(mp.name, type, Const.idPathType, tdPathType, false, onChange);
-        }
-    }
-    //默认选中第一个
-    let v = document.querySelector(`[name=${Const.idPathType}]`) as HTMLInputElement;
-    if (v) {
-        v.checked = true;
-        setType(v.value);
-    }
-}
-
-function initType(value: number) {
-    let input = document.querySelector(`input[name="${Const.idPathType}"][value="${value}"]`) as HTMLInputElement;
-    if (input) {
-        input.checked = true;
-    }
-    setType(value);
-}
-
-let _map: MapInfo;
-let _cfg: Partial<MapInfo>;
-
-function onLoad<T extends MapInfo>(map: T, cfg: Partial<T>, sizeNotMatch?: boolean) {
-    _map = map;
-    _cfg = cfg;
-    current.loaded = true;
-    current.onLoad(map, cfg, sizeNotMatch);
-}
-
-export const PathSolution = {
-    regMapPath,
-    get current() {
-        return current;
-    },
-    onLoad,
-    showGroups,
-    initType,
-    onBeforeEdit(map: MapInfo) {
-        map.pathType = current.type;
-        if (current.onBeforeEdit) {
-            current.onBeforeEdit(map);
-        }
-    }
-} 
+export const PathSolution = getPathSolution({ tdPathDetail: $g("tdPathDetail"), tdPathType: $g("tdPathType") });

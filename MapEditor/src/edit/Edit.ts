@@ -7,20 +7,154 @@ import * as $http from "http";
 import { HGameEngine } from "./HGameEngine";
 import { AniDele } from "./AniDele";
 import { Core } from "../Core";
-import { PathSolution, EditMapControl } from "../mappath/PathSolution";
+import { PathSolution, EditMapControl, getPathSolution } from "../mappath/PathSolution";
 import { PB } from "../pb/PB";
 import { prepareEffs, checkDrop, createEff, regMapEffFactorys } from "./effs/MapEffDisplay";
+import { GridMapPath } from "../mappath/grid/GridMapPath";
+import { StaggeredMapPath } from "../mappath/staggered/StaggeredMapPath";
+import { getDrawMapPathControl, MapInfo } from "../mappath/GridDrawMapPathControl";
+import { GridableMapInfo, GridablePath } from "../mappath/GridAblePath";
+
 
 const enum CtrlName {
     MapPathCtrl = "divMapPath",
     EffectList = "divEffList",
     AreaGroup = "divAreaGroup",
+
+    MapLayerExt = "MapLayerExt_"
 }
 
 let curCtrl: string;
 
 
 const ctrlDict = {} as { [id: string]: EditMapControl };
+
+const accControl = $("#accControl");
+
+const createMapLayerDele = function () {
+    let layerId = jy.GameLayerID.CeilEffect + 1;
+    const layerPlus = .001;
+
+    let dragPane: HTMLElement;
+    let txtName: HTMLInputElement;
+    let solution: typeof PathSolution;
+    const btnCreateMapLayer = $g("btnCreateMapLayer");
+    btnCreateMapLayer.addEventListener("click", showPane);
+    let showId = 0;
+    return
+    function showPane() {
+        if (!dragPane) {
+            init();
+        }
+        txtName.value = "";
+        solution.reset();
+        solution.initType(jy.MapPathType.Grid);
+        showId = $gm.$showMapGrid;
+        $gm.$showMapGrid = 0;
+        document.body.appendChild(dragPane);
+        const mapInfo = new jy.MapInfo();
+        const map = Core.selectMap;
+        mapInfo.width = map.width;
+        mapInfo.height = map.height;
+        solution.onLoad(mapInfo, map);
+        solution.current.setMapData(mapInfo);
+    }
+
+    function hidePane() {
+        $gm.$showMapGrid = showId;
+        let parent = dragPane.parentNode;
+        if (parent) {
+            parent.removeChild(dragPane);
+        }
+    }
+
+    function create() {
+        let name = txtName.value.trim();
+        if (!name) {
+            alert(`请输入子地图标识`);
+            return
+        }
+
+        hidePane();
+
+        HGameEngine.addLayerConfig(layerId, jy.GameLayerID.GameScene, jy.TileMapLayer);
+        const layer = $engine.getLayer(layerId) as jy.TileMapLayer;
+        const map = solution.map;
+        layer.currentMap = map;
+        map.id = name;
+        solution.onBeforeEdit(map);
+        const ctrl = getDrawMapPathControl($g("StateEdit"), solution.current as GridablePath<GridableMapInfo>);
+        ctrl.setMapLayerId(layerId);
+        const id = CtrlName.MapLayerExt + layerId;
+        const view = ctrl.view;
+        view.id = id;
+        ctrlDict[id] = ctrl;
+
+        accControl.add(view);
+        accControl.accordion("add", {
+            title: `格子图层-${name}`,
+            panel: view
+        });
+
+        layerId += layerPlus;
+
+    }
+
+    function init() {
+
+        dragPane = document.createElement("div");
+        const mapLayerCfgPane = document.createElement("div");
+        mapLayerCfgPane.id = "mapLayerCfgPane"
+        dragPane.append(mapLayerCfgPane);
+        const style = dragPane.style;
+        style.background = "#fafafa";
+        style.position = "absolute";
+        style.zIndex = "2001";
+        style.top = "40%";
+        style.left = "30%";
+
+        const divPathType = document.createElement("div");
+        divPathType.appendChild(document.createTextNode(`路径方式:`));
+        mapLayerCfgPane.append(divPathType);
+        const radioPane = document.createElement("span");
+        divPathType.appendChild(radioPane);
+
+        const pathDetail = document.createElement("div");
+        divPathType.appendChild(pathDetail);
+
+        const divName = document.createElement("div");
+        mapLayerCfgPane.append(divName);
+        divName.appendChild(document.createTextNode(`地图标识:`))
+        txtName = document.createElement("input");
+        divName.append(txtName);
+
+        const btnCreate = document.createElement("input");
+        btnCreate.value = "创建";
+        btnCreate.type = "button";
+        btnCreate.size = 20;
+        btnCreate.addEventListener("click", create);
+        mapLayerCfgPane.appendChild(btnCreate);
+
+        $(mapLayerCfgPane).panel({
+            title: "创建路径格图层",
+            width: 300,
+            height: 200,
+            tools: [{
+                iconCls: "panel-tool-close",
+                handler: hidePane
+            }, {}]
+        })
+
+        $(dragPane).draggable({
+            handle: ".panel-header"
+        })
+        solution = getPathSolution({ tdPathDetail: pathDetail, tdPathType: radioPane })
+        solution.regMapPathFactory(jy.MapPathType.Grid, GridMapPath);
+        solution.regMapPathFactory(jy.MapPathType.Staggered, StaggeredMapPath);
+        solution.showGroups();
+    }
+
+}()
 
 function mapPathCtrlInit() {
     const current = PathSolution.current;
@@ -36,7 +170,7 @@ function mapPathCtrlInit() {
         ctrlDict[CtrlName.AreaGroup] = areaGroupControl;
     }
 
-    $("#accControl").accordion({
+    accControl.accordion({
         onUnselect: checkSelect,
         onSelect: checkSelect
     });
@@ -53,7 +187,7 @@ function mapPathCtrlInit() {
         jy.Global.callLater($checkSelect, 0)
     }
     function $checkSelect() {
-        let select = $("#accControl").accordion("getSelected");
+        let select = accControl.accordion("getSelected");
         let flag = false;
         let ctxId: string;
         if (select) {
@@ -67,15 +201,13 @@ function mapPathCtrlInit() {
             let old = ctrlDict[curCtrl];
             if (old) {
                 old.onToggle(false);
-            } else if (curCtrl == CtrlName.EffectList) {
-                $gm.$showMapGrid = chkShowMapGrid.checked;
             }
             curCtrl = ctxId;
             let ctrl = ctrlDict[curCtrl];
             if (ctrl) {
                 ctrl.onToggle(true);
             } else if (curCtrl == CtrlName.EffectList) {
-                $gm.$showMapGrid = chkShowMapGrid.checked;
+                $gm.$showMapGrid = chkShowMapGrid.checked ? $gm.$defaultMapGridId : 0;
             }
             $engine.invalidate();
         }
@@ -178,7 +310,7 @@ let chkShowMapGrid = $g("chkShowMapGrid") as HTMLInputElement;
 chkShowMapGrid.addEventListener("change", onChkMapGridShowChange);
 
 function onChkMapGridShowChange() {
-    $gm.$showMapGrid = chkShowMapGrid.checked;
+    $gm.$showMapGrid = chkShowMapGrid.checked ? $gm.$defaultMapGridId : 0;
     $engine.invalidate();
 }
 

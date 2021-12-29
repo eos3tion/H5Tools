@@ -317,7 +317,7 @@ function onClear() {
 
 
 function showMapGrid() {
-    $gm.$showMapGrid = true;
+    $gm.$showMapGrid = $gm.$defaultMapGridId;
     //监听鼠标事件
     view.addEventListener("mousemove", showCoord);
     $engine.invalidate();
@@ -327,7 +327,7 @@ function hideMapGrid() {
     currentDraw = undefined;
     window.removeEventListener("keyup", onKeyUp);
     view.removeEventListener("click", onClick);
-    $gm.$showMapGrid = false;
+    $gm.$showMapGrid = 0;
 }
 
 class DrawMapPathControl {
@@ -369,6 +369,7 @@ class DrawMapPathControl {
 }
 
 export class NavMeshPath implements PathSolution<MapInfo> {
+    readonly type = jy.MapPathType.NavMesh;
     onLoad(map: MapInfo, cfg: Partial<MapInfo>) {
         let { $polys: polys, trans, edge } = cfg;
         if (polys) {

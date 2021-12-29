@@ -5,6 +5,7 @@ interface MapInfo extends GridableMapInfo {
 
 
 export class StaggeredMapPath extends GridablePath<MapInfo> {
+    readonly type = jy.MapPathType.Staggered;
     readonly name = "等角（交错）路径";
 
     initMapSize(map: MapInfo) {

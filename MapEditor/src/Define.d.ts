@@ -170,6 +170,7 @@ declare namespace jy {
     export interface TiledMapJson extends TiledMapPB, TiledMap {
         layerData: number[][];
     }
+
     export interface MapInfo {
         effs: MapEffData[];
 
@@ -202,6 +203,8 @@ declare namespace jy {
          * tiled的JSON数据
          */
         tiledData?: TiledMapJson;
+
+        subPaths: Partial<MapInfo>[];
     }
 
     export interface GameEngine {

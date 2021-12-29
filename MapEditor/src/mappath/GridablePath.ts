@@ -1,6 +1,6 @@
 import { Core } from "../Core";
 import { PB } from "../pb/PB";
-import { getAreaGroupControl } from "./AreaGroup";
+import { getAreaGroupControl, MapInfo } from "./AreaGroup";
 import { getDrawMapPathControl } from "./GridDrawMapPathControl";
 import { PathSolution, OnSaveOption } from "./PathSolution";
 import getMapDataHelper = jy.getMapDataHelper;
@@ -20,7 +20,7 @@ export interface GridableMapInfo extends jy.StaggeredMapInfo {
 
 
 
-let pathData: jy.MapDataHelper;
+
 
 
 function makeRow(table: HTMLTableElement, label: string, control: Node) {
@@ -32,10 +32,9 @@ function makeRow(table: HTMLTableElement, label: string, control: Node) {
 }
 
 
-function checkMapSize() {
+function checkMapSize(currentMap: GridableMapInfo) {
     let cfg = Core.mapCfg as GridableMapInfo;
     if (cfg) {
-        let currentMap = getMap();
         let { columns, rows, pdatabit: bit } = currentMap;
         /**
          * 尺寸是否匹配
@@ -78,21 +77,11 @@ function checkMapSize() {
     }
 }
 
-function getWalk(this: GridableMapInfo, x: number, y: number): number {
-    return pathData.get(x, y);
-}
 
-function setWalk(x: number, y: number, flag: any) {
-    pathData.set(x, y, flag);
-}
 
 
 const view = $g("StateEdit");
 
-
-function getMap() {
-    return Core.selectMap as GridableMapInfo;
-}
 
 interface EditMapInfoControl extends HTMLTableElement {
     sub: EditMapInfoControlSub;
@@ -109,6 +98,8 @@ interface EditMapInfoControlSub {
 
 export class GridablePath<T extends GridableMapInfo> implements PathSolution<GridableMapInfo> {
 
+    pathData: jy.MapDataHelper;
+
     onLoad(map: T, cfg: T) {
         map.gridWidth = cfg.gridWidth;
         map.gridHeight = cfg.gridHeight;
@@ -120,7 +111,7 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
     map: T;
     setMapData(map: T) {
         this.map = map;
-        map.getWalk = getWalk;
+        map.getWalk = makeGetWalk(this);
         this.initView();
         this.calGrids();
     }
@@ -128,8 +119,8 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
     onBeforeEdit(map: T) {
 
         //创建地图数据代理
-        pathData = getMapDataHelper(map.columns, map.rows, map.pdatabit, map.pathdata);
-        map.pathdata = pathData.data as Uint8Array;
+        this.pathData = getMapDataHelper(map.columns, map.rows, map.pdatabit, map.pathdata);
+        map.pathdata = this.pathData.data as Uint8Array;
         jy.bindMapPos(map);
     }
 
@@ -149,9 +140,17 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
         txtGridLevel.value = gridLevel + "";
     }
 
-    readonly drawMapPathControl = getDrawMapPathControl(view, { getMap, setWalk });
+    setWalk(x: number, y: number, flag: any) {
+        this.pathData.set(x, y, flag);
+    }
 
-    readonly areaGroupControl = getAreaGroupControl(view, { getMap });
+    getMap() {
+        return this.map;
+    }
+
+    readonly drawMapPathControl = getDrawMapPathControl(view, this);
+
+    readonly areaGroupControl = getAreaGroupControl(view, this);
 
     name: string;
 
@@ -176,8 +175,8 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
 
         const calGrids = this.calGrids.bind(this);
 
-        txtGridWidth.addEventListener("change", calGrids);
-        txtGridHeight.addEventListener("change", calGrids);
+        txtGridWidth.addEventListener("blur", calGrids);
+        txtGridHeight.addEventListener("blur", calGrids);
 
         let lblColumns = doc.createElement("label");
         makeRow(table, `水平方向格子数量：`, lblColumns);
@@ -192,7 +191,7 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
         inp.min = "1";
         inp.max = "256";
         let txtGridLevel = inp;
-        txtGridLevel.addEventListener("change", calGrids);
+        txtGridLevel.addEventListener("blur", calGrids);
         makeRow(table, `格子级数：`, inp);
         const comps = {
             txtGridHeight,
@@ -229,7 +228,7 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
     }
 
     onEnterMap(map: T) {
-        map.getWalk = getWalk;
+        map.getWalk = makeGetWalk(this);
     }
 
     getMapBytes(map: T) {
@@ -253,7 +252,7 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
 
 
     calGrids() {
-        let currentMap = getMap();
+        let currentMap = this.getMap();
         if (!currentMap) {
             return;
         }
@@ -292,16 +291,16 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
         lblRows.innerText = currentMap.rows + "";
 
         currentMap.gridLevel = _gridLevel;
-        checkMapSize();
+        checkMapSize(currentMap);
     }
 
     initMapSize(map: GridableMapInfo) {
-        let { width, height, gridWidth, gridHeight } = map;
-        let hh = gridHeight >> 1;
-        let columns = Math.ceil(width / gridWidth);
-        let rows = Math.ceil(height / hh);
-        map.columns = columns;
-        map.rows = rows;
+    }
+}
+
+function makeGetWalk(d: GridablePath<GridableMapInfo>) {
+    return function (this: GridableMapInfo, x: number, y: number) {
+        return d.pathData.get(x, y);
     }
 }
 

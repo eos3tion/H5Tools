@@ -16,9 +16,9 @@ import { checkTiledData, loadTiledMap, TiledMap } from "./tiled/TiledParser";
 const electron: typeof $electron = nodeRequire("electron");
 
 //注册路径处理器
-PathSolution.regMapPath(jy.MapPathType.Grid, new GridMapPath);
-PathSolution.regMapPath(jy.MapPathType.NavMesh, new NavMeshPath);
-PathSolution.regMapPath(jy.MapPathType.Staggered, new StaggeredMapPath)
+PathSolution.regMapPathFactory(jy.MapPathType.Grid, GridMapPath);
+PathSolution.regMapPathFactory(jy.MapPathType.NavMesh, NavMeshPath);
+PathSolution.regMapPathFactory(jy.MapPathType.Staggered, StaggeredMapPath)
 
 const view = $g("StateEditMapInfo");
 const lblPath = $g("lblPath") as HTMLLabelElement;

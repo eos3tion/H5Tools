@@ -61,7 +61,11 @@ export function getDrawMapPathControl(view: HTMLElement, opt: MapPathControlOpti
     div.appendChild(document.createElement("br"));
 
     let checked = false;
+    let _mapLayerId = $gm.$defaultMapGridId;
     return {
+        setMapLayerId(id: number) {
+            _mapLayerId = id;
+        },
         get view() {
             if (!checked) {
                 checkComponent();
@@ -90,7 +94,8 @@ export function getDrawMapPathControl(view: HTMLElement, opt: MapPathControlOpti
     }
 
     function showMapGrid() {
-        $gm.$showMapGrid = true;
+        (div.querySelector(`input[name=${Const.radioName}]`) as HTMLInputElement).checked = true;
+        $gm.$showMapGrid = _mapLayerId;
         //监听鼠标事件
         view.addEventListener("mousedown", onBegin);
         view.addEventListener("mousemove", showCoord);
@@ -101,6 +106,9 @@ export function getDrawMapPathControl(view: HTMLElement, opt: MapPathControlOpti
         if ((e.target as HTMLElement).tagName.toLowerCase() !== "canvas") {
             return
         }
+        if (!checkMapShow()) {
+            return
+        }
         if (e.button == 0) {
             view.addEventListener("mousemove", onMove);
             view.addEventListener("mouseup", onEnd);
@@ -109,14 +117,20 @@ export function getDrawMapPathControl(view: HTMLElement, opt: MapPathControlOpti
     }
 
     function onMove(e: MouseEvent) {
-        const { clientX, clientY } = e;
-        //转换成格位坐标
-        let dpr = window.devicePixelRatio;
-        let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-        pt = opt.getMap().screen2Map(pt.x, pt.y);
-        //设置可走/不可走
-        opt.setWalk(pt.x, pt.y, +$(`input[name=${Const.radioName}]:checked`).val());
-        $engine.invalidate();
+        if (!checkMapShow()) {
+            return
+        }
+        let rad = div.querySelector(`input[name=${Const.radioName}]:checked`) as HTMLInputElement;
+        if (rad) {
+            const { clientX, clientY } = e;
+            //转换成格位坐标
+            let dpr = window.devicePixelRatio;
+            let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
+            pt = opt.getMap().screen2Map(pt.x, pt.y);
+            //设置可走/不可走
+            opt.setWalk(pt.x, pt.y, rad.value);
+            $engine.invalidate();
+        }
     }
 
 
@@ -129,11 +143,18 @@ export function getDrawMapPathControl(view: HTMLElement, opt: MapPathControlOpti
         onEnd();
         view.removeEventListener("mousedown", onBegin);
         view.removeEventListener("mousemove", showCoord);
-        $gm.$showMapGrid = false;
+        $gm.$showMapGrid = 0;
+    }
+
+    function checkMapShow() {
+        return $gm.$showMapGrid === _mapLayerId
     }
 
 
     function showCoord(e: MouseEvent) {
+        if (!checkMapShow()) {
+            return
+        }
         const { clientX, clientY } = e;
         let dpr = window.devicePixelRatio;
         let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);

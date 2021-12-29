@@ -276,8 +276,14 @@ class HGameEngine extends jy.GameEngine {
                 scene.y = -rect.y * _sc;
             }
 
+            const _layers = this._layers;
             //渲染地图底图
-            this._bg.setRect(rect);
+            for (let i in _layers) {
+                const layer = _layers[i];
+                if (layer instanceof jy.TileMapLayer) {
+                    layer.setRect(rect);
+                }
+            }
             let tiled = this.tiled;
             if (tiled) {
                 tiled.setRect(rect);
