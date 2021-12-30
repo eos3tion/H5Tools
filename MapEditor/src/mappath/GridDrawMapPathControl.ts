@@ -72,7 +72,10 @@ export function getDrawMapPathControl(view: HTMLElement, opt: MapPathControlOpti
             }
             return div
         },
-        onToggle
+        onToggle,
+        getOpt() {
+            return opt;
+        }
     }
 
     function checkComponent() {

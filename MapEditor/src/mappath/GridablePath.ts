@@ -32,8 +32,7 @@ function makeRow(table: HTMLTableElement, label: string, control: Node) {
 }
 
 
-function checkMapSize(currentMap: GridableMapInfo) {
-    let cfg = Core.mapCfg as GridableMapInfo;
+function checkMapSize(currentMap: GridableMapInfo, cfg: GridableMapInfo) {
     if (cfg) {
         let { columns, rows, pdatabit: bit } = currentMap;
         /**
@@ -99,6 +98,7 @@ interface EditMapInfoControlSub {
 export class GridablePath<T extends GridableMapInfo> implements PathSolution<GridableMapInfo> {
 
     pathData: jy.MapDataHelper;
+    cfg: T;
 
     onLoad(map: T, cfg: T) {
         map.gridWidth = cfg.gridWidth;
@@ -107,6 +107,7 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
         map.pdatabit = cfg.pdatabit || 1;
         map.gridLevel = cfg.gridLevel || 1;
         map.points = cfg.points || [];
+        this.cfg = cfg;
     }
     map: T;
     setMapData(map: T) {
@@ -291,7 +292,7 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
         lblRows.innerText = currentMap.rows + "";
 
         currentMap.gridLevel = _gridLevel;
-        checkMapSize(currentMap);
+        checkMapSize(currentMap, this.cfg);
     }
 
     initMapSize(map: GridableMapInfo) {

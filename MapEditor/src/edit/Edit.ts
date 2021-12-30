@@ -41,22 +41,32 @@ const createMapLayerDele = function () {
     const btnCreateMapLayer = $g("btnCreateMapLayer");
     btnCreateMapLayer.addEventListener("click", showPane);
     let showId = 0;
-    return
+    return {
+        createWithData
+    }
+    function createWithData(data: Partial<jy.MapInfo>) {
+        init();
+        initSolution(data, data.pathType);
+        const map = solution.map;
+        map.id = data.id;
+        createMapLayer(map);
+    }
     function showPane() {
-        if (!dragPane) {
-            init();
-        }
+        init();
         txtName.value = "";
+        document.body.appendChild(dragPane);
+        initSolution();
+    }
+    function initSolution(map?: Partial<jy.MapInfo>, type = jy.MapPathType.Grid) {
         solution.reset();
-        solution.initType(jy.MapPathType.Grid);
+        solution.initType(type);
         showId = $gm.$showMapGrid;
         $gm.$showMapGrid = 0;
-        document.body.appendChild(dragPane);
         const mapInfo = new jy.MapInfo();
-        const map = Core.selectMap;
-        mapInfo.width = map.width;
-        mapInfo.height = map.height;
-        solution.onLoad(mapInfo, map);
+        const sMap = Core.selectMap;
+        mapInfo.width = sMap.width;
+        mapInfo.height = sMap.height;
+        solution.onLoad(mapInfo, map || sMap);
         solution.current.setMapData(mapInfo);
     }
 
@@ -74,17 +84,21 @@ const createMapLayerDele = function () {
             alert(`请输入子地图标识`);
             return
         }
-
         hidePane();
+        const map = solution.map;
+        map.id = name;
+        createMapLayer(map);
+    }
 
+    function createMapLayer(map: jy.MapInfo) {
         HGameEngine.addLayerConfig(layerId, jy.GameLayerID.GameScene, jy.TileMapLayer);
         const layer = $engine.getLayer(layerId) as jy.TileMapLayer;
-        const map = solution.map;
         layer.currentMap = map;
-        map.id = name;
+
         solution.onBeforeEdit(map);
         const ctrl = getDrawMapPathControl($g("StateEdit"), solution.current as GridablePath<GridableMapInfo>);
         ctrl.setMapLayerId(layerId);
+        (ctrl as EditMapControl).onSave = subMapOnSave;
         const id = CtrlName.MapLayerExt + layerId;
         const view = ctrl.view;
         view.id = id;
@@ -92,16 +106,31 @@ const createMapLayerDele = function () {
 
         accControl.add(view);
         accControl.accordion("add", {
-            title: `格子图层-${name}`,
+            title: `格子图层-${map.id}`,
             panel: view
         });
 
         layerId += layerPlus;
+    }
 
+    function subMapOnSave(this: ReturnType<typeof getDrawMapPathControl>, map: jy.MapInfo) {
+        const sol = this.getOpt() as GridablePath<GridableMapInfo>;
+        let dict = map.subPaths;
+        if (!dict) {
+            map.subPaths = dict = {};
+        }
+        const subMap = sol.getMap();
+        if (subMap) {
+            const subInfo = subMap.getSpecObject("pathType") as GridableMapInfo;
+            sol.beforeSave(subInfo, subMap);
+            dict[subMap.id] = subInfo;
+        }
     }
 
     function init() {
-
+        if (dragPane) {
+            return
+        }
         dragPane = document.createElement("div");
         const mapLayerCfgPane = document.createElement("div");
         mapLayerCfgPane.id = "mapLayerCfgPane"
@@ -392,6 +421,16 @@ async function setData(map: jy.MapInfo) {
     }
     jy.dispatch("BeforeRunEgret");
     egret.runEgret({ renderMode: "webgl" });
+
+    //初始化 subPaths
+    const subPaths = Core.mapCfg?.subPaths;
+    if (subPaths) {
+        for (let id in subPaths) {
+            const subPath = subPaths[id];
+            subPath.id = id;
+            createMapLayerDele.createWithData(subPath);
+        }
+    }
 }
 
 let lx: number, ly: number;
@@ -661,7 +700,7 @@ function saveMap() {
     const mapCfgFile = path.join(Core.basePath, currentMap.path, ConstString.MapCfgFileName);
 
     //将数据写入文件
-    let out = currentMap.getSpecObject("path", "ext", "ftype", "pWidth", "pHeight", "maxPicX", "maxPicY") as jy.MapInfo;
+    let out = currentMap.getSpecObject("path", "ext", "ftype", "pWidth", "pHeight", "maxPicX", "maxPicY", "subPaths") as jy.MapInfo;
     out.tiledData = Core.tiledMap;
     let solution = PathSolution.current;
     out.pathType = solution.type;

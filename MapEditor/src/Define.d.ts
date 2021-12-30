@@ -204,7 +204,7 @@ declare namespace jy {
          */
         tiledData?: TiledMapJson;
 
-        subPaths: Partial<MapInfo>[];
+        subPaths: { [key: string]: Partial<MapInfo> };
     }
 
     export interface GameEngine {
