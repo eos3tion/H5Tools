@@ -66,6 +66,9 @@ export function getDrawMapPathControl(view: HTMLElement, opt: MapPathControlOpti
         setMapLayerId(id: number) {
             _mapLayerId = id;
         },
+        getMapLayerId() {
+            return _mapLayerId;
+        },
         get view() {
             if (!checked) {
                 checkComponent();

@@ -101,16 +101,47 @@ const createMapLayerDele = function () {
         (ctrl as EditMapControl).onSave = subMapOnSave;
         const id = CtrlName.MapLayerExt + layerId;
         const view = ctrl.view;
+        const div = document.createElement("div");
+        view.appendChild(div);
+        //增加删除按钮
+        const btn = document.createElement("input");
+        btn.type = "button";
+        btn.value = "删除图层";
+        btn.onclick = delLayer(id);
+        div.appendChild(btn);
+
         view.id = id;
         ctrlDict[id] = ctrl;
 
         accControl.add(view);
         accControl.accordion("add", {
-            title: `格子图层-${map.id}`,
+            title: getTitle(map.id),
             panel: view
         });
 
         layerId += layerPlus;
+    }
+
+    function delLayer(id) {
+        return function () {
+            if (confirm("确定要删除图层么？")) {
+                const ctrl = ctrlDict[id] as any as ReturnType<typeof getDrawMapPathControl>;
+                delete ctrlDict[id];
+                if (ctrl) {
+                    const view = ctrl.view;
+                    const solution = ctrl.getOpt() as GridablePath<GridableMapInfo>;
+                    const map = solution.map;
+                    accControl.accordion("remove", getTitle(map.id));
+                    $(view).remove();
+                    const layerId = ctrl.getMapLayerId();
+                    $engine.sleepLayer(layerId);
+                }
+            }
+        }
+    }
+
+    function getTitle(id: jy.Key) {
+        return `格子图层-${id}`;
     }
 
     function subMapOnSave(this: ReturnType<typeof getDrawMapPathControl>, map: jy.MapInfo) {
