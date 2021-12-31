@@ -93,9 +93,8 @@ const createMapLayerDele = function () {
     function createMapLayer(map: jy.MapInfo) {
         HGameEngine.addLayerConfig(layerId, jy.GameLayerID.GameScene, jy.TileMapLayer);
         const layer = $engine.getLayer(layerId) as jy.TileMapLayer;
-        layer.currentMap = map;
-
         solution.onBeforeEdit(map);
+        layer.currentMap = map;
         const ctrl = getDrawMapPathControl($g("StateEdit"), solution.current as GridablePath<GridableMapInfo>);
         ctrl.setMapLayerId(layerId);
         (ctrl as EditMapControl).onSave = subMapOnSave;
