@@ -176,8 +176,8 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
 
         const calGrids = this.calGrids.bind(this);
 
-        txtGridWidth.addEventListener("blur", calGrids);
-        txtGridHeight.addEventListener("blur", calGrids);
+        txtGridWidth.addEventListener("change", calGrids);
+        txtGridHeight.addEventListener("change", calGrids);
 
         let lblColumns = doc.createElement("label");
         makeRow(table, `水平方向格子数量：`, lblColumns);
@@ -192,7 +192,7 @@ export class GridablePath<T extends GridableMapInfo> implements PathSolution<Gri
         inp.min = "1";
         inp.max = "256";
         let txtGridLevel = inp;
-        txtGridLevel.addEventListener("blur", calGrids);
+        txtGridLevel.addEventListener("change", calGrids);
         makeRow(table, `格子级数：`, inp);
         const comps = {
             txtGridHeight,

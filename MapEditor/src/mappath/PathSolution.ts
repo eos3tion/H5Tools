@@ -1,4 +1,4 @@
-import { createRadio } from "../Core";
+import { Core, createRadio } from "../Core";
 import MapInfo = jy.MapInfo;
 export interface EditMapControl {
     view: Element;
@@ -235,3 +235,5 @@ export function getPathSolution({ tdPathDetail, tdPathType }: { tdPathDetail: HT
 }
 
 export const PathSolution = getPathSolution({ tdPathDetail: $g("tdPathDetail"), tdPathType: $g("tdPathType") });
+
+Core.pathSolution = PathSolution;

@@ -1,4 +1,4 @@
-import { $PathSolution } from "./mappath/PathSolution";
+import { $PathSolution, getPathSolution } from "./mappath/PathSolution";
 import { TiledMap } from "./tiled/TiledParser";
 export const Core = {
     /**
@@ -40,7 +40,7 @@ export const Core = {
     /**
      * 路径解决方案
      */
-    pathSolution: null as $PathSolution,
+    pathSolution: null as ReturnType<typeof getPathSolution>,
 
     tileDict: null as TileDict
 }
