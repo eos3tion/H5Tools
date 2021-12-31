@@ -35,7 +35,7 @@ class HGameEngine extends jy.GameEngine {
 
     noX: boolean;
     noY: boolean;
-    tiled: { setRect(rect: egret.Rectangle): void; };
+    tiled: ReturnType<typeof initTiledMap>;
     protected init() {
         this.initConfigs();
         this.initLayers();

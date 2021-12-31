@@ -79,3 +79,5 @@ export function createRadio(title: string, value: any, name: string, parent: Nod
 export function log(msg: string) {
     console.log(msg);
 }
+
+window["Core"] = Core;
