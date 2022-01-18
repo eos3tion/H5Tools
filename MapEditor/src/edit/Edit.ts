@@ -21,7 +21,8 @@ const enum CtrlName {
     EffectList = "divEffList",
     AreaGroup = "divAreaGroup",
 
-    MapLayerExt = "MapLayerExt_"
+    MapLayerExt = "MapLayerExt_",
+    MapLayerChkSaveToClientName = "saveToClient",
 }
 
 let curCtrl: string;
@@ -44,11 +45,12 @@ const createMapLayerDele = function () {
     return {
         createWithData
     }
-    function createWithData(data: Partial<jy.MapInfo>) {
+    function createWithData(data: jy.SubPath) {
         init();
         initSolution(data, data.pathType);
         const map = solution.map;
         map.id = data.id;
+        (map as jy.SubPath).saveToClient = data.saveToClient;
         createMapLayer(map);
     }
     function showPane() {
@@ -57,7 +59,7 @@ const createMapLayerDele = function () {
         document.body.appendChild(dragPane);
         initSolution();
     }
-    function initSolution(map?: Partial<jy.MapInfo>, type = jy.MapPathType.Grid) {
+    function initSolution(map?: jy.SubPath, type = jy.MapPathType.Grid) {
         solution.reset();
         solution.initType(type);
         showId = $gm.$showMapGrid;
@@ -90,7 +92,7 @@ const createMapLayerDele = function () {
         createMapLayer(map);
     }
 
-    function createMapLayer(map: jy.MapInfo) {
+    function createMapLayer(map: jy.SubPath) {
         HGameEngine.addLayerConfig(layerId, jy.GameLayerID.GameScene, jy.TileMapLayer);
         const layer = $engine.getLayer(layerId) as jy.TileMapLayer;
         solution.onBeforeEdit(map);
@@ -108,6 +110,15 @@ const createMapLayerDele = function () {
         btn.value = "删除图层";
         btn.onclick = delLayer(id);
         div.appendChild(btn);
+
+        const label = document.createElement("label");
+        const chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.id = CtrlName.MapLayerChkSaveToClientName;
+        label.append(chk);
+        label.append("数据也会保存至客户端");
+        chk.checked = !!map.saveToClient;
+        div.appendChild(label);
 
         view.id = id;
         ctrlDict[id] = ctrl;
@@ -153,6 +164,14 @@ const createMapLayerDele = function () {
         if (subMap) {
             const subInfo = subMap.getSpecObject("pathType") as GridableMapInfo;
             sol.beforeSave(subInfo, subMap);
+            let view = this.view;
+            let chk = view.querySelector(`#${CtrlName.MapLayerChkSaveToClientName}`) as HTMLInputElement;
+            let saveToClient = chk.checked;
+            if (saveToClient) {
+                (subInfo as jy.SubPath).pathData = sol.getMapBytes(subMap);
+            }
+            (subInfo as jy.SubPath).saveToClient = saveToClient;
+
             dict[subMap.id] = subInfo;
         }
     }
@@ -815,6 +834,20 @@ function getMapInfoPB(map: jy.MapInfo) {
         }
     }
     pb.effs = out as jy.MapEffPB[];
+    let subPaths = map.subPaths;
+    let subPathsPB = [] as jy.SubPathPB[];
+    for (const id in subPaths) {
+        const subPath = subPaths[id];
+        if (subPath.saveToClient) {
+            let subPathPB = {
+                id,
+                type: subPath.pathType,
+                data: subPath.pathData
+            }
+            subPathsPB.push(subPathPB);
+        }
+    }
+    pb.subPaths = subPathsPB;
     let tiledMap = Core.tiledMap;
     if (tiledMap) {
         let layers = tiledMap.layerData.map(data => new jy.ByteArray(new Uint32Array(data).buffer));

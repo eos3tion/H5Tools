@@ -204,7 +204,18 @@ declare namespace jy {
          */
         tiledData?: TiledMapJson;
 
-        subPaths: { [key: string]: Partial<MapInfo> };
+        subPaths: { [key: string]: SubPath };
+
+    }
+
+    export interface SubPath extends MapInfo {
+
+        /**
+         * 子路径，是否需要存储到客户端
+         */
+        saveToClient?: boolean;
+
+        pathData?: jy.ByteArray;
     }
 
     export interface GameEngine {

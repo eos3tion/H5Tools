@@ -14,6 +14,7 @@ message MapInfoPB {
    optional int32 pHeight=11;//单张底图高度，当没有此值时，和pWidth一致  
    optional bytes noPic=12;//没有地图数据的数据索引
    optional TiledMapPB tiledMap=13;//tiled生成的地图数据
+   repeated SubPathPB subPaths=14;//子路径数据
 }
 
 message MapPointPB {
@@ -95,5 +96,12 @@ message TiledMapPB {
    required int32 tileWidth=3;
    required int32 tileHeight=4;
    repeated bytes layers=5;//每一层的tile的id的字节数组，一个字节为一个tile的id
+}
+
+
+message SubPathPB {
+   required string id=1;//子路径数据标识
+   required int32 type=3;//地图类型 `0` GridMapInfo `1` NavMeshMapInfo `2` StaggerdMapInfo
+   required bytes data=6;//特殊地图数据，根据`type`不同，里面数据不同
 }
 ```

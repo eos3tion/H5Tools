@@ -6,7 +6,7 @@ const enum Const {
 export interface MapInfo extends jy.Gridable, jy.MapInfo {
     gridLevel: number;
 
-    map2Screen(x: number, y: number, isCenter?: boolean);
+    map2Screen(x: number, y: number, out?: jy.Point, isCenter?: boolean);
 }
 
 export interface MapPathControlOption {

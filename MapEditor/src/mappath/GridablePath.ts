@@ -14,7 +14,7 @@ export interface GridableMapInfo extends jy.StaggeredMapInfo {
      */
     points: jy.PointGroupPB[];
 
-    map2Screen(x: number, y: number, isCenter?: boolean);
+    map2Screen(x: number, y: number, pt: jy.Point, isCenter?: boolean);
 }
 
 

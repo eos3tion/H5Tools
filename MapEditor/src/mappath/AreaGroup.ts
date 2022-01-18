@@ -1,5 +1,6 @@
 import { createRadio } from "../Core";
 import { EditMapControl } from "./PathSolution";
+const tmpPt = { x: 0, y: 0 }
 
 export interface MapInfo extends jy.MapInfo {
 
@@ -8,7 +9,7 @@ export interface MapInfo extends jy.MapInfo {
      */
     points: jy.PointGroupPB[];
 
-    map2Screen(x: number, y: number, isCenter?: boolean);
+    map2Screen(x: number, y: number, pt?: jy.Point, isCenter?: boolean);
 }
 
 
@@ -119,7 +120,7 @@ export function getAreaGroupControl(view: HTMLElement, opt: MapAreaGroupControlO
     }
 
     function showMapGrid() {
-        $gm.$showMapGrid = true;
+        $gm.$showMapGrid = $gm.$defaultMapGridId;
         //监听鼠标事件
         view.addEventListener("mousedown", onBegin);
         $engine.invalidate();
@@ -202,8 +203,8 @@ export function getAreaGroupControl(view: HTMLElement, opt: MapAreaGroupControlO
                 for (let i = 0; i < children.length; i++) {
                     let pt = children[i];
                     graphics.beginFill(pt.selected ? 0xffff00 : 0xffff);
-                    pt = map.map2Screen(pt.x, pt.y, true);
-                    graphics.drawCircle(pt.x, pt.y, 5);
+                    map.map2Screen(pt.x, pt.y, tmpPt, true);
+                    graphics.drawCircle(tmpPt.x, tmpPt.y, 5);
                     graphics.endFill();
                 }
             }
@@ -225,7 +226,7 @@ export function getAreaGroupControl(view: HTMLElement, opt: MapAreaGroupControlO
     function hideMapGrid() {
         onEnd();
         view.addEventListener("mousedown", onBegin);
-        $gm.$showMapGrid = false;
+        $gm.$showMapGrid = 0;
         clearPoints();
     }
 
