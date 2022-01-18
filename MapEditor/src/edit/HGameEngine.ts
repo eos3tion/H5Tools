@@ -36,6 +36,8 @@ class HGameEngine extends jy.GameEngine {
     noX: boolean;
     noY: boolean;
     tiled: ReturnType<typeof initTiledMap>;
+
+    _zoom = 1;
     protected init() {
         this.initConfigs();
         this.initLayers();
@@ -47,7 +49,9 @@ class HGameEngine extends jy.GameEngine {
         window.onwheel = e => {
             let target = e.target;
             if (target.tagName === "CANVAS" && target.parentNode?.id === "StateEdit") {
-                $engine.scale += e.deltaY * .0001;
+                let mult = e.shiftKey ? .00001 : .002;
+                this._zoom += e.deltaY * mult;
+                $engine.scale = 2 ** (1 - this._zoom);
             }
         };
 
