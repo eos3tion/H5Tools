@@ -308,7 +308,7 @@ function resizeMap(map: MapInfo, pWidth: number, pHeight: number, maxPicX: numbe
     lblPicSize.value = pWidth + "×" + pHeight;
     PathSolution.current.setMapData(map);
     let total = hPicCount * vPicCount;
-    if (Object.keys(hasPicDat).length < total) {
+    if (!Core.tiledMap && Object.keys(hasPicDat).length < total) {
         let noPic = new Uint8Array(total);
         for (let x = 0; x < hPicCount; x++) {
             for (let y = 0; y < vPicCount; y++) {

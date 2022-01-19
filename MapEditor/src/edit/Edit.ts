@@ -818,9 +818,11 @@ function getMapInfoPB(map: jy.MapInfo) {
     pb.pWidth = map.pWidth;
     pb.width = map.width;
     pb.height = map.height;
-    let noPic = map.noPic;
-    if (noPic) {
-        pb.noPic = new jy.ByteArray(noPic.buffer);
+    if (!Core.tiledMap) {
+        let noPic = map.noPic;
+        if (noPic) {
+            pb.noPic = new jy.ByteArray(noPic.buffer);
+        }
     }
     let effs = map.effs;
     let out = [] as MapEffData[];
