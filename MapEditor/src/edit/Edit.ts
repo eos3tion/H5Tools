@@ -30,6 +30,8 @@ let curCtrl: string;
 
 const ctrlDict = {} as { [id: string]: EditMapControl };
 
+window["ctrlDict"] = ctrlDict;
+
 const accControl = $("#accControl");
 
 const createMapLayerDele = function () {
