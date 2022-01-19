@@ -97,5 +97,3 @@ export function regMapEffFactorys() {
     regMapEffFactory(jy.MapEffType.Ani, AniMapEffFactory);
     regMapEffFactory(jy.MapEffType.DBone, DBoneMapEffFactory);
 }
-
-globalThis["createEff"] = createEff;
