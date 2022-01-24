@@ -264,7 +264,7 @@ function setData(map: MapInfo) {
             }
             Core.tiledMap = tiledData;
         }
-
+        map.tiledMap = tiledData;
         PathSolution.onLoad(map, cfg, sizeNotMatch);
     }
 
