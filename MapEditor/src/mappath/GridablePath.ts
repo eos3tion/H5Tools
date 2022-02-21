@@ -306,7 +306,8 @@ function makeGetWalk(d: GridablePath<GridableMapInfo>) {
 }
 
 function getDataB64(pathdata: Uint8Array) {
-    return egret.Base64Util.encode(pathdata.buffer);
+    const buffer = Buffer.from(pathdata.buffer);
+    return buffer.toString("base64");
 }
 
 function getDataForJava(map: GridableMapInfo) {//为了避免服务端数据结构变更，减少
