@@ -11,7 +11,9 @@ import ClientRegTemplate from "./ClientRegTemplate.js";
 import PluginLoader from "./PluginLoader.js";
 import asyncFileLoad from "./asyncFileLoad.js";
 import { loadTiaoJian } from "./ConditionTypeParser.js";
+import { check } from "./g11n.js";
 
+type ParseExtraDataReturn = ReturnType<typeof XLSXDecoder.prototype.parseExtraData>;
 
 hljs.loadLanguage("typescript");
 hljs.loadLanguage("java");
@@ -20,25 +22,6 @@ hljs.loadLanguage("java");
  */
 const Extra = "extra";
 
-
-
-/**
- * 正常数据内容，列表数据
- */
-const SHEET_MAIN = "导出";
-/**
- * 附加数据，用于代替之前公共数据表功能
- * 这样可以将一个模块数据配置在一起
- * 第一列为Key
- * 第二列为Value
- */
-const SHEET_EXTRA = "附加数据";
-
-/**
- * 用于配置表的配置  
- * 程序用的一些配置
- */
-const SHEET_CONFIG = "程序配置";
 
 var $g: any = (id) => { return document.getElementById(id) };
 /**
@@ -87,9 +70,12 @@ export class ExcelDataSaver {
             });
             this.getPathCookie("txtClientPath");
             this.getPathCookie("txtServerPath");
+            this.getPathCookie("txtG11nPath");
+
             $g("chkClientPath").checked = !!cookie.getCookie(cookieKey + "chkClientPath");
             $g("chkServerPath").checked = !!cookie.getCookie(cookieKey + "chkServerPath");
             $g("chkESModule").checked = !!cookie.getCookie(cookieKey + "chkESModule");
+            $g("chkG11nPath").checked = !!cookie.getCookie(cookieKey + "chkG11nPath");
         });
     }
 
@@ -100,13 +86,13 @@ export class ExcelDataSaver {
         }
     }
 
-    private setPathCookie(id: string): string {
+    private setPathCookie(id: string, isFile?: boolean): string {
         let v: string = $g(id).value;
         v = v.trim();
         $g(id).value = v;
         if (v && fs.existsSync(v)) {
             let re = fs.statSync(v);
-            if (re.isDirectory()) {
+            if (isFile && re.isFile() || re.isDirectory()) {
                 cookie.setCookie(cookieKey + id, v)
                 return v;
             }
@@ -119,6 +105,7 @@ export class ExcelDataSaver {
         let gcfg: GlobalCfg;
         let cPath = this.setPathCookie("txtClientPath");
         let sPath = this.setPathCookie("txtServerPath");
+        let lPath = this.setPathCookie("txtG11nPath", true);
 
         let useClientPath = $g("chkClientPath").checked;
         cookie.setCookie(cookieKey + "chkClientPath", useClientPath);
@@ -126,6 +113,12 @@ export class ExcelDataSaver {
         cookie.setCookie(cookieKey + "chkServerPath", useServerPath);
         let useESModule = $g("chkESModule").checked;
         cookie.setCookie(cookieKey + "chkESModule", useESModule);
+
+        let genLang = $g("chkG11nPath").checked;
+        cookie.setCookie(cookieKey + "chkG11nPath", genLang);
+        if (!genLang) {
+            lPath = "";
+        }
 
         if (!useClientPath) {
             cPath = "";
@@ -155,7 +148,7 @@ export class ExcelDataSaver {
                 }
                 try {
                     let xlsx = new XLSXDecoder();
-                    await xlsx.init(gcfg, file, cPath, sPath, i, cb, configKeyInfo, newSForbidden, useESModule);
+                    await xlsx.init({ gcfg, file, cPath, sPath, lPath, idx: i, cb, configKeyInfo, newSForbidden, useESModule });
                 } catch (e) {
                     error("", e);
                     alert(`数据解析失败，发生错误：` + e.message);
@@ -216,7 +209,7 @@ export class ExcelDataSaver {
             return data;
         }
 
-        function cb(file: File, _err: boolean, hasExtra: { hasClient?: boolean, hasServer?: boolean }) {
+        function cb(file: File, _err: boolean, hasExtra: ParseExtraDataReturn) {
             if (hasExtra.hasClient) {
                 hasClient = true;
             }
@@ -390,16 +383,27 @@ export class ExcelDataSaver {
 
 new ExcelDataSaver();
 
+interface InitOption {
+    gcfg: GlobalCfg;
+    file: File;
+    cPath: string;
+    sPath: string;
+    /**
+     * 翻译文件路径
+     */
+    lPath: string;
+    idx: number;
+    cb: { (file: File, error: boolean, hasExtra: ParseExtraDataReturn); };
+    configKeyInfo: { cFileNames: Map<string, ConfigKeyBin>; sFileNames: Map<string, ConfigKeyBin>; };
+    newSForbidden: { [index: string]: boolean; };
+    useESModule: boolean;
+}
+
 /**
  * XLSX解析器
  */
 class XLSXDecoder {
-
-
-    constructor() {
-
-    }
-    async init(gcfg: GlobalCfg, file: File, cPath: string, sPath: string, idx: number, cb: { (file: File, error: boolean, hasExtra: { hasClient?: boolean, hasServer?: boolean }) }, configKeyInfo: { cFileNames: Map<string, ConfigKeyBin>, sFileNames: Map<string, ConfigKeyBin> }, newSForbidden: { [index: string]: boolean }, useESModule: boolean) {
+    async init({ gcfg, file, cPath, sPath, lPath, idx, cb, configKeyInfo, newSForbidden, useESModule }: InitOption) {
 
         loadTiaoJian(gcfg);
         cPath = cPath || "";
@@ -413,8 +417,8 @@ class XLSXDecoder {
         let utils = XLSX.utils;
 
 
-        let list = utils.sheet_to_json(Sheets[SHEET_MAIN], { header: 1 });
-        let listCfg = utils.sheet_to_json(Sheets[SHEET_CONFIG], { header: 1 });
+        let list = utils.sheet_to_json(Sheets[SheetNames.Main], { header: 1 });
+        let listCfg = utils.sheet_to_json(Sheets[SheetNames.Config], { header: 1 });
 
 
         let rowCfgs: { [index: string]: string } = {
@@ -553,11 +557,7 @@ class XLSXDecoder {
         cfgRow[0] = undefined;
 
         // 先处理附加数据
-        let hasExtra: {
-            hasClient: boolean;
-            hasServer: boolean;
-            server: any;
-        };
+        let hasExtra: ParseExtraDataReturn;
         try {
             hasExtra = this.parseExtraData(wb, fname, gcfg);
         } catch (e) {
@@ -819,6 +819,80 @@ class XLSXDecoder {
 
         let cOut = doSortAndGetData(defines, "client");
 
+        let pData;
+        if (gcfg.clientPreCheck || gcfg.serverPreCheck || plugin) {
+            pData = { gcfg, filename: fname, rawData: list, cdatas: cOut, sdatas, defines: defines, dataRowStart: dataRowStart, rowCfg: rowCfgLines, pluginData: genPluginData, pluginParams: pluginParams, cPath, sPath, cfilePackage, sfilePackage, cSuper, sSuper, cInterfaces, sInterfaces }
+            function _toJSON() {
+                return {
+                    as3Type: this.type,
+                    javaType: this.javaType
+                }
+            }
+            for (let checkKey in TypeCheckers) {
+                let checker = TypeCheckers[checkKey];
+                checker["toJSON"] = _toJSON;
+            }
+        }
+
+        if (gcfg.clientPreCheck) {
+            await solveCheck(gcfg.clientPreCheck, "客户端预检测", pData);
+        }
+
+        if (gcfg.serverPreCheck) {
+            await solveCheck(gcfg.clientPreCheck, "服务端预检测", pData);
+        }
+
+        if (lPath) {//有翻译文件需要处理
+            let datas = gcfg.g11nSource ? sdatas : cRawDatas;
+            let extraData: ExtraBin[];
+            if (hasExtra) {
+                extraData = gcfg.g11nSource ? hasExtra.bins : hasExtra.cExtraBins;
+            }
+            check({
+                fileName: fname,
+                langFilePath: lPath,
+                log,
+                datas,
+                extraData
+            });
+        }
+
+        if (plugin) {
+            new PluginLoader(plugin, pData, m => {
+                let mtype = m.type;
+                if (mtype == "error") {
+                    let emsg = "";
+                    switch (m.error) {
+                        case PluginErrorType.ExecuteFailed:
+                            emsg = `插件：${plugin}执行失败，检查插件代码！`;
+                            break;
+                        case PluginErrorType.LoadFailed:
+                            emsg = `插件：${plugin}加载失败，请检查路径是否正确！`;
+                            break;
+                        case PluginErrorType.InitFailed:
+                            emsg = `插件：${plugin}初始化失败，检查插件代码！`;
+                            break;
+                        default:
+                            emsg = `插件：${plugin}出现未知！`;
+                            break;
+                    }
+                    let err = m.err || new Error("");
+                    err.message += "\n附加信息：" + emsg;
+                    throw err;
+                } else if (mtype == "success") {//插件处理完成
+                    log(`插件数据处理完成：\n${m.output || ""}`);
+                    if (!useRaw) {
+                        writeData(m.cdatas || [], m.sdatas || [], gcfg, m.makeBin);
+                    } else {
+                        cb(file, false, hasExtra);
+                    }
+                }
+            });
+            return;
+        }
+
+        writeData(cOut, sdatas, gcfg, true, cRawDatas);
+        return
 
         //对defines进行排序
         function doSortAndGetData(defines: ProDefine[], key: string) {
@@ -911,67 +985,6 @@ class XLSXDecoder {
             }
             return outData;
         }
-
-
-        let pData;
-        if (gcfg.clientPreCheck || gcfg.serverPreCheck || plugin) {
-            pData = { gcfg, filename: fname, rawData: list, cdatas: cOut, sdatas, defines: defines, dataRowStart: dataRowStart, rowCfg: rowCfgLines, pluginData: genPluginData, pluginParams: pluginParams, cPath, sPath, cfilePackage, sfilePackage, cSuper, sSuper, cInterfaces, sInterfaces }
-            function _toJSON() {
-                return {
-                    as3Type: this.type,
-                    javaType: this.javaType
-                }
-            }
-            for (let checkKey in TypeCheckers) {
-                let checker = TypeCheckers[checkKey];
-                checker["toJSON"] = _toJSON;
-            }
-        }
-
-        if (gcfg.clientPreCheck) {
-            await solveCheck(gcfg.clientPreCheck, "客户端预检测", pData);
-        }
-
-        if (gcfg.serverPreCheck) {
-            await solveCheck(gcfg.clientPreCheck, "服务端预检测", pData);
-        }
-
-        if (plugin) {
-            new PluginLoader(plugin, pData, m => {
-                let mtype = m.type;
-                if (mtype == "error") {
-                    let emsg = "";
-                    switch (m.error) {
-                        case PluginErrorType.ExecuteFailed:
-                            emsg = `插件：${plugin}执行失败，检查插件代码！`;
-                            break;
-                        case PluginErrorType.LoadFailed:
-                            emsg = `插件：${plugin}加载失败，请检查路径是否正确！`;
-                            break;
-                        case PluginErrorType.InitFailed:
-                            emsg = `插件：${plugin}初始化失败，检查插件代码！`;
-                            break;
-                        default:
-                            emsg = `插件：${plugin}出现未知！`;
-                            break;
-                    }
-                    let err = m.err || new Error("");
-                    err.message += "\n附加信息：" + emsg;
-                    throw err;
-                } else if (mtype == "success") {//插件处理完成
-                    log(`插件数据处理完成：\n${m.output || ""}`);
-                    if (!useRaw) {
-                        writeData(m.cdatas || [], m.sdatas || [], gcfg, m.makeBin);
-                    } else {
-                        cb(file, false, hasExtra);
-                    }
-                }
-            });
-            return;
-        }
-
-        writeData(cOut, sdatas, gcfg, true, cRawDatas);
-        return
         /**
          * 
          * 写最终数据
@@ -1324,8 +1337,8 @@ class XLSXDecoder {
      * @param {GlobalCfg} gcfg  全局配置
      * @throws {Error}
      */
-    private parseExtraData(wb: $XLSX.IWorkBook, fname: string, gcfg: GlobalCfg) {
-        let ws = wb.Sheets[SHEET_EXTRA];
+    parseExtraData(wb: $XLSX.IWorkBook, fname: string, gcfg: GlobalCfg) {
+        let ws = wb.Sheets[SheetNames.Extra];
         let hasClient: boolean, hasServer: boolean;
         if (!ws) {//没有附加数据表
             return { hasClient, hasServer, server: undefined };
@@ -1335,7 +1348,8 @@ class XLSXDecoder {
         let client = [];
         let server = {};
         let checkers = TypeCheckers;
-        let cExtraBins = [];
+        let cExtraBins = [] as ExtraBin[];
+        let bins = [] as ExtraBin[];
         for (let row = 0; row < len; row++) {
             let data = list[row];
             let key: string = data["标识"] + "";
@@ -1363,6 +1377,7 @@ class XLSXDecoder {
                 bin.key = key;
                 bin.value = value;
                 bin.type = checker.type;
+                bins.push(bin);
                 if (clientParse) {
                     cExtraBins.push(bin);
                     client.push(key, value);
@@ -1417,7 +1432,7 @@ class XLSXDecoder {
         } else {//尝试删除多生成的文件
             tryDeleteFile(ofname, serverDir);
         }
-        return { hasClient, hasServer, server };
+        return { hasClient, hasServer, server, bins, cExtraBins };
     }
 
 

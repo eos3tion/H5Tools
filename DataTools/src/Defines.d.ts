@@ -214,6 +214,13 @@ interface GlobalCfg {
      * 所有函数都会将函数名转换成小写字符串
      */
     tiaojianFuncs?: string[]
+
+    /**
+     * 国际化数据源  
+     * **`0或者不配置`**  使用客户端导出字段  
+     * **`1`** 使用服务端导出字段  
+     */
+    g11nSource?: number;
 }
 
 interface FileConfig {
@@ -916,6 +923,25 @@ declare const enum Ext {
      * 服务端代码文件 .java
      */
     ServerCode = ".java"
+}
+
+declare const enum SheetNames {
+    /**
+     * 正常数据内容，列表数据
+     */
+    Main = "导出",
+    /**
+     * 附加数据，用于代替之前公共数据表功能
+     * 这样可以将一个模块数据配置在一起
+     * 第一列为Key
+     * 第二列为Value
+     */
+    Extra = "附加数据",
+    /**
+     * 用于配置表的配置  
+     * 程序用的一些配置
+     */
+    Config = "程序配置",
 }
 
 interface CodeFlashResult {

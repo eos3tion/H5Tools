@@ -5,47 +5,49 @@
 
 declare module 'xlsx' {
 
-    export function readFile(filename:string, opts?:IParsingOptions):IWorkBook;
-    export function read(data:any, opts?:IParsingOptions):IWorkBook;
-    export var utils:IUtils;
+    export function readFile(filename: string, opts?: IParsingOptions): IWorkBook;
+    export function read(data: any, opts?: IParsingOptions): IWorkBook;
+    export function write(data: any, opts?: IParsingOptions): any;
+    export var utils: IUtils;
 
     export interface IProperties {
-        LastAuthor?:string
-        Author?:string;
-        CreatedDate?:Date;
-        ModifiedDate?:Date
-        Application?:string;
-        AppVersion?:string;
-        Company?:string;
-        DocSecurity?:string;
-        Manager?:string;
+        LastAuthor?: string
+        Author?: string;
+        CreatedDate?: Date;
+        ModifiedDate?: Date
+        Application?: string;
+        AppVersion?: string;
+        Company?: string;
+        DocSecurity?: string;
+        Manager?: string;
         HyperlinksChanged?: boolean;
-        SharedDoc?:boolean;
-        LinksUpToDate?:boolean;
-        ScaleCrop?:boolean;
-        Worksheets?:number;
-        SheetNames?:string[];
+        SharedDoc?: boolean;
+        LinksUpToDate?: boolean;
+        ScaleCrop?: boolean;
+        Worksheets?: number;
+        SheetNames?: string[];
     }
 
     export interface IParsingOptions {
-        cellFormula?:boolean;
-        cellHTML?:boolean;
-        cellNF?:boolean;
-        cellStyles?:boolean;
-        cellDates?:boolean;
-        sheetStubs?:boolean;
-        sheetRows?:number;
-        bookDeps?:boolean;
-        bookFiles?:boolean;
-        bookProps?:boolean;
-        bookSheets?:boolean;
-        bookVBA?:boolean;
-        password?:string;
-
+        cellFormula?: boolean;
+        cellHTML?: boolean;
+        cellNF?: boolean;
+        cellStyles?: boolean;
+        cellDates?: boolean;
+        sheetStubs?: boolean;
+        sheetRows?: number;
+        bookDeps?: boolean;
+        bookFiles?: boolean;
+        bookProps?: boolean;
+        bookSheets?: boolean;
+        bookVBA?: boolean;
+        password?: string;
+        bookType?: string;
+        bookSST?: boolean;
         /**
          * Possible options: 'binary', 'base64', 'buffer', 'file'
          */
-        type?:string;
+        type?: string;
     }
 
     export interface IWorkBook {
@@ -53,25 +55,25 @@ declare module 'xlsx' {
          * A dictionary of the worksheets in the workbook.
          * Use SheetNames to reference these.
          */
-        Sheets:{[sheet:string]:IWorkSheet};
+        Sheets: { [sheet: string]: IWorkSheet };
 
         /**
          * ordered list of the sheet names in the workbook
          */
-        SheetNames:string[];
+        SheetNames: string[];
 
         /**
          * an object storing the standard properties. wb.Custprops stores custom properties.
          * Since the XLS standard properties deviate from the XLSX standard, XLS parsing stores core properties in both places.
          */
-        Props:IProperties;
+        Props: IProperties;
     }
 
     /**
      * object representing the worksheet
      */
     export interface IWorkSheet {
-        [cell:string]:IWorkSheetCell;
+        [cell: string]: IWorkSheetCell;
     }
 
     export interface IWorkSheetCell {
@@ -127,22 +129,30 @@ declare module 'xlsx' {
         s?: string;
     }
 
+    export interface ICell {
+        c: number;
+        r: number;
+    }
 
     export interface IUtils {
-        sheet_to_json<T>(worksheet:IWorkSheet,opts?:{
-        raw?:boolean;
-        range?:string|number|{e:{c:number,r:number},s:{c:number,r:number}};
-        header?:string[]|"A"|number;
-    }):T[];
-        sheet_to_csv(worksheet:IWorkSheet):any;
-        sheet_to_formulae(worksheet:IWorkSheet):any;
+        sheet_to_json<T>(worksheet: IWorkSheet, opts?: {
+            raw?: boolean;
+            range?: string | number | { e: { c: number, r: number }, s: { c: number, r: number } };
+            header?: string[] | "A" | number;
+        }): T[];
+        sheet_to_csv(worksheet: IWorkSheet): any;
+        sheet_to_formulae(worksheet: IWorkSheet): any;
         /**
          * 
          * 将列号处理为Excel的A B C D....Z AA AB...的形式
          * @param {number} col
          * @returns {string}
          */
-        encode_col(col:number):string;
+        encode_col(col: number): string;
+        encode_cell(cell: ICell): any;
+        encode_range(s: ICell, e: ICell): any;
+        encode_range(opt: { s: ICell, e: ICell }): any;
+        format_cell(cell?: IWorkSheetCell, v?: string): any;
     }
 
 }
