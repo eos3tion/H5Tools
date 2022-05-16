@@ -19,6 +19,9 @@ export function initTiledMap(data: TiledMap) {
     let lashHash: number;
     return {
         setRect({ left, top, right, bottom }: egret.Rectangle) {
+            if (!layer.stage || !layer.visible) {
+                return
+            }
             let sx = left / tileWidth | 0;
             let sy = top / hh | 0;
             sy -= 3;

@@ -782,7 +782,8 @@ function saveMap() {
     pb.type = solution.type | 0;
     pb.data = solution.getMapBytes(currentMap);
     let mapBytes = PB.writeTo(pb, jy.MapPBDictKey.MapInfoPB);
-    out.mapBytesB64 = egret.Base64Util.encode(mapBytes.buffer);
+    const buffer = Buffer.from(mapBytes.buffer);
+    out.mapBytesB64 = buffer.toString("base64");
     fs.writeFileSync(mapCfgFile, JSON.stringify(out));
     log(`存储到[${mapCfgFile}]`);
 
