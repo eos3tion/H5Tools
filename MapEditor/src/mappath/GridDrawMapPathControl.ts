@@ -164,7 +164,7 @@ export function getDrawMapPathControl(view: HTMLElement, opt: MapPathControlOpti
         const { clientX, clientY } = e;
         let dpr = window.devicePixelRatio;
         let pt = $engine._bg.globalToLocal(clientX / dpr, clientY / dpr);
-        lblPixelPoint.innerText = `像素坐标：${pt.x},${pt.y}`;
+        lblPixelPoint.innerText = `像素坐标：${Math.round(pt.x)},${Math.round(pt.y)}`;
         pt = opt.getMap().screen2Map(pt.x, pt.y);
         lblGridPoint.innerText = `格位坐标：${pt.x},${pt.y}`;
     }
