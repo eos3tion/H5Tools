@@ -1,17 +1,18 @@
 {
 	"clientModule":"jy",
 	"lan" : "cn",
-	"clientPath":"//OutputPath/${project}/cfgs/${lan}/raw/client",
-	"serverPath":"//OutputPath/${project}/cfgs/${lan}/output/server",
+	"clientPath":"//OutputPath/${project}/cfgs/${lan}/${version}raw/client",
+	"serverPath":"//OutputPath/${project}/cfgs/${lan}/${version}output/server",
 	"clientRegClass":["GConfig",""],
 	"serverExtra" : "GongGongShuJu",
 	"serverCfgDownload" : "gongnengdown",
 	"clientDataType":1,
+	"serverDataType":1,
 	"serverExportAll":true,
 	"msgCode":[
 		{
 			"type":"json",
-			"path":"//OutputPath/${project}/cfgs/${lan}/lang.json"
+			"path":"//OutputPath/${project}/cfgs/${lan}/${version}lang{v}.json"
 		}
 	],
 	"endAction":"",
