@@ -43,11 +43,19 @@ function execute(data: IPluginData, callback: IPluginCallback) {
             path: path.join(gcfg.clientPath, "lang.js"),
         }]
     }
+    const filename = data.filename;
+    const p = path.basename(filename, ".xlsx");
+    const plusD = p.split("_");
+    let v = "";
+    if (plusD.length == 2) {
+        v = "_" + plusD[1];
+    }
     for (let msgCode of msgCodes) {
         let { type, path: fullPath } = msgCode;
         if (type == "js") {
             dat = "var $lang=" + dat.replace(/"([^"^'^-]+?)":"(.+?)"(,?)/g, "$1:\"$2\"$3");
         }
+        fullPath = fullPath.replace("{v}", v);
         let dir = path.dirname(fullPath);
         // 检查文件夹
         if (fs.existsSync(path.dirname(dir))) {
