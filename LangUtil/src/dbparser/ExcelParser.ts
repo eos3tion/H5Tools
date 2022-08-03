@@ -74,7 +74,7 @@ export class ExcelParser implements DataBaseParser {
                                 md.module = lastModule;
                                 modules.set(lastModule, md);
                             }
-                            md.push({ code, msg: parseReturn(line[2]), path: line[3], module: line[4] })
+                            md.push({ code, msg: parseReturn(line[2]), path: line[3], module: line[4], raw: line })
                         }
                     }
                 }
@@ -107,7 +107,6 @@ export class ExcelParser implements DataBaseParser {
         for (let i = 0; i < headerData.length; i++) {
             output[i] = headerData[i];
         }
-        let module: string;
         let startRow = output.length;
         let isFirst = true;
         map.forEach(datas => {
@@ -126,13 +125,14 @@ export class ExcelParser implements DataBaseParser {
             }
             for (let i = 0; i < datas.length; i++) {
                 let data = datas[i];
-                output.push([
-                /*A*/undefined,
-                /*B*/data.code,
-                /*C*/parseReturn(data.msg),
-                /*D*/data.path,
-                /*E*/mod
-                ]);
+                let raw = data.raw;
+                let dat = raw ? raw.slice() : [];
+                dat[0] = undefined;
+                dat[1] = data.code;
+                dat[2] = parseReturn(data.msg);
+                dat[3] = data.path;
+                dat[4] = mod;
+                output.push(dat);
             }
         });
         if (output.length > startRow) {
@@ -208,54 +208,4 @@ export class ExcelParser implements DataBaseParser {
 
 function parseReturn(msg: string) {
     return msg ? msg.replace(/&#10;/g, "\n").replace(/&#13;/g, "\r").replace(/(\r|\n)+/g, "\n") : "";
-}
-
-/**
- * Excel一行的数据
- * 
- * @interface ExcelRow
- */
-interface ExcelRow extends Array<any> {
-    /**
-     * 行号
-     * 
-     * @type {number}
-     * @memberOf ExcelRow
-     */
-    __rowNum__: number,
-    /**
-     * 用于存储标识 CodeGroup
-     * 
-     * @type {string}
-     * @memberOf ExcelRow
-     */
-    0?: string,
-    /**
-     * msgCode的code列
-     * 
-     * @type {(string | number)}
-     * @memberOf ExcelRow
-     */
-    1?: string | number,
-    /**
-     * msgCode的msg列
-     * 
-     * @type {string}
-     * @memberOf ExcelRow
-     */
-    2?: string,
-    /**
-     * 用于存储code所在文件，用于查询
-     * 
-     * @type {string}
-     * @memberOf ExcelRow
-     */
-    3?: string;
-    /**
-    * 所属模块
-    * 
-    * @type {string}
-    * @memberOf ExcelRow
-    */
-    4?: string;
 }
