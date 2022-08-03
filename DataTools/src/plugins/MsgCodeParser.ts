@@ -25,7 +25,7 @@ function execute(data: IPluginData, callback: IPluginCallback) {
         } else if (cell == "msg") {
             cfg.msg = col;
             KeyFlag |= 0b10;
-        } else if (cell.startsWith(Const.MsgKeyPrefix)) {//多语言
+        } else if (typeof cell === "string" && cell.startsWith(Const.MsgKeyPrefix)) {//多语言
             otherMsgKeys.push(cell);
         }
     }
@@ -80,7 +80,7 @@ function execute(data: IPluginData, callback: IPluginCallback) {
         output += writeFile(msgDict, type, file, path, fs);
         for (let key in otherDict) {
             const dict = otherDict[key];
-            let file = fullPath.replace("{v}", key.substring(prefixStartIdx));
+            let file = fullPath.replace("{v}", "_" + key.substring(prefixStartIdx));
             output += writeFile(dict, type, file, path, fs);
         }
     }
