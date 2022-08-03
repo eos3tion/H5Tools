@@ -13,7 +13,8 @@ function execute(data: IPluginData, callback: IPluginCallback) {
     /**
      * 用于处理其他语言
      */
-    let otherMsgKeys = [] as string[];
+    let otherMsgKeys = {} as { [key: string]: number };
+    const otherDict = {} as { [lan: string]: { [code: string]: string } }
     for (let col = 0, len = title.length; col <= len; col++) {
         let cell = title[col] as string;
         if (cell) {
@@ -26,7 +27,8 @@ function execute(data: IPluginData, callback: IPluginCallback) {
             cfg.msg = col;
             KeyFlag |= 0b10;
         } else if (typeof cell === "string" && cell.startsWith(Const.MsgKeyPrefix)) {//多语言
-            otherMsgKeys.push(cell);
+            otherMsgKeys[cell] = col;
+            otherDict[cell] = {};
         }
     }
     if (KeyFlag != 0b11) {
@@ -34,21 +36,18 @@ function execute(data: IPluginData, callback: IPluginCallback) {
         return;
     }
     let msgDict = {} as { [code: string]: string };
-    const otherDict = {} as { [lan: string]: { [code: string]: string } }
-    for (let i = 0; i < otherMsgKeys.length; i++) {
-        const key = otherMsgKeys[i];
-        otherDict[key] = {};
-    }
+
     // 去掉第一行说明
     for (let i = data.dataRowStart, len = list.length; i < len; i++) {
         let rowData = list[i];
         const { code, msg } = cfg;
-        msgDict[rowData[code]] = rowData[msg];
-        for (let j = 0; j < otherMsgKeys.length; j++) {
-            const key = otherMsgKeys[j];
-            const lanMsg = cfg[key];
-            if (lanMsg != undefined) {
-                otherDict[key][code] = lanMsg;
+        const codeValue = rowData[code];
+        let rawMsg = rowData[msg];
+        msgDict[codeValue] = rawMsg;
+        for (let key in otherMsgKeys) {
+            const lanMsg = rowData[otherMsgKeys[key]];
+            if (lanMsg !== undefined) {
+                otherDict[key][codeValue] = lanMsg;
             }
         }
     }
