@@ -275,7 +275,7 @@ export class AniDele extends egret.Sprite {
         }
     }
 
-    dispose() {
+    dispose(noEmit?: boolean) {
         this.disposed = true;
         let render = this.render;
         if (render) {
@@ -289,7 +289,9 @@ export class AniDele extends egret.Sprite {
         btn = this.btnDel;
         btn.off(EgretEvent.TOUCH_TAP, this.dispose, this);
         jy.removeDisplay(this);
-        jy.dispatch(AppEvent.RemoveEffect, this);
+        if (!noEmit) {
+            jy.dispatch(AppEvent.RemoveEffect, this);
+        }
     }
     private bindComponents() {
         let ox = 0;

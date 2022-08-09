@@ -345,6 +345,24 @@ btnHide.on("click", hideEffs);
 const btnShow = $("#btnShow");
 btnShow.on("click", showEffs);
 
+const btnDel = $("#btnDels");
+btnDel.on("click", delEffs);
+
+function delEffs() {
+    const effs = $engine.effs;
+    let j = 0;
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        if (eff.selected) {
+            eff.dispose(true);
+        } else {
+            effs[j++] = eff;
+        }
+    }
+    effs.length = j;
+    refreshEffectList();
+}
+
 function hideEffs() {
     const effs = $engine.effs;
     for (let i = 0; i < effs.length; i++) {
@@ -607,7 +625,7 @@ function checkSelection() {
     const checkedEffs: AniDele[] = effListFun("getChecked");
     for (let i = 0; i < checkedEffs.length; i++) {
         const eff = effs[i];
-        if (!eff.selected) {
+        if (eff && !eff.selected) {
             let target = $("#" + (eff as any).domId)[0];
             if (target) {
                 needUncheckTargets.push(target);
