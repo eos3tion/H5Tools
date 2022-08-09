@@ -40,8 +40,12 @@ function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
+      webSecurity: false,
+      contextIsolation: false,
       nodeIntegration: true,
-      nodeIntegrationInWorker: true
+      nodeIntegrationInWorker: true,
+      allowRunningInsecureContent: true,
+      enableRemoteModule:true
     }
   });
 
