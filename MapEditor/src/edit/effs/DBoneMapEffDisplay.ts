@@ -167,6 +167,7 @@ function init() {
             if (curFactory != factory) {
                 curFactory = factory;
                 let $arms = factory.$arms;
+                $arms.sort();
                 selectArm.innerHTML = "";
                 let find = false;
                 for (let i = 0; i < $arms.length; i++) {
