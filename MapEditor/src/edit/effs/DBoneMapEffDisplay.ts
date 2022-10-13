@@ -117,9 +117,9 @@ export class DBoneMapEffRender implements MapEffRender {
                 if (!ani) {
                     return log(`无效的[animation:${ani}]`);
                 }
-                if (ani) {
-                    db.animation.play(ani);
-                }
+            }
+            if (ani) {
+                db.animation.play(ani);
             }
         }
         jy.dispatch(AppEvent.EffectChange, this);
