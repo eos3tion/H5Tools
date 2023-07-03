@@ -402,6 +402,10 @@ interface TypeChecker {
      */
     readonly javaType: string;
     /**
+     * ue的c++类型
+     */
+    readonly ueType: string;
+    /**
      * 
      * 类型索引值
      * @type {number}
@@ -922,7 +926,12 @@ declare const enum Ext {
     /**
      * 服务端代码文件 .java
      */
-    ServerCode = ".java"
+    ServerCode = ".java",
+
+    /**
+     * UE头文件
+     */
+    CStructHead = ".h",
 }
 
 declare const enum SheetNames {
@@ -966,7 +975,7 @@ interface CodeFlashResult {
 /**
  * 服务端代码生成器
  */
-interface ServerCodeMaker {
+interface CodeMaker {
     /**
      * 添加要导出的属性定义
      * @param define 
@@ -980,10 +989,17 @@ interface ServerCodeMaker {
      * 初始化
      */
     init(fcfg: FileConfig, cfg: GlobalCfg);
+
+    /**
+     * 获取扩展名
+     */
+    getExt(): string;
 }
 
 
-declare var serverCodeMaker: ServerCodeMaker
+declare var serverCodeMaker: CodeMaker
+
+declare var clientCodeMaker: CodeMaker
 
 /**
  * 文件后缀

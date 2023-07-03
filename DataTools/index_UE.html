@@ -1,0 +1,52 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script>
+        require("punycode");
+        if (typeof window.require === "function") {
+            // 重命名 Electron 提供的 require
+            window.nodeRequire = window.require;
+            delete window.require;
+            delete window.exports;
+            delete window.module;
+        }
+    </script>
+    <link rel="stylesheet" href="../helpers/highlight/styles/monokai-sublime.css">
+    <script type="text/javascript" src="../helpers/highlight/highlight.js"></script>
+    <script type="text/javascript" src="../helpers/highlight/helper.js"></script>
+    <script type="text/javascript" src="../helpers/Extend.js"></script>
+    <script type="text/javascript" src="../helpers/jszip.js"></script>
+    <script type="text/javascript" src="../helpers/xlsx.js"></script>
+    <style>
+        html,
+        body {
+            padding: 0;
+            border: 0;
+            margin: 0;
+            height: 100%;
+            font: 14px "Microsoft YaHei";
+        }
+    </style>
+    <script src="../helpers/cookie.js"></script>
+    <script src="dist/WallanUECodeMaker.js" type="module"></script>
+    <script src="dist/index.js" type="module"></script>
+</head>
+
+<body>
+    <div>
+        客户端项目根目录：<input id="txtClientPath" style="width:400px;" type="input" value="" /> 生成代码:<input id="chkClientPath"
+            type="checkbox" checked="checked" /> 使用 es module:<input id="chkESModule" type="checkbox" /><br /> 服务端项目根目录：
+        <input id="txtServerPath" style="width:400px;" type="input" value="" /> 生成代码:<input id="chkServerPath"
+            type="checkbox" checked="checked" /><br />
+        国际化文件xlsx路径:<input id="txtG11nPath" style="width:400px;" type="input" value="" /> 生成:<input id="chkG11nPath"
+        type="checkbox" />
+    </div>
+    <div id="txtLog" style="width:100%;height:50%;margin-top:5px;border:#ccc solid 1px;overflow-y:auto; ">
+    </div>
+    <div id="code">
+    </div>
+</body>
+
+</html>

@@ -24,6 +24,7 @@ function tryParseNumber(value: any) {
 abstract class AbsTypeChecker implements TypeChecker {
     abstract type: string;
     abstract javaType: string;
+    abstract ueType: string;
     abstract idx: number;
     abstract def: any;
 
@@ -50,6 +51,8 @@ class AnyChecker extends AbsTypeChecker {
 
     javaType = "String";
 
+    ueType = "FString"
+
     def = undefined;
 
     jsonDef = null;
@@ -72,6 +75,8 @@ class StringChecker extends AbsTypeChecker {
     type = "string";
 
     javaType = "String";
+
+    ueType = "FString"
 
     def = "";
 
@@ -97,6 +102,8 @@ class NumberChekcer extends AbsTypeChecker {
     type = "number";
 
     javaType = "double";
+
+    ueType = "double";
 
     def = 0;
     jsonDef = 0;
@@ -134,6 +141,7 @@ class NumberChekcer extends AbsTypeChecker {
  */
 class Int32Checker extends NumberChekcer {
     javaType = "int";
+    ueType = "int32";
     check(value: string) {
         if (value == undefined) {
             return;
@@ -171,6 +179,8 @@ class BooleanChecker extends AbsTypeChecker {
 
     javaType = "bool";
 
+    ueType = "bool";
+
     def = 0;
     idx = TypeCheckerIndex.Bool;
     solveString = true;
@@ -198,6 +208,7 @@ class ArrayCheker extends AbsTypeChecker {
 
     javaType = "Object[]";
 
+    ueType = "TArray<FString>";
     def = undefined;
     idx = TypeCheckerIndex.Array;
 
@@ -232,7 +243,7 @@ class Array2DCheker extends AbsTypeChecker {
     type = "any[][]";
 
     javaType = "Object[][]";
-
+    ueType = "TArray<FString>";
     def = undefined;
     idx = TypeCheckerIndex.Array2D;
 
@@ -318,7 +329,7 @@ class DateChecker extends AbsTypeChecker {
     type = "Date";
 
     javaType = "String";
-
+    ueType = "FString";
     def = 0;
     idx = TypeCheckerIndex.Date;
 
@@ -351,7 +362,7 @@ class TimeChecker extends AbsTypeChecker {
     type = "TimeVO";
 
     javaType = "String";
-
+    ueType = "FString";
     def = 0;
 
     idx = TypeCheckerIndex.Time;
@@ -384,7 +395,7 @@ class DateTimeChecker extends AbsTypeChecker {
     type = "Date";
 
     javaType = "String";
-
+    ueType = "FString";
     def = 0;
     idx = TypeCheckerIndex.DateTime;
     solveString = true;
@@ -415,6 +426,7 @@ class DateTimeChecker extends AbsTypeChecker {
 class ConditionChecker extends AbsTypeChecker {
     type = "Condition";
     javaType = "String";
+    ueType = "FString";
     def = undefined;
     idx = TypeCheckerIndex.Condition;
     solveString = true;
@@ -440,6 +452,7 @@ class ConditionChecker extends AbsTypeChecker {
 class LingYuArrayChecker extends AbsTypeChecker {
     type = "any[]";
     javaType = "String";
+    ueType = "FString";
     def = undefined;
 
     idx = TypeCheckerIndex.Array;

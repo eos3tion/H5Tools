@@ -77,11 +77,15 @@ function init(fcfg: FileConfig, cfg: GlobalCfg) {
     _cfg = cfg;
 }
 
+function getExt(){
+    return Ext.ServerCode;
+}
+
 function getFilePath(fcfg: FileConfig) {
     let { sfilePackage, name, sPath } = fcfg;
     _pathSPackage = sfilePackage.replace(/\./g, "/");
     className = `${getJavaName(name)}${Suffix.Server}`;
-    return path.join(sPath, _pathSPackage, `${className}${Ext.ServerCode}`)
+    return path.join(sPath, _pathSPackage, `${className}${getExt()}`)
 }
 
 function getJavaName(name: string) {
@@ -92,4 +96,5 @@ window.serverCodeMaker = {
     init,
     addProperty,
     flash,
+    getExt
 }

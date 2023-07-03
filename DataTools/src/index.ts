@@ -1293,6 +1293,7 @@ class XLSXDecoder {
                 log(`客户端没有配置[前端包结构]，无需生成${fname}`, `#0a0`);
             }
             if (sfilePackage != undefined) {
+                let ext = serverCodeMaker ? serverCodeMaker.getExt() : Ext.ServerCode;
                 if (sNeedGen) {
                     // 生成服务端代码
                     if (serverCodeMaker) {
@@ -1300,13 +1301,13 @@ class XLSXDecoder {
                         if (result) {
                             let { code, packagePath, className } = result;
                             sout = code;
-                            saveCodeFile(sPath, packagePath, sout, className, Ext.ServerCode);
+                            saveCodeFile(sPath, packagePath, sout, className, ext);
                         } else {
-                            log(`服务端没有任何字段有输出，无需生成${fname}${Ext.ServerCode}`, `#0a0`);
+                            log(`服务端没有任何字段有输出，无需生成${fname}${ext}`, `#0a0`);
                         }
                     }
                 } else {
-                    log(`服务端没有配置[后端包结构]，无需生成${fname}${Ext.ServerCode}`, `#0a0`);
+                    log(`服务端没有配置[后端包结构]，无需生成${fname}${ext}`, `#0a0`);
                 }
                 createContent($g("code"), fname, idx++, cout, sout);
                 // 尝试生成注册文件
