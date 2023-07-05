@@ -442,6 +442,19 @@ class ConditionChecker extends AbsTypeChecker {
     }
 }
 
+class UEPathChecker extends AbsTypeChecker {
+    type = "string";
+    javaType = "String";
+    ueType = "FSoftObjectPath";
+
+    idx = TypeCheckerIndex.String;
+    def = "";
+
+    jsonDef = "";
+    check(value: string) {
+        return value;
+    }
+}
 
 /**
  * 用于支持灵娱的数组
@@ -548,6 +561,7 @@ checkers[TypeCheckerKey.Time] = new TimeChecker;
 checkers[TypeCheckerKey.DateTime] = new DateTimeChecker;
 checkers[TypeCheckerKey.Int] = new Int32Checker;
 checkers[TypeCheckerKey.Condition] = new ConditionChecker;
+checkers[TypeCheckerKey.UEPath] = new UEPathChecker;
 
 checkers[TypeCheckerKey.LingYuArray] = new LingYuArrayChecker;
 
