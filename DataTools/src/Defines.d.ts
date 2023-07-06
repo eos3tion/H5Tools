@@ -796,6 +796,10 @@ declare const enum TypeCheckerKey {
      * UE路径
      */
     UEPath = "UEPath",
+    /**
+     * UE的名字
+     */
+    UEName = "UEName",
 }
 
 declare type Key = string | number;

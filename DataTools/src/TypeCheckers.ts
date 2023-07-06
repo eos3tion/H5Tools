@@ -442,6 +442,20 @@ class ConditionChecker extends AbsTypeChecker {
     }
 }
 
+class UENameChecker extends AbsTypeChecker {
+    type = "string";
+    javaType = "String";
+    ueType = "FName";
+
+    idx = TypeCheckerIndex.String;
+    def = "";
+
+    jsonDef = "";
+    check(value: string) {
+        return value;
+    }
+}
+
 class UEPathChecker extends AbsTypeChecker {
     type = "string";
     javaType = "String";
@@ -561,7 +575,10 @@ checkers[TypeCheckerKey.Time] = new TimeChecker;
 checkers[TypeCheckerKey.DateTime] = new DateTimeChecker;
 checkers[TypeCheckerKey.Int] = new Int32Checker;
 checkers[TypeCheckerKey.Condition] = new ConditionChecker;
+
+
 checkers[TypeCheckerKey.UEPath] = new UEPathChecker;
+checkers[TypeCheckerKey.UEName] = new UENameChecker;
 
 checkers[TypeCheckerKey.LingYuArray] = new LingYuArrayChecker;
 
