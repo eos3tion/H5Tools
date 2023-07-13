@@ -22,7 +22,7 @@ function addProperty(define: ProDefine, checker: TypeChecker, descs: string[]) {
     let defData = Defs[checker.key];
     let def = "";
     if (defData) {
-        def = `=${defData}`;
+        def = ` = ${defData}`;
     }
     pros.push(`${checker.ueType} ${define.name}${def};`);
     pros.push(`\n`);
