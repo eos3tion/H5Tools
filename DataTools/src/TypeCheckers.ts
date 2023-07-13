@@ -22,6 +22,7 @@ function tryParseNumber(value: any) {
 }
 
 abstract class AbsTypeChecker implements TypeChecker {
+    key: string;
     abstract type: string;
     abstract javaType: string;
     abstract ueType: string;
@@ -130,6 +131,13 @@ class NumberChekcer extends AbsTypeChecker {
         }
         return super.getOutValue(v, def);
     }
+}
+
+class FloatChecker extends NumberChekcer {
+
+    javaType = "float";
+
+    ueType = "float";
 }
 
 
@@ -575,12 +583,17 @@ checkers[TypeCheckerKey.Time] = new TimeChecker;
 checkers[TypeCheckerKey.DateTime] = new DateTimeChecker;
 checkers[TypeCheckerKey.Int] = new Int32Checker;
 checkers[TypeCheckerKey.Condition] = new ConditionChecker;
+checkers[TypeCheckerKey.Float] = new FloatChecker;
 
 
 checkers[TypeCheckerKey.UEPath] = new UEPathChecker;
 checkers[TypeCheckerKey.UEName] = new UENameChecker;
 
 checkers[TypeCheckerKey.LingYuArray] = new LingYuArrayChecker;
+
+for (let key in checkers) {
+    checkers[key].key = key;
+}
 
 export default TypeChecker;
 export { checkers as TypeCheckers };

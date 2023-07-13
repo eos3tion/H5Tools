@@ -10,9 +10,21 @@ let _outFilePath: string;
 let _pathSPackage: string;
 let className: string;
 
+const Defs = {
+    [TypeCheckerKey.Number]: "0.0",
+    [TypeCheckerKey.Float]: "0.0f",
+    [TypeCheckerKey.Int]: "0",
+    [TypeCheckerKey.Bool]: "false"
+}
+
 function addProperty(define: ProDefine, checker: TypeChecker, descs: string[]) {
     pros.push(`UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)`);
-    pros.push(`${checker.ueType} ${define.name};`);
+    let defData = Defs[checker.key];
+    let def = "";
+    if (defData) {
+        def = `=${defData}`;
+    }
+    pros.push(`${checker.ueType} ${define.name}${def};`);
     pros.push(`\n`);
 }
 
@@ -59,7 +71,7 @@ function init(fcfg: FileConfig, cfg: GlobalCfg) {
     _cfg = cfg;
 }
 
-function getExt(){
+function getExt() {
     return Ext.CStructHead
 }
 

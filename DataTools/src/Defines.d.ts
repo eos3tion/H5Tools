@@ -393,6 +393,7 @@ interface ProDefine {
  */
 interface TypeChecker {
 
+    key: string;
     readonly type: string;
     /**
      * java类型
@@ -800,6 +801,7 @@ declare const enum TypeCheckerKey {
      * UE的名字
      */
     UEName = "UEName",
+    Float = "float",
 }
 
 declare type Key = string | number;
