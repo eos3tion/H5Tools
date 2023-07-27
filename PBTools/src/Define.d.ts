@@ -196,6 +196,7 @@ declare const enum Const {
 
 	MarkDownExt = ".md",
 
+	CookieProjectKey = "JprotoTools_"
 }
 
 declare const enum ProtoType {

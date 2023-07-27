@@ -2,13 +2,15 @@
 import CookieForPath from "../CookieForPath";
 import "../../lib/hanzi2pinyin.js";
 import "../../lib/protobuf.js";
-import { createContent, writeFile, log, error, progress, getTempPath, CmdSuffix } from "../Helper.js";
+import { createContent as createContentOrigin, writeFile, log, error, progress, getTempPath, CmdSuffix } from "../Helper.js";
 import { addCmds } from "./UECmdTemplate.js";
 import { analyseUrl, updateWithGit, checkIndexPage, getProtoFromMD, checkGitIsOK } from "../GitlabHelper.js";
 const pbjs: typeof import("protobufjs") = ProtoBuf;
 const path: typeof import("path") = nodeRequire("path");
 
-
+function createContent(parentID: string, filename: string, idx: number, ccode: string) {
+    createContentOrigin(parentID, filename, idx, ccode, "c++")
+}
 
 async function requestAll(cookieForPath: CookieForPath, gcfg: ClientCfg) {
     progress.reset();

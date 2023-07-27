@@ -34,6 +34,7 @@
     <script src="dist/Const.js"></script>
     <script type="module" src="dist/ue/UEClientProxy.js"></script>
     <script type="module" src="dist/app2.js"></script>
+    <script type="module" src="dist/swaggerapi/Index.js"></script>
 </head>
 
 <body>
@@ -42,7 +43,7 @@
         <input id="txtServerWiki" style="width:400px;" type="input" value="" />
         <input type="button" id="btnCreateTest" value="在wiki上生成测试样例" />
     </div>
-    <div style="background:#fee">
+    <div style="background:#fee;display: none;">
         服务端语言：<select id="selLanguage">
             <option value="java">JAVA</option>
             <option value="csharp">C#</option>
@@ -62,6 +63,11 @@
         <input id="btnServer" type="button" value="生成服务端文件" />
     </div>
 
+    <div id="SwaggerAPI" style="background:#fee">
+        SwaggerAPI的URL路径：<input id="txtSwaggerAPIURL" value="" size="50" /><input id="btnGetSwaggerAPI" type="button"
+            value="拉取API数据" />
+        <div id="SwaggerTag"></div>
+    </div>
 
     <div id="c2s">
         c2s&s2c匹配规则：

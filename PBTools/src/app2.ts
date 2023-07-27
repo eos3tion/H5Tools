@@ -1,6 +1,6 @@
 "use strict";
 
-const projectKey = "JprotoTools_";
+const projectKey = Const.CookieProjectKey;
 
 const $g = (id) => { return <HTMLInputElement>document.getElementById(id) };
 

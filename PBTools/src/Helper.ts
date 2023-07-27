@@ -49,16 +49,15 @@ export function log(msg: string, color?: string) {
  * @param {string} ccode (description)
  * @param {string} scode (description)
  */
-export function createContent(parentID: string, filename: string, idx: number, ccode: string, scode: string = "") {
+export function createContent(parentID: string, filename: string, idx: number, ccode: string, lan = "typescript") {
     let parent = $g(parentID)
     let pane = document.createElement("div");
     pane.style.border = "#000 solid 1px";
     let idCopyClient = "btnCopyClient" + idx;
-    let idCopyServer = "btnCopyServer" + idx;
     let template = `<div>${filename}</div>
     <div style="width:100%;float:left;background:#eef">
         客户端代码：<input type="button" value="复制客户端代码" id="${idCopyClient}" />
-        <pre style="width:100%;border:#ccf solid 1px;background:#000;color:#fff;font:'Microsoft Yahei'"><code>${hljs.highlightAuto(ccode, ["typescript"]).value}</code></pre>
+        <pre style="width:100%;border:#ccf solid 1px;background:#000;color:#fff;font:'Microsoft Yahei'"><code>${hljs.highlightAuto(ccode, [lan]).value}</code></pre>
     </div>`
     pane.innerHTML = template;
     parent.appendChild(pane);
