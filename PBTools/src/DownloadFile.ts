@@ -1,9 +1,4 @@
-import * as _electron from "electron";
-import * as _path from "path";
-import * as _fs from "fs";
-import * as _url from "url";
-import * as _http from "http";
-import { getDataPath } from "./Helper";
+import { getDataPath } from "./Helper.js";
 
 /**
  * 检查并下载文件
@@ -12,8 +7,8 @@ import { getDataPath } from "./Helper";
  */
 export function checkAndDownloadFile(localPath: string, remotePath: string) {
     return new Promise<string>((resolve, reject) => {
-        const path: typeof _path = nodeRequire("path");
-        const fs: typeof _fs = nodeRequire("fs");
+        const path: typeof import("path") = nodeRequire("path");
+        const fs: typeof import("fs") = nodeRequire("fs");
         let binPath = getDataPath(localPath);
         let baseDir = path.dirname(binPath);
         if (fs.existsSync(binPath)) {//没有找到pngquant文件
@@ -21,9 +16,9 @@ export function checkAndDownloadFile(localPath: string, remotePath: string) {
         } else {
             //先确保文件夹创建
             FsExtra.mkdirs(baseDir);
-            const url: typeof _url = nodeRequire("url");
+            const url: typeof import("url") = nodeRequire("url");
             let path = url.resolve(location.href, remotePath);
-            const http: typeof _http = nodeRequire("http");
+            const http: typeof import("http") = nodeRequire("http");
             http.get(path, res => {
                 let ws = fs.createWriteStream(binPath);
                 res.pipe(ws);

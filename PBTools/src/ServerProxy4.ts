@@ -1,17 +1,10 @@
-import * as _cp from "child_process";
-import * as _electron from "electron";
-import * as _path from "path";
-import * as _fs from "fs";
-import * as _url from "url";
-import * as _http from "http";
-import ServerProxy3 from "ServerProxy3";
-import { execAsync } from "./exec";
-import { progress, log } from "./Helper";
-import { IndexResult } from "./GitlabHelper";
-import { saveCommonProto } from "./OptionProtoHead";
+import ServerProxy3 from "./ServerProxy3.js";
+import { execAsync } from "./exec.js";
+import { progress, log } from "./Helper.js";
+import { IndexResult } from "./GitlabHelper.js";
+import { saveCommonProto } from "./OptionProtoHead.js";
 
-const path: typeof _path = nodeRequire("path");
-const fs: typeof _fs = nodeRequire("fs");
+const path: typeof import("path") = nodeRequire("path");
 
 
 const enum Const {

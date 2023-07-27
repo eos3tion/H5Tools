@@ -1,6 +1,6 @@
 
 import * as _proto from "protobufjs";
-import * as _pbjs from "../lib/protobuf";
+import * as _pbjs from "../lib/protobuf.js";
 const pbjs: typeof _proto = _pbjs;
 
 export function getPageData(content: string, name: string) {

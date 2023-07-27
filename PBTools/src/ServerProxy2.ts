@@ -1,10 +1,10 @@
-import CookieForPath from "./CookieForPath";
+import CookieForPath from "./CookieForPath.js";
 import * as _electron from "electron";
 import * as _path from "path";
 import * as _fs from "fs";
-import { postHttpData } from "./getHttpData";
-import { checkGitIsOK, analyseIndex, IndexResult } from "./GitlabHelper";
-import { progress, error } from "./Helper";
+import { postHttpData } from "./getHttpData.js";
+import { checkGitIsOK, analyseIndex, IndexResult } from "./GitlabHelper.js";
+import { progress, error } from "./Helper.js";
 
 /**
  * 远程路径

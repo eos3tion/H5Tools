@@ -1,7 +1,7 @@
 //用于创建测试用的gm指令
 
-import { analyseIndex, commitGitToOrigin, getDist, IndexResult } from "./GitlabHelper";
-import { log, CmdSuffix, error } from "./Helper";
+import { analyseIndex, commitGitToOrigin, getDist, IndexResult } from "./GitlabHelper.js";
+import { log, CmdSuffix, error } from "./Helper.js";
 
 import type { ProtoMessage, ProtoEnum } from "protobufjs"
 

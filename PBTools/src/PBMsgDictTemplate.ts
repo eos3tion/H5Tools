@@ -1,5 +1,4 @@
-import _fs = require("fs");
-const fs: typeof _fs = nodeRequire("fs");
+const fs: typeof import("fs") = nodeRequire("fs");
 const regValue = new RegExp(`(\/\\*([a-zA-Z_0-9]+)\\*\/\\d+\\s*:\\s*({.*?}|${ConstString.PBDictKeyName}\\.([a-zA-Z_0-9]+))),?`, "g");
 /**
  * 服务端前缀

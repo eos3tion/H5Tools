@@ -202,3 +202,9 @@ declare const enum ProtoType {
 	Message = "message",
 	Enum = "enum",
 }
+
+declare var ClientProxy: {
+	requestAll(cookieForPath: import("./CookieForPath").default, gcfg: ClientCfg): Promise<void>;
+	parseProto(proto: string, gcfg?: ClientCfg, url?: string);
+	request(url: string, gcfg: ClientCfg): Promise<void>;
+}

@@ -1,16 +1,13 @@
 
-import CookieForPath from "CookieForPath";
-import "Const";
-import "../lib/hanzi2pinyin";
-import _proto = require("protobufjs");
-import * as _pbjs from "../lib/protobuf";
-import PBMsgDictTemplate from "./PBMsgDictTemplate";
-import { createContent, writeFile, log, error, progress, getTempPath, CmdSuffix } from "./Helper";
-import ServiceNameTemplate from "./ServiceNameTemplate";
-import { addCmds } from "./CmdTemplate";
-import { checkCmdIsOK } from "./exec";
-import { analyseUrl, updateWithGit, checkIndexPage, getProtoFromMD, checkGitIsOK } from "./GitlabHelper";
-const pbjs: typeof _proto = _pbjs;
+import CookieForPath from "./CookieForPath.js";
+import "../lib/hanzi2pinyin.js";
+import "../lib/protobuf.js";
+import PBMsgDictTemplate from "./PBMsgDictTemplate.js";
+import { createContent, writeFile, log, error, progress, getTempPath, CmdSuffix } from "./Helper.js";
+import ServiceNameTemplate from "./ServiceNameTemplate.js";
+import { addCmds } from "./CmdTemplate.js";
+import { analyseUrl, updateWithGit, checkIndexPage, getProtoFromMD, checkGitIsOK } from "./GitlabHelper.js";
+const pbjs: typeof import("protobufjs") = ProtoBuf;
 const fs: typeof import("fs") = nodeRequire("fs");
 const path: typeof import("path") = nodeRequire("path");
 
@@ -55,7 +52,7 @@ interface Func {
 }
 
 
-export async function requestAll(cookieForPath: CookieForPath, gcfg: ClientCfg) {
+async function requestAll(cookieForPath: CookieForPath, gcfg: ClientCfg) {
     progress.reset();
     let wikiUrl = cookieForPath.setPathCookie("txtServerWiki", false, false);
     if (!wikiUrl) {
@@ -77,7 +74,7 @@ export async function requestAll(cookieForPath: CookieForPath, gcfg: ClientCfg) 
     }
 }
 
-export async function request(url: string, gcfg: ClientCfg) {
+async function request(url: string, gcfg: ClientCfg) {
     if (!checkGitIsOK()) {
         return;
     }
@@ -93,7 +90,7 @@ function getWikiUrl(name: string, baseWikiUrl: string) {
 }
 
 
-export function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
+function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
     url = url || (gcfg ? gcfg.url : "");
     url = url || "[文本框中，复制粘贴]";
     let cprefix = gcfg ? gcfg.cprefix : null;
@@ -732,4 +729,10 @@ function getVariable(field: ProtoBuf.ProtoField, variables: string[]): FieldData
         variables.push(`${fname}?: ${fieldType};`);
     }
     return { fieldName: fname, fieldType, isMsg, tType, repeated };
+}
+
+window.ClientProxy = {
+    requestAll,
+    request,
+    parseProto
 }

@@ -1,10 +1,8 @@
-import { git, checkCmdIsOK } from "./exec";
-import * as _path from "path";
-import * as _fs from "fs";
-import { log, progress, getTempPath } from "./Helper";
-import { getPageData } from "./getPageProto";
-const path: typeof _path = nodeRequire("path");
-const fs: typeof _fs = nodeRequire("fs");
+import { git, checkCmdIsOK } from "./exec.js";
+import { log, progress, getTempPath } from "./Helper.js";
+import { getPageData } from "./getPageProto.js";
+const path: typeof import("path") = nodeRequire("path");
+const fs: typeof import("fs") = nodeRequire("fs");
 /**
  * 分析 gitlab 的页面路径
  * @param wikiUrl gitlab，要找的页面 

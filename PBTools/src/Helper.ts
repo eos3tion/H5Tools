@@ -1,4 +1,4 @@
-import Progress from "./Progress";
+import Progress from "./Progress.js";
 import * as _electron from "electron";
 
 export const $g = (id: string) => document.getElementById(id);

@@ -1,9 +1,8 @@
-import $http = require("http");
-const http: typeof $http = nodeRequire("http");
+const http: typeof import("http") = nodeRequire("http");
 const URL: typeof import("url") = nodeRequire("url");
-
+import type { IncomingMessage, RequestOptions } from "http";
 export interface GetHttpDataCallback {
-    res: $http.IncomingMessage;
+    res: IncomingMessage;
     content: string;
     params: any;
     url: string;
@@ -18,7 +17,7 @@ export interface GetHttpDataCallback {
  */
 function postHttpData(url: string, post?: any) {
     return new Promise<string>((resolve, reject) => {
-        let opt = (<any>URL.parse(url)) as $http.RequestOptions;
+        let opt = (<any>URL.parse(url)) as RequestOptions;
         let postData = typeof post == "string" ? post : (post ? JSON.stringify(post) : "");
         opt.headers = {
             'Content-Type': 'text/json',

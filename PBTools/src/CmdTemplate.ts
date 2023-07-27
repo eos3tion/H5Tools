@@ -1,5 +1,4 @@
-import _fs = require("fs");
-const fs: typeof _fs = nodeRequire("fs");
+const fs: typeof import("fs") = nodeRequire("fs");
 
 const regValue = /\s*([A-Z][a-zA-Z_$0-9]+) = (\d+),?\s*?\n/g;
 /**

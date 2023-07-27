@@ -1,5 +1,5 @@
 import * as _cp from "child_process";
-import { error, log } from "./Helper";
+import { error, log } from "./Helper.js";
 export function exec(opt: string | { cmd?: string, cwd?: string, notThrowError?: boolean }, ...args) {
     if (typeof opt === "string") {
         cmd = opt;
@@ -38,7 +38,7 @@ export async function execAsync(opt: string | { cmd?: string, cwd?: string, notT
     let cmdstring = `${cmd} ${args.join(" ")}`;
     log(`开始执行：${cmdstring}`);
     let td = new TextDecoder(encoding || "utf8");
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         const cp: typeof _cp = nodeRequire("child_process");
         let child = cp.spawn(cmd, args, option);
         child.stderr.on("data", data => {

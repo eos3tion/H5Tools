@@ -31,7 +31,7 @@
         else
             (global["dcodeIO"] = global["dcodeIO"] || {})["ProtoBuf"] = factory(global["dcodeIO"]["ByteBuffer"]);
     
-    })(this, function (ByteBuffer, isCommonJS) {
+    })(window, function (ByteBuffer, isCommonJS) {
         "use strict";
     
         /**
@@ -41,7 +41,7 @@
          * @expose
          */
         var ProtoBuf = {};
-    
+        window.ProtoBuf = ProtoBuf;
         /**
          * @type {!function(new: ByteBuffer, ...[*])}
          * @expose

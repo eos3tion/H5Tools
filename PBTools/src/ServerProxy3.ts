@@ -1,19 +1,14 @@
-import CookieForPath from "./CookieForPath";
-import * as _cp from "child_process";
-import * as _electron from "electron";
-import * as _path from "path";
-import * as _fs from "fs";
-import * as _url from "url";
-import * as _http from "http";
-import ServerProxy2 from "ServerProxy2";
-import { checkCmdIsOK, execAsync } from "./exec";
-import { checkAndDownloadFile } from "./DownloadFile";
-import { getTempPath, progress, log } from "./Helper";
-import { IndexResult } from "./GitlabHelper";
-import { saveCommonProto } from "./OptionProtoHead";
+import CookieForPath from "./CookieForPath.js";
 
-const path: typeof _path = nodeRequire("path");
-const fs: typeof _fs = nodeRequire("fs");
+import ServerProxy2 from "./ServerProxy2.js";
+import { checkCmdIsOK, execAsync } from "./exec.js";
+import { checkAndDownloadFile } from "./DownloadFile.js";
+import { getTempPath, progress, log } from "./Helper.js";
+import { IndexResult } from "./GitlabHelper.js";
+import { saveCommonProto } from "./OptionProtoHead.js";
+
+const path: typeof import("path") = nodeRequire("path");
+const fs: typeof import("fs") = nodeRequire("fs");
 
 
 const enum Const {
@@ -93,7 +88,6 @@ export default class ServerProxy extends ServerProxy2 {
         this.cmdFullPath = cookieForPath.setPathCookie("txtCmdClassFullPath", false, false);
         this.protoBasePath = cookieForPath.setPathCookie("txtProtoOutput", false, false);
         this.lan = cookieForPath.setPathCookie("selLanguage", false, false);
-        const fs: typeof _fs = nodeRequire("fs");
         if (sPath && !fs.existsSync(sPath)) {
             return alert(`服务器端配置了源码基础路径,但是找不到该路径[${sPath}]`);
         }
