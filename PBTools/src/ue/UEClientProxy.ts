@@ -118,10 +118,10 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let cmddata: UECmdType = options[Options.CMD];
         for (let field of msg.fields) {
 
-            let data = getVariable(field, variables);
+            let data = getVariable(field, variables, imports);
             fieldDatas.push(data);
         }
-        simports = simports.concat(imports);
+        imports = imports.map(inc => getInclude(inc));
         // 根据CMD 生成通信代码
         // 生成代码
         let className: string = msg.name;
@@ -152,7 +152,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
                 //创建send指令
                 makeSendFunDefine(className, funcs);
                 makeSendFunImpl(service, className, implLines);
-                cIncludes.push(getInclude(className));
+                cIncludes.push(getInclude(className, "msgs/"));
 
             }
         } else if (s) { // server to client
@@ -162,12 +162,12 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
             makeReceiveDele(className, deles);
             makeReceiveHandler(className, handlers);
             makeRegs(className, cRegs);
-            cIncludes.push(getInclude(className));
+            cIncludes.push(getInclude(className, "msgs/"));
         }
 
         if (isCreateMsg) { //需要生成消息
 
-            let clientCode = getStructContent(now, url, className, variables);
+            let clientCode = getStructContent(now, url, className, variables, imports);
             if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
                 let cdir = path.join(cprefix, cpath, "msgs");
                 let out = writeFile(className + UEConstString.FileH, cdir, clientCode);
@@ -237,11 +237,12 @@ function GetStructName(className: string) {
  * @param variables 
  * @returns 
  */
-function getStructContent(createTime: string, path: string, className: string, variables: string[]) {
+function getStructContent(createTime: string, path: string, className: string, variables: string[], imports: string[]) {
     let vars = `\t` + variables.join(`\n\t`);
     return `#pragma once
 
 #include "CoreMinimal.h"
+${imports.join("\n")}
 #include "${className}.generated.h"
 
 
@@ -368,8 +369,8 @@ public:
 };`
 }
 
-function getInclude(className: string) {
-    return `#include "msgs/${className}.h"`
+function getInclude(className: string, pre = "") {
+    return `#include "${pre}${className}.h"`
 }
 
 //------------------- Service.cpp ---------------------------------------
@@ -401,7 +402,7 @@ ${implLines.join("\n")}
 
 
 
-function field2type(field: ProtoBuf.ProtoField): [string, MsgType, string | number, boolean, string] {
+function field2type(field: ProtoBuf.ProtoField, includes?: string[]): [string, MsgType, string | number, boolean, string] {
     let type = field.type;
     let isMsg = MsgType.NotMessage;
     let ttype: string | number;
@@ -456,7 +457,10 @@ function field2type(field: ProtoBuf.ProtoField): [string, MsgType, string | numb
             ttype = NSType.String;
             break;
         default:
-            type = field.type;
+            if (includes) {
+                includes.pushOnce(type)
+            }
+            type = GetStructName(type);
             isMsg = MsgType.isServerMsg;
             ttype = `"${type}"`;
             break;
@@ -467,10 +471,10 @@ function field2type(field: ProtoBuf.ProtoField): [string, MsgType, string | numb
     return [type, isMsg, ttype, false, def];
 }
 
-function getVariable(field: ProtoBuf.ProtoField, variables: string[]): FieldData {
+function getVariable(field: ProtoBuf.ProtoField, variables: string[], includes: string[]): FieldData {
     let comment = field.comment;// 调整protobuf.js代码 让其记录注释
     let fname = field.name;
-    let [fieldType, isMsg, tType, repeated, def] = field2type(field);
+    let [fieldType, isMsg, tType, repeated, def] = field2type(field, includes);
     variables.push(`/**`);
     variables.push(` * ${comment}`);
     variables.push(` */`);
