@@ -23,13 +23,15 @@ cookieForPath.getPathCookie("txtCmdClassFullPath");
 cookieForPath.getPathCookie("txtServerWiki");
 cookieForPath.getPathCookie("txtProtoOutput");
 cookieForPath.getPathCookie("selLanguage");
-isOptMsg = !!+cookie.getCookie(projectKey + "OptMsg");
 let chkOptimizeMsg = $g("chkOptimizeMsg");
-chkOptimizeMsg.checked = isOptMsg;
-chkOptimizeMsg.addEventListener("change", () => {
-	isOptMsg = $g("chkOptimizeMsg").checked;
-	cookie.setCookie(projectKey + "OptMsg", +isOptMsg + "");
-});
+if (chkOptimizeMsg) {
+	isOptMsg = !!+cookie.getCookie(projectKey + "OptMsg");
+	chkOptimizeMsg.checked = isOptMsg;
+	chkOptimizeMsg.addEventListener("change", () => {
+		isOptMsg = $g("chkOptimizeMsg").checked;
+		cookie.setCookie(projectKey + "OptMsg", +isOptMsg + "");
+	});
+}
 let chkSpliteProto = $g("chkSpliteProto");
 chkSpliteProto.checked = !!+cookie.getCookie(projectKey + "chkSpliteProto");
 chkSpliteProto.addEventListener("change", () => {

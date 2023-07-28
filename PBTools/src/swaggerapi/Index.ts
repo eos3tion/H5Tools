@@ -82,7 +82,7 @@ function findSchemas(schema: Schema, schemas: { [ref: string]: Schema }) {
 }
 
 
-function getSchemaContent(schema: Schema, lines: string[], writed: { [ref: string]: boolean }, cmd?: string) {
+function getSchemaContent(schema: Schema, lines: string[], writed: { [ref: string]: boolean }, cmd?: string, isResp?: boolean) {
     writed[schema.ref] = true;
     if (schema.type == "object") {
         const properties = schema.properties;
@@ -126,6 +126,11 @@ function getSchemaContent(schema: Schema, lines: string[], writed: { [ref: strin
                         break;
                 }
             }
+            if (isResp) {
+                if (proKey == "state") {
+                    type = "int64";
+                }
+            }
             lines.push(`    ${lab} ${type} ${proKey} = ${idx++};`)
         }
         lines.push(`}`);
@@ -167,7 +172,7 @@ function onTagClick() {
             lines.push("");
 
             lines.push(`### ${summary}回调`)
-            getSchemaContent(response, lines, rpcs, p);
+            getSchemaContent(response, lines, rpcs, p, true);
             lines.push("");
         }
         //创建Schema
