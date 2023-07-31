@@ -1617,8 +1617,8 @@ function makeExtraInterfaceFile(gcfg: GlobalCfg, codePath: string, isClient?: bo
  * @returns {string} 错误内容
  */
 function checkProName(name: string, gcfg: GlobalCfg, errPrefix = "") {
-    if (!/[a-zA-Z][a-zA-Z0-9_]*/.test(name)) {
-        return `${errPrefix}属性名字不符合规范：只能使用字母(a-z A-Z)或者数字(0-9)及下划线(_)`;
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*/.test(name)) {
+        return `${errPrefix}属性名字不符合规范：必须使用字母开头，只能使用字母(a-z A-Z)或者数字(0-9)及下划线(_)`;
     }
     const keywords = gcfg.keywords;
     for (let key in keywords) {
