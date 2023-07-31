@@ -478,6 +478,23 @@ class UEPathChecker extends AbsTypeChecker {
     }
 }
 
+class UEClassChecker extends AbsTypeChecker {
+    type = "string";
+    javaType = "String";
+    ueType = "FSoftClassPath";
+
+    idx = TypeCheckerIndex.String;
+    def = "";
+
+    jsonDef = "";
+    check(value: string) {
+        if (value) {
+            value = value.slice(0, -1) + "_C" + value.slice(-1);
+        }
+        return value;
+    }
+}
+
 /**
  * 用于支持灵娱的数组
  * 
@@ -587,6 +604,7 @@ checkers[TypeCheckerKey.Float] = new FloatChecker;
 
 
 checkers[TypeCheckerKey.UEPath] = new UEPathChecker;
+checkers[TypeCheckerKey.UEClass] = new UEClassChecker;
 checkers[TypeCheckerKey.UEName] = new UENameChecker;
 
 checkers[TypeCheckerKey.LingYuArray] = new LingYuArrayChecker;

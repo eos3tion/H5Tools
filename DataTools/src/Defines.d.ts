@@ -798,6 +798,10 @@ declare const enum TypeCheckerKey {
      */
     UEPath = "UEPath",
     /**
+     * UE的ClassPath
+     */
+    UEClass = "UEClass",
+    /**
      * UE的名字
      */
     UEName = "UEName",
