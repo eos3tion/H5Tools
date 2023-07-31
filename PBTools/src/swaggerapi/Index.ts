@@ -67,16 +67,21 @@ function findSchemas(schema: Schema, schemas: { [ref: string]: Schema }) {
         for (let proKey in properties) {
             let pro = properties[proKey];
             let ref = pro.$ref;
-            if (ref && !schemas[ref]) {
-                const schema = getSchema(ref, currentData);
-                schemas[schema.ref] = schema;
+            if (ref) {
+                checkSubSchema(ref, schemas);
             } else {
                 if (pro.type == Type.Array) {
-                    let ref = pro.items.$ref;
-                    const schema = getSchema(ref, currentData);
-                    schemas[schema.ref] = schema;
+                    checkSubSchema(pro.items.$ref, schemas);
                 }
             }
+        }
+    }
+
+    function checkSubSchema(ref: string, schemas: { [ref: string]: Schema }) {
+        if (!schemas[ref]) {
+            const schema = getSchema(ref, currentData);
+            schemas[schema.ref] = schema;
+            findSchemas(schema, schemas);
         }
     }
 }
