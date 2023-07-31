@@ -450,18 +450,12 @@ class ConditionChecker extends AbsTypeChecker {
     }
 }
 
-class UENameChecker extends AbsTypeChecker {
-    type = "string";
-    javaType = "String";
+class UENameChecker extends StringChecker {
     ueType = "FName";
+}
 
-    idx = TypeCheckerIndex.String;
-    def = "";
-
-    jsonDef = "";
-    check(value: string) {
-        return value;
-    }
+class UETextChecker extends StringChecker {
+    ueType = "FText";
 }
 
 class UEPathChecker extends AbsTypeChecker {
@@ -606,6 +600,7 @@ checkers[TypeCheckerKey.Float] = new FloatChecker;
 checkers[TypeCheckerKey.UEPath] = new UEPathChecker;
 checkers[TypeCheckerKey.UEClass] = new UEClassChecker;
 checkers[TypeCheckerKey.UEName] = new UENameChecker;
+checkers[TypeCheckerKey.UEText] = new UETextChecker;
 
 checkers[TypeCheckerKey.LingYuArray] = new LingYuArrayChecker;
 

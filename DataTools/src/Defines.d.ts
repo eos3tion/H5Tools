@@ -805,6 +805,10 @@ declare const enum TypeCheckerKey {
      * UE的名字
      */
     UEName = "UEName",
+    /**
+     * UE Text类型字符串
+     */
+    UEText = "UEText",
     Float = "float",
 }
 
