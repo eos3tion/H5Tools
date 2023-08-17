@@ -489,6 +489,42 @@ class UEClassChecker extends AbsTypeChecker {
     }
 }
 
+
+
+class UEArrayIntChecker extends ArrayCheker {
+    ueType = "TArray<int32>"
+}
+
+class UEArrayDoubleChecker extends ArrayCheker {
+    ueType = "TArray<double>"
+}
+
+class UEArrayTextChecker extends ArrayCheker {
+    ueType = "TArray<FText>"
+}
+class UEArrayNameChecker extends ArrayCheker {
+    ueType = "TArray<FName>"
+}
+
+class UEArrayPathChecker extends ArrayCheker {
+    ueType = "TArray<FSoftObjectPath>"
+}
+
+
+class UEArrayClassChecker extends ArrayCheker {
+    ueType = "TArray<FSoftClassPath>"
+
+    check(value: string) {
+        let arr = super.check(value) as string[];
+        return arr.map(value => {
+
+            if (value) {
+                value = value.slice(0, -1) + "_C" + value.slice(-1);
+            }
+        })
+    }
+}
+
 /**
  * 用于支持灵娱的数组
  * 
@@ -601,6 +637,14 @@ checkers[TypeCheckerKey.UEPath] = new UEPathChecker;
 checkers[TypeCheckerKey.UEClass] = new UEClassChecker;
 checkers[TypeCheckerKey.UEName] = new UENameChecker;
 checkers[TypeCheckerKey.UEText] = new UETextChecker;
+
+checkers[TypeCheckerKey.UEArrayString] = new ArrayCheker;
+checkers[TypeCheckerKey.UEArrayInt] = new UEArrayIntChecker;
+checkers[TypeCheckerKey.UEArrayDouble] = new UEArrayDoubleChecker;
+checkers[TypeCheckerKey.UEArrayText] = new UEArrayTextChecker;
+checkers[TypeCheckerKey.UEArrayName] = new UEArrayNameChecker;
+checkers[TypeCheckerKey.UEArrayPath] = new UEArrayPathChecker;
+checkers[TypeCheckerKey.UEArrayClass] = new UEArrayClassChecker;
 
 checkers[TypeCheckerKey.LingYuArray] = new LingYuArrayChecker;
 

@@ -809,6 +809,13 @@ declare const enum TypeCheckerKey {
      * UE Text类型字符串
      */
     UEText = "UEText",
+    UEArrayString = "UEArrayString",
+    UEArrayInt = "UEArrayInt",
+    UEArrayDouble = "UEArrayDouble",
+    UEArrayText = "UEArrayText",
+    UEArrayPath = "UEArrayPath",
+    UEArrayName = "UEArrayName",
+    UEArrayClass = "UEArrayClass",
     Float = "float",
 }
 
