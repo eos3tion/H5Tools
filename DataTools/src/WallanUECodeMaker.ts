@@ -18,6 +18,12 @@ const Defs = {
 }
 
 function addProperty(define: ProDefine, checker: TypeChecker, descs: string[]) {
+
+    pros.push(`/**`);
+    descs.forEach(line => {
+        pros.push(` * ${line}  `);
+    });
+    pros.push(` */`);
     pros.push(`UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)`);
     let defData = Defs[checker.key];
     let def = "";
