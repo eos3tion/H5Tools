@@ -67,6 +67,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
     // 处理文件级的Option
     let fcpath: string = options[Options.ClientPath];
     let service: string = options[Options.ServiceName];
+    let pageChannel = +options[Options.Channel] || 0;
     let now = new Date().format("yyyy-MM-dd HH:mm:ss");
     let idx = 0;
     //处理枚举
@@ -108,6 +109,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let options = msg.options;
         let nofunc = options[Options.NoFunction] !== undefined;
         let climit: number = +options[Options.ClientLimit];
+        let channel = +options[Options.Channel] || pageChannel;
         let cpath: string = options[Options.ClientPath] || fcpath;
         //如果设置的不是整数，则让climit为undefined
         isNaN(climit) && (climit = undefined);
@@ -150,7 +152,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
                 hasService = true;
                 cmdDict[className] = cmddata;
                 //创建send指令
-                makeSendFunDefine(className, funcs);
+                makeSendFunDefine(className, channel, funcs);
                 makeSendFunImpl(service, className, implLines);
                 cIncludes.push(getInclude(className, "msgs/"));
 
@@ -331,11 +333,15 @@ function makeReceiveHandler(className: string, handlers: string[]) {
 }
 
 //------------------- Send---------------------------------
-function makeSendFunDefine(className: string, funcs: string[]) {
+function makeSendFunDefine(className: string, channel: number, funcs: string[]) {
     // UFUNCTION(BlueprintCallable)
     // void Login_C(FLogin_C _Login_C) const;
     funcs.push(`UFUNCTION(BlueprintCallable)`);
-    funcs.push(`void ${className}(F${className} _${className}) const;`)
+    let strChannel = `ENetChannel::Default`;
+    if (channel > 0) {
+        strChannel = `ENetChannel::Channel` + channel;
+    }
+    funcs.push(`void ${className}(F${className} _${className}, ENetChannel Channel = ${strChannel}) const;`)
 }
 
 function getServiceHFileContent(createTime: string, path: string, serviceClassName: string, includes: string[], deles: string[], funcs: string[], handlers: string[]) {

@@ -24,6 +24,10 @@ const enum Options {
      */
     ClientLimit = "(climit)",
     /**
+     * 发送通道
+     */
+    Channel = "(channel)",
+    /**
      * 页面名称
      */
     Name = "(name)",
