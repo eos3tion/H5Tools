@@ -472,7 +472,7 @@ function field2type(field: ProtoBuf.ProtoField, includes?: string[]): [string, M
             break;
     }
     if (field.rule == "repeated") { // 数组赋值
-        return [`TArray<${type}>`, isMsg, ttype, true, def];
+        return [`TArray<${type}>`, isMsg, ttype, true, ""];
     }
     return [type, isMsg, ttype, false, def];
 }
