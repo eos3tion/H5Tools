@@ -54,7 +54,6 @@ export function addCmds(file: string, cmds: UECmdDict, c2stype: string, error: F
         let oname = dictName[cmd];
         if (oname && oname != name) {
             error(`${oname}和${name}不一致，但使用了相同的cmd[${cmd}]`);
-            continue;
         }
         dict[name] = cmd;
     }
