@@ -1293,7 +1293,7 @@ class XLSXDecoder {
                 log(`客户端没有配置[前端包结构]，无需生成${fname}`, `#0a0`);
             }
             if (sfilePackage != undefined) {
-                let ext = serverCodeMaker ? serverCodeMaker.getExt() : Ext.ServerCode;
+                let ext = serverCodeMaker?.getExt?.() || Ext.ServerCode;
                 if (sNeedGen) {
                     // 生成服务端代码
                     if (serverCodeMaker) {
