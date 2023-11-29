@@ -412,32 +412,55 @@ function field2type(field: ProtoBuf.ProtoField, includes?: string[]): [string, M
     let type = field.type;
     let isMsg = MsgType.NotMessage;
     let ttype: string | number;
-    let def = "";
+    let def = field.options.default;
+    if (def !== undefined) {
+        let t = typeof def;
+        if (t === "string") {
+            def = `= "${def}"`;
+        } else if (t === "object") {//不支持对象类型默认值
+            def = "";
+        } else {
+            def = `= ${def}`;
+        }
+    }
+    if (!def) {
+        def = "";
+    }
     switch (type) {
         case "int32":
         case "sint32":
         case "sfixed32":
             type = "int32";
             ttype = NSType.Int32;
-            def = ` = 0`;
+            if (!def) {
+                def = ` = 0`;
+            }
             break;
         case "enum":
         case "fixed32":
         case "uint32":
             type = "uint32";
             ttype = NSType.Uint32;
-            def = ` = 0`;
+            if (!def) {
+                def = ` = 0`;
+            }
         case "double":
             ttype = NSType.Double;
-            def = ` = 0.0`;
+            if (!def) {
+                def = ` = 0.0`;
+            }
             break;
         case "float":
             ttype = NSType.Double;
-            def = ` = 0.0`;
+            if (!def) {
+                def = ` = 0.0`;
+            }
             break;
         case "bool":
             ttype = NSType.Boolean;
-            def = ` = false`;
+            if (!def) {
+                def = ` = false`;
+            }
             break;
         case "bytes":
             type = "TArray<uint8>";
@@ -451,7 +474,9 @@ function field2type(field: ProtoBuf.ProtoField, includes?: string[]): [string, M
             // 项目理论上不使用
             type = "int64";
             ttype = NSType.Int64;
-            def = ` = 0`;
+            if (!def) {
+                def = ` = 0`;
+            }
             break;
         case "message":
             type = field.type;
