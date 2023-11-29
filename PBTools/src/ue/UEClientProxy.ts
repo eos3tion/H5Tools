@@ -5,12 +5,23 @@ import "../../lib/protobuf.js";
 import { createContent as createContentOrigin, writeFile, log, error, progress, getTempPath, CmdSuffix } from "../Helper.js";
 import { addCmds } from "./UECmdTemplate.js";
 import { analyseUrl, updateWithGit, checkIndexPage, getProtoFromMD, checkGitIsOK } from "../GitlabHelper.js";
+import { ClassHelper, getClassHelper } from "./UEClassHelper.js";
 const pbjs: typeof import("protobufjs") = ProtoBuf;
 const path: typeof import("path") = nodeRequire("path");
 
 function createContent(parentID: string, filename: string, idx: number, ccode: string) {
     createContentOrigin(parentID, filename, idx, ccode, "c++")
 }
+
+function createClassHelper(gcfg: ClientCfg) {
+    let cprefix = gcfg ? gcfg.cprefix : null;
+    if (cprefix) {
+        classHelper = getClassHelper(cprefix);
+        error(classHelper.getError());
+    }
+}
+
+let classHelper: ClassHelper;
 
 async function requestAll(cookieForPath: CookieForPath, gcfg: ClientCfg) {
     progress.reset();
@@ -24,6 +35,7 @@ async function requestAll(cookieForPath: CookieForPath, gcfg: ClientCfg) {
     const { page, gitUrl, project, baseWikiUrl } = analyseUrl(wikiUrl);
     let dist = path.join(getTempPath(), Const.GitTempPath, project);
     await updateWithGit(dist, gitUrl);
+    createClassHelper(gcfg);
     //开始检查文件
     const pageDict = await checkIndexPage(dist, page);
     if (pageDict) {
@@ -38,6 +50,7 @@ async function request(url: string, gcfg: ClientCfg) {
     if (!checkGitIsOK()) {
         return;
     }
+    createClassHelper(gcfg);
     const { page: name, gitUrl, project, baseWikiUrl } = analyseUrl(url);
     let dist = path.join(getTempPath(), Const.GitTempPath, project);
     await updateWithGit(dist, gitUrl);
@@ -101,6 +114,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
     let cmdDict: { [name: string]: string } = {};
     // 客户端和服务端的Service收发数组
     let deles: string[] = [], funcs: string[] = [], handlers: string[] = [], cRegs: string[] = [], cIncludes: string[] = [], implLines: string[] = [], simports: string[] = [];
+
     for (let msg of p.messages) {
         // 所有的变量
         // 一行一个
@@ -123,7 +137,11 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
             let data = getVariable(field, variables, imports);
             fieldDatas.push(data);
         }
-        imports = imports.map(inc => getInclude(inc));
+        let cdir = "";
+        if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
+            cdir = path.join(cprefix, cpath, "msgs");
+        }
+        imports = imports.map(inc => getInclude(inc, "", cdir));
         // 根据CMD 生成通信代码
         // 生成代码
         let className: string = msg.name;
@@ -154,7 +172,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
                 //创建send指令
                 makeSendFunDefine(className, channel, funcs);
                 makeSendFunImpl(service, className, implLines);
-                cIncludes.push(getInclude(className, "msgs/"));
+                cIncludes.push(getInclude(className, "msgs/", cdir));
 
             }
         } else if (s) { // server to client
@@ -164,14 +182,12 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
             makeReceiveDele(className, deles);
             makeReceiveHandler(className, handlers);
             makeRegs(className, cRegs);
-            cIncludes.push(getInclude(className, "msgs/"));
+            cIncludes.push(getInclude(className, "msgs/", cdir));
         }
 
         if (isCreateMsg) { //需要生成消息
-
             let clientCode = getStructContent(now, url, className, variables, imports);
-            if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
-                let cdir = path.join(cprefix, cpath, "msgs");
+            if (cdir) {
                 let out = writeFile(className + UEConstString.FileH, cdir, clientCode);
                 if (out) {
                     log(`<font color="#0c0">生成客户端代码成功，${out}</font>`);
@@ -375,8 +391,13 @@ public:
 };`
 }
 
-function getInclude(className: string, pre = "") {
-    return `#include "${pre}${className}.h"`
+function getInclude(className: string, pre = "", cdir: string) {
+    if (classHelper && cdir) {
+        //检查 className 
+        return `#include "${pre}${classHelper.getInclude(className, cdir)}"`;
+    } else {
+        return `#include "${pre}${className}.h"`
+    }
 }
 
 //------------------- Service.cpp ---------------------------------------
