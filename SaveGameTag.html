@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>输出文本渐变数据</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" href="helpers/easyui/themes/default/easyui.css" />
+    <link rel="stylesheet" type="text/css" href="helpers/easyui/themes/icon.css" />
+    <script type="text/javascript" src="./helpers/Extend.js"></script>
+    <script type="text/javascript" src="./helpers/cookie.js"></script>
+    <script>
+        const cookieKey = "SaveGameTag";
+        function $g(id) { return document.getElementById(id) };
+        function GetCode(content) {
+            let code = `#pragma once
+#include "GameplayTagContainer.h"
+
+static FGameplayTag GetTag(const FString& TagKey)
+{
+	return FGameplayTag::RequestGameplayTag(FName(TagKey));
+}
+
+class ModuleIDTag
+{
+public:
+${getTagCode(content, "ModuleID")}
+};
+
+
+class GameplayEvent
+{
+public:
+${getTagCode(content, "Event")}
+};
+ `
+
+
+            console.dir(code);
+            return code;
+        }
+
+        function getPathCookie(id) {
+            let sPath = cookie.getCookie(cookieKey + id);
+            if (sPath) {
+                $g(id).value = sPath;
+            }
+        }
+
+        function getTagCode(content, tagType) {
+            const Reg = new RegExp(`\\+GameplayTagList=\\(Tag="${tagType}\\.(.*?)",DevComment="(.*?)"\\)`, "g");
+            let code = ``;
+            while (true) {
+                let result = Reg.exec(content);
+                if (result) {
+                    code += getCode(result[1], result[2]);
+                } else {
+                    break
+                }
+            }
+            return code;
+
+            function getCode(tag, comment) {
+                tag = tag.replace(/\./g, "_");
+                return `
+    /**
+     * ${comment}
+     */
+    inline const static FString ${tag} = "${tagType}.${tag}";
+    
+    /**
+     * ${comment}
+     */
+	static FGameplayTag Get${tag}()
+	{
+		return GetTag(${tag});
+	}`
+            }
+        }
+
+        function generate() {
+            const fs = require("fs");
+            const sourceFile = $g("txtSourceFile").value;
+            const targetCodeFile = $g("txtTargetCodeFile").value;
+            if (sourceFile && targetCodeFile) {
+                const source = fs.readFileSync(sourceFile, "utf8");
+                const code = GetCode(source);
+                fs.writeFileSync(targetCodeFile, code, "utf8");
+
+                cookie.setCookie(cookieKey + "txtSourceFile", sourceFile);
+                cookie.setCookie(cookieKey + "txtTargetCodeFile", targetCodeFile);
+                alert("处理完成")
+            } else {
+                alert("请设值文件路径")
+            }
+        }
+        ready(() => {
+            getPathCookie("txtSourceFile");
+            getPathCookie("txtTargetCodeFile");
+        })
+    </script>
+</head>
+
+<body>
+    GameplayTag.ini文件路径：<input type="text" id="txtSourceFile" size="50" /><br /> 生成的c++文件路径：<input type="text"
+        id="txtTargetCodeFile" size="50" /><input type="button" onclick="generate()" value="生成" />
+</body>
+
+</html>
