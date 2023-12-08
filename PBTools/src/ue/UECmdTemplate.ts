@@ -1,19 +1,8 @@
 const fs: typeof import("fs") = nodeRequire("fs");
 
-/**
- * 客户端前缀
- */
-const clientPrefix = `#pragma once
-#include "NetCore.h"
-
-class NetCMDs
-{
-public:
-`;
 
 const ident = `\t`;
 
-const clientSuffix = `\n};`
 
 const regValue = /\s*inline static const NetCMD ([A-Z][a-zA-Z_$0-9]+) = "(.*?)";\n/g;
 
@@ -24,7 +13,7 @@ const regValue = /\s*inline static const NetCMD ([A-Z][a-zA-Z_$0-9]+) = "(.*?)";
  * @class CmdTemplate
  */
 
-export function addCmds(file: string, cmds: UECmdDict, c2stype: string, error: Function) {
+export function addCmds(file: string, cmds: UECmdDict, c2stype: string, error: Function, ModuleAPIName: string) {
     let dict: UECmdDict = {};
     let dictName: { [cmd: string]: string } = {};
     //S2C理论上允许使用同一个cmd
@@ -61,13 +50,19 @@ export function addCmds(file: string, cmds: UECmdDict, c2stype: string, error: F
     //基于字符串排序
     let arr = Object.keys(dict);
     arr.sort();
-    let c = clientPrefix;
+    let c = `#pragma once
+#include "NetCore.h"
+
+class ${ModuleAPIName}NetCMDs
+{
+public:
+`;
     for (let i = 0; i < arr.length; i++) {
         let name = arr[i];
         let cmd = dict[name];
         c += `${ident}inline static const NetCMD ${name} = "${cmd}";\n`;
     }
-    c += clientSuffix;
+    c += `\n};`;
     fs.writeFileSync(file, c);
     return c;
 }

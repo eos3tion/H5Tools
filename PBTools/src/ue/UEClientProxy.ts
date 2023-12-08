@@ -1,5 +1,5 @@
 
-import CookieForPath from "../CookieForPath";
+import CookieForPath from "../CookieForPath.js";
 import "../../lib/hanzi2pinyin.js";
 import "../../lib/protobuf.js";
 import { createContent as createContentOrigin, writeFile, log, error, progress, getTempPath, CmdSuffix } from "../Helper.js";
@@ -8,6 +8,13 @@ import { analyseUrl, updateWithGit, checkIndexPage, getProtoFromMD, checkGitIsOK
 import { ClassHelper, getClassHelper } from "./UEClassHelper.js";
 const pbjs: typeof import("protobufjs") = ProtoBuf;
 const path: typeof import("path") = nodeRequire("path");
+
+const projectKey = Const.CookieProjectKey;
+const cookieForPath = new CookieForPath(projectKey);
+const txtModuleAPIName = "txtModuleAPI";
+cookieForPath.getPathCookie(txtModuleAPIName);
+
+
 
 function createContent(parentID: string, filename: string, idx: number, ccode: string) {
     createContentOrigin(parentID, filename, idx, ccode, "c++")
@@ -64,6 +71,12 @@ function getWikiUrl(name: string, baseWikiUrl: string) {
 
 
 function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
+    let inp = document.getElementById(txtModuleAPIName) as HTMLInputElement;
+    let ModuleAPIName = inp.value.trim();
+    if (ModuleAPIName) {
+        ModuleAPIName = ModuleAPIName + " ";
+    }
+    cookieForPath.setPathCookie(txtModuleAPIName, false);
     url = url || (gcfg ? gcfg.url : "");
     url = url || "[文本框中，复制粘贴]";
     let cprefix = gcfg ? gcfg.cprefix : null;
@@ -186,7 +199,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         }
 
         if (isCreateMsg) { //需要生成消息
-            let clientCode = getStructContent(now, url, className, variables, imports);
+            let clientCode = getStructContent(now, url, className, variables, imports, ModuleAPIName);
             if (cdir) {
                 let out = writeFile(className + UEConstString.FileH, cdir, clientCode);
                 if (out) {
@@ -203,7 +216,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let crout = path.join(cprefix, UEConstString.PBCmdName + UEConstString.FileH);
         let out: string;
         try {
-            out = addCmds(crout, cmdDict, c2s, error);
+            out = addCmds(crout, cmdDict, c2s, error, ModuleAPIName);
 
             log(`<font color="#0c0">生成客户端代码成功，${crout}</font>`);
         } catch (e) {
@@ -218,7 +231,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         //检查是否有客户端Service文件
         let cdir = path.join(cprefix, fcpath);
         let cpath = path.join(cdir, service);
-        let ccodeH = getServiceHFileContent(now, url, service, cIncludes, deles, funcs, handlers);
+        let ccodeH = getServiceHFileContent(now, url, service, cIncludes, deles, funcs, handlers, ModuleAPIName);
         let ccodeCPP = getServiceCPPFileContent(service, cRegs, implLines);
         // 创建客户端Service
         if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
@@ -255,7 +268,7 @@ function GetStructName(className: string) {
  * @param variables 
  * @returns 
  */
-function getStructContent(createTime: string, path: string, className: string, variables: string[], imports: string[]) {
+function getStructContent(createTime: string, path: string, className: string, variables: string[], imports: string[], ModuleAPIName: string) {
     let vars = `\t` + variables.join(`\n\t`);
     return `#pragma once
 
@@ -269,7 +282,7 @@ ${imports.join("\n")}
  * 生成时间 ${createTime}
  **/
 USTRUCT(BlueprintType)
-struct ${GetStructName(className)}
+struct ${ModuleAPIName}${GetStructName(className)}
 {
     GENERATED_BODY()
 
@@ -360,7 +373,7 @@ function makeSendFunDefine(className: string, channel: number, funcs: string[]) 
     funcs.push(`void ${className}(F${className} _${className}, ENetChannel Channel = ${strChannel}) const;`)
 }
 
-function getServiceHFileContent(createTime: string, path: string, serviceClassName: string, includes: string[], deles: string[], funcs: string[], handlers: string[]) {
+function getServiceHFileContent(createTime: string, path: string, serviceClassName: string, includes: string[], deles: string[], funcs: string[], handlers: string[], ModuleAPIName: string) {
 
     return `#pragma once
 
@@ -377,7 +390,7 @@ ${deles.join("\n")}
  * 生成时间 ${createTime}
  */
 UCLASS(BlueprintType)
-class ${serviceObjectName(serviceClassName)} : public UBaseNetProxy
+class ${ModuleAPIName}${serviceObjectName(serviceClassName)} : public UBaseNetProxy
 {
 	GENERATED_BODY()
 
