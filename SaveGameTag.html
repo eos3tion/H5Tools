@@ -60,12 +60,13 @@ ${getTagCode(content, "Event")}
             return code;
 
             function getCode(tag, comment) {
+                let rawTag = tag;
                 tag = tag.replace(/\./g, "_");
                 return `
     /**
      * ${comment}
      */
-    inline const static FString ${tag} = "${tagType}.${tag}";
+    inline const static FString ${tag} = "${tagType}.${rawTag}";
     
     /**
      * ${comment}
