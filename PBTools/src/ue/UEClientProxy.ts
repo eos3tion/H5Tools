@@ -126,7 +126,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
     let hasService = false;
     let cmdDict: { [name: string]: string } = {};
     // 客户端和服务端的Service收发数组
-    let deles: string[] = [], funcs: string[] = [], handlers: string[] = [], cRegs: string[] = [], cIncludes: string[] = [], implLines: string[] = [], simports: string[] = [];
+    let deles: string[] = [], funcs: string[] = [], sendRegs: string[] = [], handlers: string[] = [], cRegs: string[] = [], cIncludes: string[] = [], implLines: string[] = [], simports: string[] = [];
 
     for (let msg of p.messages) {
         // 所有的变量
@@ -183,7 +183,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
                 hasService = true;
                 cmdDict[className] = cmddata;
                 //创建send指令
-                makeSendFunDefine(className, channel, funcs);
+                makeSendFunDefine(className, channel, funcs, sendRegs);
                 makeSendFunImpl(service, className, implLines);
                 cIncludes.push(getInclude(className, "msgs/", cdir));
 
@@ -232,7 +232,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let cdir = path.join(cprefix, fcpath);
         let cpath = path.join(cdir, service);
         let ccodeH = getServiceHFileContent(now, url, service, cIncludes, deles, funcs, handlers, ModuleAPIName);
-        let ccodeCPP = getServiceCPPFileContent(service, cRegs, implLines);
+        let ccodeCPP = getServiceCPPFileContent(service, cRegs, implLines, sendRegs);
         // 创建客户端Service
         if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
 
@@ -362,7 +362,7 @@ function makeReceiveHandler(className: string, handlers: string[]) {
 }
 
 //------------------- Send---------------------------------
-function makeSendFunDefine(className: string, channel: number, funcs: string[]) {
+function makeSendFunDefine(className: string, channel: number, funcs: string[], sendRegs: string[]) {
     // UFUNCTION(BlueprintCallable)
     // void Login_C(FLogin_C _Login_C) const;
     funcs.push(`UFUNCTION(BlueprintCallable)`);
@@ -371,6 +371,8 @@ function makeSendFunDefine(className: string, channel: number, funcs: string[]) 
         strChannel = `ENetChannel::Channel` + channel;
     }
     funcs.push(`void ${className}(F${className} _${className}, ENetChannel Channel = ${strChannel}) const;`)
+
+    sendRegs.push(`RegSend(${UEConstString.PBCmdName}::${className}, F${className}::StaticStruct(), ${strChannel});`)
 }
 
 function getServiceHFileContent(createTime: string, path: string, serviceClassName: string, includes: string[], deles: string[], funcs: string[], handlers: string[], ModuleAPIName: string) {
@@ -424,13 +426,15 @@ function makeSendFunImpl(serviceClassName: string, className: string, implLines:
     implLines.push(`NetSend(${serviceObjectName(serviceClassName)}, ${className}, ${UEConstString.PBCmdName}::${className})`)
 }
 
-function getServiceCPPFileContent(serviceClassName: string, regs: string[], implLines: string[]) {
+function getServiceCPPFileContent(serviceClassName: string, regs: string[], implLines: string[], sendRegs: string[]) {
     return `
 #include "${serviceClassName}.h"
 
 void ${serviceObjectName(serviceClassName)}::RegReceiveHandlers() const
 {
 	${regs.join("\n\t")}
+    
+    ${sendRegs.join("\n\t")}
 }
 
 
