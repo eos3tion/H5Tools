@@ -231,8 +231,10 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         //检查是否有客户端Service文件
         let cdir = path.join(cprefix, fcpath);
         let cpath = path.join(cdir, service);
-        let ccodeH = getServiceHFileContent(now, url, service, cIncludes, deles, funcs, handlers, ModuleAPIName);
+        let NetCMDsPath = path.relative(cdir, cprefix);
+        let ccodeH = getServiceHFileContent(now, url, service, cIncludes, deles, funcs, handlers, ModuleAPIName, NetCMDsPath.replace(/\\/g, "/"));
         let ccodeCPP = getServiceCPPFileContent(service, cRegs, implLines, sendRegs);
+
         // 创建客户端Service
         if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
 
@@ -375,13 +377,13 @@ function makeSendFunDefine(className: string, channel: number, funcs: string[], 
     sendRegs.push(`RegSend(${UEConstString.PBCmdName}::${className}, F${className}::StaticStruct(), ${strChannel});`)
 }
 
-function getServiceHFileContent(createTime: string, path: string, serviceClassName: string, includes: string[], deles: string[], funcs: string[], handlers: string[], ModuleAPIName: string) {
+function getServiceHFileContent(createTime: string, path: string, serviceClassName: string, includes: string[], deles: string[], funcs: string[], handlers: string[], ModuleAPIName: string, NetCMDsPath: string) {
 
     return `#pragma once
 
 #include "CoreMinimal.h"
 #include "BaseNetProxy.h"
-#include "../NetCMDs.h"
+#include "${NetCMDsPath}/NetCMDs.h"
 ${includes.join("\n")}
 #include "${serviceClassName}.generated.h"
 
