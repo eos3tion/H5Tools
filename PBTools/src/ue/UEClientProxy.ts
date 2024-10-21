@@ -409,6 +409,9 @@ public:
 }
 
 function getInclude(className: string, pre = "", cdir: string) {
+    if (className.startsWith("#include")) {
+        return className;
+    }
     if (classHelper && cdir) {
         //检查 className 
         return `#include "${pre}${classHelper.getInclude(className, cdir)}"`;
@@ -526,6 +529,13 @@ function field2type(field: ProtoBuf.ProtoField, includes?: string[]): [string, M
         case "string":
             type = "FString";
             ttype = NSType.String;
+            break;
+        case "object":
+            type = "FJsonObjectWrapper";
+            if (includes) {
+                includes.pushOnce(`#include "JsonObjectWrapper.h"`);
+            }
+            ttype = `"FJsonObjectWrapper"`;
             break;
         default:
             if (includes) {
