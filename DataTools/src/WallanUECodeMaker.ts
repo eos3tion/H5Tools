@@ -41,11 +41,12 @@ function flash() {
         return {
             code:
                 `#pragma once
+${genManualAreaCode("$area1", sdict)}
+
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "${className}.generated.h"
 
-${genManualAreaCode("$area1", sdict)}
 
 
 /**
