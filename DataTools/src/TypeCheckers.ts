@@ -10,6 +10,7 @@ function tryParseNumber(value: any) {
     if (typeof value === "boolean") {
         return value ? 1 : 0;
     }
+    value = value.replace(/,/g, "");
     if (value == +value && value.length == (+value + "").length) { // 数值类型
         // "12132123414.12312312"==+"12132123414.12312312"
         // true
