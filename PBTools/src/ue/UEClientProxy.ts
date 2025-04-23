@@ -136,7 +136,8 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let options = msg.options;
         let nofunc = options[Options.NoFunction] !== undefined;
         let climit: number = +options[Options.ClientLimit];
-        let channel = +options[Options.Channel] || pageChannel;
+        let msgChannel = +options[Options.Channel];
+        let channel = isNaN(msgChannel) ? pageChannel : msgChannel;
         let cpath: string = options[Options.ClientPath] || fcpath;
         //如果设置的不是整数，则让climit为undefined
         isNaN(climit) && (climit = undefined);
