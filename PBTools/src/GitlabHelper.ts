@@ -11,6 +11,7 @@ export function analyseUrl(wikiUrl: string) {
     //http://192.168.0.205:1234/h5arpg/hch5/wikis/%E5%89%8D%E5%90%8E%E7%AB%AF%E9%80%9A%E4%BF%A1
     //只处理 gitlab 地址
     wikiUrl = decodeURIComponent(wikiUrl);
+    wikiUrl = wikiUrl.replace(/\/-\//, "/");
     let protocalIndex = wikiUrl.indexOf("//");
     let p = protocalIndex > -1 ? wikiUrl.substr(protocalIndex + 2) : wikiUrl;
     let paths = p.split("/");
