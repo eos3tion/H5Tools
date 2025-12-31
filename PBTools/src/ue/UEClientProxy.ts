@@ -557,6 +557,13 @@ function getVariable(field: ProtoBuf.ProtoField, variables: string[], includes: 
     let comment = field.comment;// 调整protobuf.js代码 让其记录注释
     let fname = field.name;
     let [fieldType, isMsg, tType, repeated, def] = field2type(field, includes);
+
+    variables.push(`/**`);
+    variables.push(` * ${fname}是否有值`);
+    variables.push(` */`);
+    variables.push(`UPROPERTY(BlueprintReadOnly)`);
+    variables.push(`bool Has${fname} = false;`);
+
     variables.push(`/**`);
     variables.push(` * ${comment}`);
     variables.push(` */`);
