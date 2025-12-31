@@ -11,12 +11,18 @@ function tryParseNumber(value: any) {
         return value ? 1 : 0;
     }
     value = value.replace(/,/g, "");
-    if (value == +value && value.length == (+value + "").length) { // 数值类型
-        // "12132123414.12312312"==+"12132123414.12312312"
-        // true
-        // "12132123414.12312312".length==(+"12132123414.12312312"+"").length
-        // false
-        return +value;
+    if (value == +value) { // 数值类型
+        if (value.indexOf(".") >= 0) {//有小数点
+            //去除字符串末尾的0
+            value = value.replace(/\.0+$/, "");
+        }
+        if (value.length == (+value + "").length) {
+            // "12132123414.12312312"==+"12132123414.12312312"
+            // true
+            // "12132123414.12312312".length==(+"12132123414.12312312"+"").length
+            // false
+            return +value;
+        }
     } else {
         return value;
     }
