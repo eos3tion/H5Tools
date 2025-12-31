@@ -151,7 +151,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
 
             let data = getVariable(field, variables, imports);
             fieldDatas.push(data);
-            fieldIdxList.push(`{${field.name}, ${field.id}}`);
+            fieldIdxList.push(`{"${field.name}", ${field.id}}`);
         }
         let cdir = "";
         if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
