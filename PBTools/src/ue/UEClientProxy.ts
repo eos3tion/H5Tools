@@ -14,10 +14,10 @@ const cookieForPath = new CookieForPath(projectKey);
 const txtModuleAPIName = "txtModuleAPI";
 cookieForPath.getPathCookie(txtModuleAPIName);
 
-
+hljs.loadLanguage("cpp");
 
 function createContent(parentID: string, filename: string, idx: number, ccode: string) {
-    createContentOrigin(parentID, filename, idx, ccode, "c++")
+    createContentOrigin(parentID, filename, idx, ccode, "cpp")
 }
 
 function createClassHelper(gcfg: ClientCfg) {
@@ -136,8 +136,10 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let options = msg.options;
         let nofunc = options[Options.NoFunction] !== undefined;
         let climit: number = +options[Options.ClientLimit];
-        let channel = +options[Options.Channel] || pageChannel;
+        let msgChannel = +options[Options.Channel];
+        let channel = isNaN(msgChannel) ? pageChannel : msgChannel;
         let cpath: string = options[Options.ClientPath] || fcpath;
+        let fieldIdxList: string[] = [];
         //如果设置的不是整数，则让climit为undefined
         isNaN(climit) && (climit = undefined);
         // repeated 字段的数量
@@ -149,6 +151,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
 
             let data = getVariable(field, variables, imports);
             fieldDatas.push(data);
+            fieldIdxList.push(`{"${field.name}", ${field.id}}`);
         }
         let cdir = "";
         if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
@@ -199,10 +202,11 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         }
 
         if (isCreateMsg) { //需要生成消息
-            let clientCode = getStructContent(now, url, className, variables, imports, ModuleAPIName);
+            let clientCode = getStructContent(now, url, className, variables, imports, ModuleAPIName, fieldIdxList);
             if (cdir) {
                 let out = writeFile(className + UEConstString.FileH, cdir, clientCode);
                 if (out) {
+                    classHelper.reg(className, path.join(cdir, className + UEConstString.FileH));
                     log(`<font color="#0c0">生成客户端代码成功，${out}</font>`);
                 }
             }
@@ -270,11 +274,12 @@ function GetStructName(className: string) {
  * @param variables 
  * @returns 
  */
-function getStructContent(createTime: string, path: string, className: string, variables: string[], imports: string[], ModuleAPIName: string) {
+function getStructContent(createTime: string, path: string, className: string, variables: string[], imports: string[], ModuleAPIName: string, fieldIdxList: string[]) {
     let vars = `\t` + variables.join(`\n\t`);
     return `#pragma once
 
 #include "CoreMinimal.h"
+#include "MeowNet/Protobuf/PBUtils.h"
 ${imports.join("\n")}
 #include "${className}.generated.h"
 
@@ -286,7 +291,19 @@ ${imports.join("\n")}
 USTRUCT(BlueprintType)
 struct ${ModuleAPIName}${GetStructName(className)}
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
+
+	${GetStructName(className)}()
+	{
+		static bool bInitialized = false;
+		if (!bInitialized)
+		{
+			RegPBFields(StaticStruct(), {
+				            ${fieldIdxList.join(",\n\t\t\t\t            ")}
+			            });
+			bInitialized = true;
+		}
+	}
 
 ${vars}
 };
@@ -556,6 +573,13 @@ function getVariable(field: ProtoBuf.ProtoField, variables: string[], includes: 
     let comment = field.comment;// 调整protobuf.js代码 让其记录注释
     let fname = field.name;
     let [fieldType, isMsg, tType, repeated, def] = field2type(field, includes);
+
+    variables.push(`/**`);
+    variables.push(` * ${fname}是否有值`);
+    variables.push(` */`);
+    variables.push(`UPROPERTY(BlueprintReadOnly)`);
+    variables.push(`uint8 Has_${fname}:1 = false;`);
+
     variables.push(`/**`);
     variables.push(` * ${comment}`);
     variables.push(` */`);

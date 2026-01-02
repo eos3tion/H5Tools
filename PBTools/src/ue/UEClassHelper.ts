@@ -42,6 +42,9 @@ export function getClassHelper(baseDir: string, excludeReg?: RegExp) {
             }
             return tpath;
         },
+        reg(className: string, path: string) {
+            classPathDict[className] = path;
+        },
         getError() {
             return error;
         }
