@@ -10,6 +10,9 @@ function tryParseNumber(value: any) {
     if (typeof value === "boolean") {
         return value ? 1 : 0;
     }
+    if (!/^[+-]?[0-9,.]+/.test(value)) {
+        return value;
+    }
     value = value.replace(/,/g, "");
     if (value == +value) { // 数值类型
         if (value.indexOf(".") >= 0) {//有小数点
