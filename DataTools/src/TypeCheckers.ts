@@ -10,7 +10,7 @@ function tryParseNumber(value: any) {
     if (typeof value === "boolean") {
         return value ? 1 : 0;
     }
-    if (!/^[+-]?[0-9,.]+/.test(value)) {
+    if (!/^[+-]?[0-9eE,.]+/.test(value)) {
         return value;
     }
     value = value.replace(/,/g, "");
