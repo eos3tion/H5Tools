@@ -147,9 +147,18 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let fieldDatas: FieldData[] = [];
         let imports: string[] = [];
         let cmddata: UECmdType = options[Options.CMD];
+
+        // 根据CMD 生成通信代码
+        // 生成代码
+        let className: string = msg.name;
+        let ctype = className.slice(-1 * c2s.length);
+        let stype = className.slice(-1 * s2c.length);
+        let c = ctype == c2s;
+        let s = stype == s2c;
+
         for (let field of msg.fields) {
 
-            let data = getVariable(field, variables, imports);
+            let data = getVariable(field, variables, imports, !c);
             fieldDatas.push(data);
             fieldIdxList.push(`{"${field.name}", ${field.id}}`);
         }
@@ -158,9 +167,6 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
             cdir = path.join(cprefix, cpath, "msgs");
         }
         imports = imports.map(inc => getInclude(inc, "", cdir));
-        // 根据CMD 生成通信代码
-        // 生成代码
-        let className: string = msg.name;
         /**
          * 是否需要生成消息
          */
@@ -171,10 +177,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         // 2. 消息中 field 为 1个，但是数据为 repeated
         // 3. 消息为非 S2C 或者 C2S 的情况
         // let type = className.substr(-3);
-        let ctype = className.slice(-1 * c2s.length);
-        let stype = className.slice(-1 * s2c.length);
-        let c = ctype == c2s;
-        let s = stype == s2c;
+
         // let type = c ? ctype : s ? stype : "";
         if (c || s) {
             let fleng = fieldDatas.length;
@@ -569,16 +572,18 @@ function field2type(field: ProtoBuf.ProtoField, includes?: string[]): [string, M
     return [type, isMsg, ttype, false, def];
 }
 
-function getVariable(field: ProtoBuf.ProtoField, variables: string[], includes: string[]): FieldData {
+function getVariable(field: ProtoBuf.ProtoField, variables: string[], includes: string[], hasHasField: boolean): FieldData {
     let comment = field.comment;// 调整protobuf.js代码 让其记录注释
     let fname = field.name;
     let [fieldType, isMsg, tType, repeated, def] = field2type(field, includes);
 
-    variables.push(`/**`);
-    variables.push(` * ${fname}是否有值`);
-    variables.push(` */`);
-    variables.push(`UPROPERTY(BlueprintReadOnly)`);
-    variables.push(`uint8 Has_${fname}:1 = false;`);
+    if (hasHasField) {
+        variables.push(`/**`);
+        variables.push(` * ${fname}是否有值`);
+        variables.push(` */`);
+        variables.push(`UPROPERTY(BlueprintReadOnly, Transient)`);
+        variables.push(`uint8 Has_${fname}:1 = false;`);
+    }
 
     variables.push(`/**`);
     variables.push(` * ${comment}`);
