@@ -15,24 +15,61 @@
             let code = `#pragma once
 #include "GameplayTagContainer.h"
 
-static FGameplayTag GetTag(const FString& TagKey)
-{
-	return FGameplayTag::RequestGameplayTag(FName(TagKey));
-}
-
+/**
+ * 模块ID
+ */
 class ModuleIDTag
 {
 public:
 ${getTagCode(content, "ModuleID")}
 };
 
-
+/**
+ * 事件
+ */
 class GameplayEvent
 {
 public:
 ${getTagCode(content, "Event")}
+${getTagCode(content, "GameplayEvent")}
 };
- `
+
+/**
+ * Actor隐藏原因
+ */
+class ActorHiddenReason
+{
+public:
+${getTagCode(content, "ActorHiddenReason")}
+};
+
+/**
+ * 地图图标
+ */
+class MapSignIconTag
+{
+public:
+${getTagCode(content, "MapSignIcon")}
+};
+
+/**
+ * 任务解析器类型
+ */
+class TaskParserTypeTag
+{
+public:
+${getTagCode(content, "TaskParserType")}
+};
+
+/**
+ * NPC交互接受类型
+ */
+class NPCAcceptType
+{
+public:
+${getTagCode(content, "NPCAcceptType")}
+};
+`
 
 
             console.dir(code);
@@ -73,7 +110,8 @@ ${getTagCode(content, "Event")}
      */
 	static FGameplayTag Get${tag}()
 	{
-		return GetTag(${tag});
+		static FGameplayTag Tag = FGameplayTag::RequestGameplayTag(FName(${tag}));
+		return Tag;
 	}`
             }
         }
