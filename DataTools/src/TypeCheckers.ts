@@ -15,6 +15,9 @@ function tryParseNumber(value: any) {
     }
     value = value.replace(/,/g, "");
     if (value == +value) { // 数值类型
+        if (value == "-0") {
+            return -0;
+        }
         if (value.indexOf(".") >= 0) {//有小数点
             //去除字符串末尾的0
             value = value.replace(/\.0+$/, "");
@@ -26,9 +29,9 @@ function tryParseNumber(value: any) {
             // false
             return +value;
         }
-    } else {
-        return value;
     }
+    return value;
+
 }
 
 abstract class AbsTypeChecker implements TypeChecker {
