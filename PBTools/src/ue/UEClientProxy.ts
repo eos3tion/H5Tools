@@ -577,7 +577,7 @@ function getVariable(field: ProtoBuf.ProtoField, variables: string[], includes: 
     let fname = field.name;
     let [fieldType, isMsg, tType, repeated, def] = field2type(field, includes);
 
-    if (hasHasField) {
+    if (hasHasField && isMsg != MsgType.NotMessage && !repeated) {
         variables.push(`/**`);
         variables.push(` * ${fname}是否有值`);
         variables.push(` */`);
