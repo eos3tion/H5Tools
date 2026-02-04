@@ -6,32 +6,51 @@ import { decode } from "./ConditionTypeParser.js";
  * @param {*} value (description)
  * @returns (description)
  */
-function tryParseNumber(value: any) {
-    if (typeof value === "boolean") {
-        return value ? 1 : 0;
+function tryParseNumber(str: any) {
+    if (typeof str === "boolean") {
+        return str ? 1 : 0;
     }
-    if (!/^[+-]?[0-9eE,.]+/.test(value)) {
-        return value;
-    }
-    value = value.replace(/,/g, "");
-    if (value == +value) { // 数值类型
-        if (value == "-0") {
-            return -0;
-        }
-        if (value.indexOf(".") >= 0) {//有小数点
-            //去除字符串末尾的0
-            value = value.replace(/\.0+$/, "");
-        }
-        if (value.length == (+value + "").length) {
-            // "12132123414.12312312"==+"12132123414.12312312"
-            // true
-            // "12132123414.12312312".length==(+"12132123414.12312312"+"").length
-            // false
-            return +value;
-        }
-    }
-    return value;
+    if (typeof str !== "string") return str;
 
+    let trimmed = str.trim();
+
+    // ---------- 处理带千分位的数字 ----------
+    // 例如：1,234,567 或 -1,234.56
+    // 仅当整体符合千分位格式时才去掉逗号
+    const commaNumberPattern =
+        /^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+    if (commaNumberPattern.test(trimmed)) {
+        trimmed = trimmed.replace(/,/g, "");
+    }
+
+    // ---------- 判断是否数字 ----------
+    const numericPattern =
+        /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
+
+    if (!numericPattern.test(trimmed)) {
+        return str;
+    }
+
+    const num = Number(trimmed);
+
+    if (!Number.isFinite(num)) {
+        return str;
+    }
+
+    // ---------- 处理 -0 ----------
+    if (Object.is(num, -0)) {
+        return 0;
+    }
+
+    // ---------- 安全整数判断 ----------
+    if (Number.isInteger(num)) {
+        if (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER) {
+            return str;
+        }
+    }
+
+    return num;
 }
 
 abstract class AbsTypeChecker implements TypeChecker {
