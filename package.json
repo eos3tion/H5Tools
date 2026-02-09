@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "electron": "^6.1.12"
+  }
+}

@@ -1,2 +1,2 @@
 start /b node web.js
-electron app
+node_modules\.bin\electron app
