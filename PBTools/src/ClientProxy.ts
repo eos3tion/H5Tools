@@ -7,8 +7,8 @@ import { createContent, writeFile, log, error, progress, getTempPath, CmdSuffix 
 import ServiceNameTemplate from "./ServiceNameTemplate.js";
 import { addCmds } from "./CmdTemplate.js";
 import { analyseUrl, updateWithGit, checkIndexPage, getProtoFromMD, checkGitIsOK } from "./GitlabHelper.js";
+import { genManualAreaCode, getManualCodeInfo, replaceFuncManuals } from "./ManualCodeHelper.js";
 const pbjs: typeof import("protobufjs") = ProtoBuf;
-const fs: typeof import("fs") = nodeRequire("fs");
 const path: typeof import("path") = nodeRequire("path");
 
 
@@ -314,82 +314,6 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
     }
 }
 
-/**
- * 获取手动写的代码信息
- */
-function getManualCodeInfo(file: string) {
-    let manuals: { [index: string]: string } = {};
-    /**
-     * 注释的字典
-     */
-    let comments: { [index: string]: string } = {};
-    if (file && fs.existsSync(file)) {
-        //读取文件内容
-        let content = fs.readFileSync(file, "utf8");
-
-        // /*-*begin $area1*-*/
-        // //这里填写类上方的手写内容
-        // /*-*end $area1*-*/
-        // class XXService{
-        // protected handlerName(data:NetData) {
-        // 	let msg:className = <className>data.data;
-        // 	/*-*begin handlerName*-*/
-        // 	//这里填写方法中的手写内容
-        // 	/*-*end handlerName*-*/
-        // }
-        // /*-*begin $area2*-*/
-        // //这里填写类里面的手写内容
-        // /*-*end $area2*-*/
-        // }
-        // /*-*begin $area3*-*/
-        // //这里填写类下发的手写内容
-        // /*-*end $area3*-*/
-
-        // 注释内容
-        // /**【xHandler】
-        //  *
-        //  *
-        //  */
-
-        //找到注释内容
-        let commentReg = /[/][*][*]【([$]?[a-zA-Z0-9]+)】([^]*?)[*][/]/g;
-        while (true) {
-            let result = commentReg.exec(content);
-            if (result) {
-                let comment = result[0];
-                let key = result[1];
-                comments[key] = comment;
-            } else {
-                break;
-            }
-        }
-        //找到手写内容
-        let reg = /[/][*]-[*]begin[ ]([$]?[a-zA-Z0-9_$]+)[*]-[*][/]([^]*?)\s+[/][*]-[*]end[ ]\1[*]-[*][/]/g
-        while (true) {
-            let result = reg.exec(content);
-            if (result) {
-                let key = result[1];
-                let manual = result[2];
-                if (!manual.trim()) {//没有注释
-                    continue;
-                } else if (key in ManualCodeDefaultComment) {
-                    if (ManualCodeDefaultComment[key] == manual) {//类上中下的注释
-                        continue;
-                    }
-                } else {
-                    if (ManualCodeDefaultComment.$handler == manual) {//函数注释
-                        continue;
-                    }
-                }
-                manuals[key] = manual;
-            } else {
-                break;
-            }
-        }
-    }
-    return { manuals, comments };
-}
-
 function wikiCheck(originContent, content) {
     let commentReg = /[/][*][*]【([$_a-zA-Z][$_a-zA-Z0-9]+)】([^]*?)[*][/]/g;
     let oComments = new Map<string, string>();
@@ -576,7 +500,7 @@ function makeReciveFunc(className: string, handlerName: string, regs: string[], 
 
 
 
-function getCServiceCode(createTime: string, path: string, className: string, module: string, sends: Func[], recvs: Func[], regs: string[], cinfo: { manuals: { [index: string]: string }, comments: { [index: string]: string } }) {
+function getCServiceCode(createTime: string, path: string, className: string, module: string, sends: Func[], recvs: Func[], regs: string[], cinfo: ReturnType<typeof getManualCodeInfo>) {
     return `/**
  * 使用JunyouProtoTools，从 ${path} 生成
  * 生成时间 ${createTime}
@@ -618,55 +542,6 @@ function parseFuncs(funcs: Func[], cinfo: { manuals: { [index: string]: string }
         }
         return `${indent}${comment}\n${indent}${replaceFuncManuals(func.lines.join(`\n${indent}`), cinfo.manuals, indent)}`;
     }).join(`\n`);
-}
-
-function replaceFuncManuals(rep: string, manuals: { [index: string]: string }, indent: string = "") {
-    return rep.replace(/[/][*][|]([$_a-zA-Z0-9]+)[|][*][/]/g, (rep, hander) => {
-        return `\t` + genManualAreaCode(hander, manuals, `${indent}\t`);
-    })
-}
-
-/**
- * 生成手动代码区域的文本
- */
-function genManualAreaCode(key: string, cinfo: { [index: string]: string }, indent = "") {
-    let manual = cinfo[key];
-    if (!manual) {
-        if (key in ManualCodeDefaultComment) {
-            manual = "\n" + indent + ManualCodeDefaultComment[key];
-        } else {
-            manual = "\n" + indent + ManualCodeDefaultComment.$handler;
-        }
-    }
-    return `/*-*begin ${key}*-*/${manual}
-${indent}/*-*end ${key}*-*/`
-}
-
-
-/**
- * 手写代码的默认提示
- */
-const ManualCodeDefaultComment = {
-    /**
-     * 类上方提示
-     */
-    $area1: "//这里填写类上方的手写内容",
-    /**
-     * 类中提示
-     */
-    $area2: "//这里填写类里面的手写内容",
-    /**
-     * 类下方提示
-     */
-    $area3: "//这里填写类下发的手写内容",
-    /**
-     * onRegister方法中
-     */
-    $onRegister: "//这里写onRegister中手写内容",
-    /**
-     * 处理函数提示
-     */
-    $handler: "//这里填写方法中的手写内容",
 }
 
 /**

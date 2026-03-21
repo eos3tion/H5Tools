@@ -6,6 +6,7 @@ import { createContent as createContentOrigin, writeFile, log, error, progress, 
 import { addCmds } from "./UECmdTemplate.js";
 import { analyseUrl, updateWithGit, checkIndexPage, getProtoFromMD, checkGitIsOK } from "../GitlabHelper.js";
 import { ClassHelper, getClassHelper } from "./UEClassHelper.js";
+import { genManualAreaCode, getManualCodeInfo } from "../ManualCodeHelper.js";
 const pbjs: typeof import("protobufjs") = ProtoBuf;
 const path: typeof import("path") = nodeRequire("path");
 
@@ -113,9 +114,10 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
             getEnumVariable(v, variables);
         }
 
-        let clientCode = getClientEnumCode(now, url, className, variables);
+        let cdir = path.join(cprefix, cpath, "enums");
+        let codePath = path.join(cdir, className + UEConstString.FileH);
+        let clientCode = getClientEnumCode(now, url, className, variables, getManualCodeInfo(codePath));
         if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
-            let cdir = path.join(cprefix, cpath, "enums");
             let out = writeFile(className + UEConstString.FileH, cdir, clientCode);
             if (out) {
                 log(`<font color="#0c0">生成客户端代码成功，${out}</font>`);
@@ -205,7 +207,8 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         }
 
         if (isCreateMsg) { //需要生成消息
-            let clientCode = getStructContent(now, url, className, variables, imports, ModuleAPIName, fieldIdxList);
+            let cpath = path.join(cdir, className + UEConstString.FileH);
+            let clientCode = getStructContent(now, url, className, variables, imports, ModuleAPIName, fieldIdxList, getManualCodeInfo(cpath));
             if (cdir) {
                 let out = writeFile(className + UEConstString.FileH, cdir, clientCode);
                 if (out) {
@@ -239,8 +242,10 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let cdir = path.join(cprefix, fcpath);
         let cpath = path.join(cdir, service);
         let NetCMDsPath = path.relative(cdir, cprefix);
-        let ccodeH = getServiceHFileContent(now, url, service, cIncludes, deles, funcs, handlers, ModuleAPIName, NetCMDsPath.replace(/\\/g, "/"));
-        let ccodeCPP = getServiceCPPFileContent(service, cRegs, implLines, sendRegs);
+        let serviceHPath = cpath + UEConstString.FileH;
+        let ccodeH = getServiceHFileContent(now, url, service, cIncludes, deles, funcs, handlers, ModuleAPIName, NetCMDsPath.replace(/\\/g, "/"), getManualCodeInfo(serviceHPath));
+        let serviceCPPPath = cpath + UEConstString.FileCPP;
+        let ccodeCPP = getServiceCPPFileContent(service, cRegs, implLines, sendRegs, getManualCodeInfo(serviceCPPPath));
 
         // 创建客户端Service
         if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
@@ -277,14 +282,17 @@ function GetStructName(className: string) {
  * @param variables 
  * @returns 
  */
-function getStructContent(createTime: string, path: string, className: string, variables: string[], imports: string[], ModuleAPIName: string, fieldIdxList: string[]) {
+function getStructContent(createTime: string, path: string, className: string, variables: string[], imports: string[], ModuleAPIName: string, fieldIdxList: string[], cinfo: ReturnType<typeof getManualCodeInfo>) {
     let vars = `\t` + variables.join(`\n\t`);
     return `#pragma once
 
 #include "CoreMinimal.h"
 #include "MeowNet/Protobuf/PBUtils.h"
 ${imports.join("\n")}
+${genManualAreaCode("$header", cinfo.manuals)}
 #include "${className}.generated.h"
+
+${genManualAreaCode("$area1", cinfo.manuals)}
 
 
 /**
@@ -308,6 +316,8 @@ struct ${ModuleAPIName}${GetStructName(className)}
 		}
 	}
 
+${genManualAreaCode("$area2", cinfo.manuals)}
+
 ${vars}
 };
 `
@@ -330,12 +340,12 @@ function getEnumName(className: string) {
     return `E${className}`;
 }
 
-function getClientEnumCode(createTime: string, path: string, className: string, variables: string[]) {
+function getClientEnumCode(createTime: string, path: string, className: string, variables: string[], cinfo: ReturnType<typeof getManualCodeInfo>) {
     let vars = `\t` + variables.join(`\n\t`);
     return `#pragma once
 
 #include "CoreMinimal.h"
-
+${genManualAreaCode("$area1", cinfo.manuals)}
 
 /**
  * 使用JunyouProtoTools，从 ${path} 生成
@@ -397,15 +407,18 @@ function makeSendFunDefine(className: string, channel: number, funcs: string[], 
     sendRegs.push(`RegSend(${UEConstString.PBCmdName}::${className}, F${className}::StaticStruct(), ${strChannel});`)
 }
 
-function getServiceHFileContent(createTime: string, path: string, serviceClassName: string, includes: string[], deles: string[], funcs: string[], handlers: string[], ModuleAPIName: string, NetCMDsPath: string) {
+function getServiceHFileContent(createTime: string, path: string, serviceClassName: string, includes: string[], deles: string[], funcs: string[], handlers: string[], ModuleAPIName: string, NetCMDsPath: string, cinfo: ReturnType<typeof getManualCodeInfo>) {
 
     return `#pragma once
 
+${genManualAreaCode("$header", cinfo.manuals)}
 #include "CoreMinimal.h"
 #include "BaseNetProxy.h"
 #include "${NetCMDsPath}/NetCMDs.h"
 ${includes.join("\n")}
 #include "${serviceClassName}.generated.h"
+
+${genManualAreaCode("$area1", cinfo.manuals)}
 
 ${deles.join("\n")}
 
@@ -425,7 +438,12 @@ public:
 
 	${handlers.join("\n\t")}
 
-};`
+    ${genManualAreaCode("$area2", cinfo.manuals, `\t`)}
+
+};
+
+${genManualAreaCode("$area3", cinfo.manuals)}
+`
 }
 
 function getInclude(className: string, pre = "", cdir: string) {
@@ -451,20 +469,24 @@ function makeSendFunImpl(serviceClassName: string, className: string, implLines:
     implLines.push(`NetSend(${serviceObjectName(serviceClassName)}, ${className}, ${UEConstString.PBCmdName}::${className})`)
 }
 
-function getServiceCPPFileContent(serviceClassName: string, regs: string[], implLines: string[], sendRegs: string[]) {
+function getServiceCPPFileContent(serviceClassName: string, regs: string[], implLines: string[], sendRegs: string[], cinfo: ReturnType<typeof getManualCodeInfo>) {
     return `
 #include "${serviceClassName}.h"
+${genManualAreaCode("$area1", cinfo.manuals)}
 
 void ${serviceObjectName(serviceClassName)}::RegReceiveHandlers() const
 {
 	${regs.join("\n\t")}
     
     ${sendRegs.join("\n\t")}
+
+    ${genManualAreaCode("$handler", cinfo.manuals, `\t`)}
 }
 
 
 ${implLines.join("\n")}
 
+${genManualAreaCode("$area2", cinfo.manuals)}
 `
 }
 
