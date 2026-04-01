@@ -2,7 +2,7 @@
 /**
  * 手写代码的默认提示
  */
-export const ManualCodeDefaultComment = {
+export const ManualCodeDefaultComment: { [index: string]: string } = {
     /**
      * 类上方提示
      */
