@@ -306,14 +306,10 @@ struct ${ModuleAPIName}${GetStructName(className)}
 
 	${GetStructName(className)}()
 	{
-		static bool bInitialized = false;
-		if (!bInitialized)
-		{
-			RegPBFields(StaticStruct(), {
-				            ${fieldIdxList.join(",\n\t\t\t\t            ")}
-			            });
-			bInitialized = true;
-		}
+
+        REG_PB_FIELD({
+                        ${fieldIdxList.join(",\n\t\t\t\t\t\t\t")}
+                    })
 	}
 
 ${genManualAreaCode("$area2", cinfo.manuals)}
