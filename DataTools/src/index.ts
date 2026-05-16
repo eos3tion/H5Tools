@@ -771,7 +771,7 @@ class XLSXDecoder {
                                     hasClientRaw = true;
                                 }
                                 if (ccell != undefined) {
-                                    let dat = def.checker.check(cell || "");
+                                    let dat = def.checker.check(ccell || "");
                                     cRawRow[def.name] = dat;
                                 }
                             }
