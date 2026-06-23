@@ -127,6 +127,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
     }
     let hasService = false;
     let cmdDict: { [name: string]: string } = {};
+    let cmdIcmdDict: { [name: string]: number } = {};
     // 客户端和服务端的Service收发数组
     let deles: string[] = [], funcs: string[] = [], sendRegs: string[] = [], handlers: string[] = [], cRegs: string[] = [], cIncludes: string[] = [], implLines: string[] = [], simports: string[] = [];
 
@@ -149,6 +150,11 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let fieldDatas: FieldData[] = [];
         let imports: string[] = [];
         let cmddata: UECmdType = options[Options.CMD];
+        // 整数型cmd
+        let icmddata = options["(icmd)"];
+        if (icmddata !== undefined) {
+            cmdIcmdDict[cmddata] = icmddata;
+        }
 
         // 根据CMD 生成通信代码
         // 生成代码
@@ -226,7 +232,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let crout = path.join(cprefix, UEConstString.PBCmdName + UEConstString.FileH);
         let out: string;
         try {
-            out = addCmds(crout, cmdDict, c2s, error, ModuleAPIName);
+            out = addCmds(crout, cmdDict, c2s, error, ModuleAPIName, cmdIcmdDict);
 
             log(`<font color="#0c0">生成客户端代码成功，${crout}</font>`);
         } catch (e) {
