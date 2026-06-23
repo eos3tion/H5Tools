@@ -86,7 +86,7 @@ public:
             let cmd = dict[name];
             c += `${ident}inline static const NetCMD ${name} = "${cmd}";\n`;
         }
-        c += `${ident}inline static TMap<NetCMD, int32> NetCMDMap = {\n`;
+        c += `${ident}inline static TMap<NetCMD, uint32> NetCMDMap = {\n`;
         for (let i = 0; i < arr2.length; i++) {
             let key = arr2[i];
             c += `${ident}${ident}\{"${key}", ${icmds[key]}\},\n`;
