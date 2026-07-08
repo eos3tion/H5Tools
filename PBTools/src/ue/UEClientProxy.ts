@@ -127,7 +127,8 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
     }
     let hasService = false;
     let cmdDict: { [name: string]: string } = {};
-    let cmdIcmdDict: { [name: string]: number } = {};
+    let cmdIcmdDict_C: { [name: string]: number } = {};
+    let cmdIcmdDict_S: { [name: number]: string} = {};
     // 客户端和服务端的Service收发数组
     let deles: string[] = [], funcs: string[] = [], sendRegs: string[] = [], handlers: string[] = [], cRegs: string[] = [], cIncludes: string[] = [], implLines: string[] = [], simports: string[] = [];
 
@@ -152,9 +153,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let cmddata: UECmdType = options[Options.CMD];
         // 整数型cmd
         let icmddata = options["(icmd)"];
-        if (icmddata !== undefined) {
-            cmdIcmdDict[cmddata] = icmddata;
-        }
+        
 
         // 根据CMD 生成通信代码
         // 生成代码
@@ -202,6 +201,10 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
                 cIncludes.push(getInclude(className, "msgs/", cdir));
 
             }
+            if (icmddata !== undefined) {
+                cmdIcmdDict_C[cmddata] = icmddata;
+            }
+        
         } else if (s) { // server to client
             hasService = true;
             cmdDict[className] = cmddata;
@@ -210,6 +213,9 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
             makeReceiveHandler(className, handlers);
             makeRegs(className, cRegs);
             cIncludes.push(getInclude(className, "msgs/", cdir));
+            if (icmddata !== undefined) {
+                cmdIcmdDict_S[icmddata] = cmddata;
+            }
         }
 
         if (isCreateMsg) { //需要生成消息
@@ -232,7 +238,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let crout = path.join(cprefix, UEConstString.PBCmdName + UEConstString.FileH);
         let out: string;
         try {
-            out = addCmds(crout, cmdDict, c2s, error, ModuleAPIName, cmdIcmdDict);
+            out = addCmds(crout, cmdDict, c2s, error, ModuleAPIName, cmdIcmdDict_C, cmdIcmdDict_S);
 
             log(`<font color="#0c0">生成客户端代码成功，${crout}</font>`);
         } catch (e) {
