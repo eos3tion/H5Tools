@@ -52,7 +52,6 @@ export function addCmds(file: string, cmds: UECmdDict, c2stype: string, error: F
         let arr = Object.keys(dict);
         arr.sort();
 
-        let arr2: string[] = [];
         icmdRegValue_C.lastIndex = 0;
         while (true) {
             let res = icmdRegValue_C.exec(content);
@@ -62,21 +61,19 @@ export function addCmds(file: string, cmds: UECmdDict, c2stype: string, error: F
                 if (icmds_c[name] !== undefined && icmds_c[name] != icmd) {
                     error(`ICMD ${name} 与已存在的值不一致`);
                 } else {
-                    arr2.push(name);
                     icmds_c[name] = icmd;
                 }
             } else {
                 break;
             }
         }
-
+        let arr2: string[] = Object.keys(icmds_c);
         arr2.sort((a, b) => {
             return icmds_c[a] - icmds_c[b];
         });
 
 
         icmdRegValue_S.lastIndex = 0;
-        let arr3:number[] = [];
         while (true) {
             let res = icmdRegValue_S.exec(content);
             if (res) {
@@ -85,7 +82,6 @@ export function addCmds(file: string, cmds: UECmdDict, c2stype: string, error: F
                 if (icmds_s[name] !== undefined && icmds_s[name] != icmd) {
                     error(`ICMD ${name} 与已存在的值不一致`);
                 } else {
-                    arr3.push(name);
                     icmds_s[name] = icmd;
                 }
             } else {
@@ -93,6 +89,7 @@ export function addCmds(file: string, cmds: UECmdDict, c2stype: string, error: F
             }
         }
 
+        let arr3: number[] = Object.keys(icmds_s) as any;
         arr3.sort((a, b) => {
             return (+a) - (+b);
         });
