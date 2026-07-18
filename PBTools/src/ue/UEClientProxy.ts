@@ -128,7 +128,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
     let hasService = false;
     let cmdDict: { [name: string]: string } = {};
     let cmdIcmdDict_C: { [name: string]: number } = {};
-    let cmdIcmdDict_S: { [name: number]: string} = {};
+    let cmdIcmdDict_S: { [name: number]: string } = {};
     // 客户端和服务端的Service收发数组
     let deles: string[] = [], funcs: string[] = [], sendRegs: string[] = [], handlers: string[] = [], cRegs: string[] = [], cIncludes: string[] = [], implLines: string[] = [], simports: string[] = [];
 
@@ -144,6 +144,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let channel = isNaN(msgChannel) ? pageChannel : msgChannel;
         let cpath: string = options[Options.ClientPath] || fcpath;
         let fieldIdxList: string[] = [];
+        let ZigZagIndex = [];
         //如果设置的不是整数，则让climit为undefined
         isNaN(climit) && (climit = undefined);
         // repeated 字段的数量
@@ -153,7 +154,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let cmddata: UECmdType = options[Options.CMD];
         // 整数型cmd
         let icmddata = options["(icmd)"];
-        
+
 
         // 根据CMD 生成通信代码
         // 生成代码
@@ -164,10 +165,12 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
         let s = stype == s2c;
 
         for (let field of msg.fields) {
-
             let data = getVariable(field, variables, imports, !c);
             fieldDatas.push(data);
             fieldIdxList.push(`{"${field.name}", ${field.id}}`);
+            if (field.type == "sint32" || field.type == "sint64") {// zigzag编码
+                ZigZagIndex.push(field.id);
+            }
         }
         let cdir = "";
         if (cprefix && cpath != undefined/*cpath允许为`""`*/) {
@@ -204,7 +207,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
             if (icmddata !== undefined) {
                 cmdIcmdDict_C[cmddata] = icmddata;
             }
-        
+
         } else if (s) { // server to client
             hasService = true;
             cmdDict[className] = cmddata;
@@ -220,7 +223,7 @@ function parseProto(proto: string, gcfg?: ClientCfg, url?: string) {
 
         if (isCreateMsg) { //需要生成消息
             let cpath = path.join(cdir, className + UEConstString.FileH);
-            let clientCode = getStructContent(now, url, className, variables, imports, ModuleAPIName, fieldIdxList, getManualCodeInfo(cpath));
+            let clientCode = getStructContent(now, url, className, variables, imports, ModuleAPIName, fieldIdxList, getManualCodeInfo(cpath), ZigZagIndex);
             if (cdir) {
                 let out = writeFile(className + UEConstString.FileH, cdir, clientCode);
                 if (out) {
@@ -294,8 +297,12 @@ function GetStructName(className: string) {
  * @param variables 
  * @returns 
  */
-function getStructContent(createTime: string, path: string, className: string, variables: string[], imports: string[], ModuleAPIName: string, fieldIdxList: string[], cinfo: ReturnType<typeof getManualCodeInfo>) {
+function getStructContent(createTime: string, path: string, className: string, variables: string[], imports: string[], ModuleAPIName: string, fieldIdxList: string[], cinfo: ReturnType<typeof getManualCodeInfo>, ZigZagIndex: number[]) {
     let vars = `\t` + variables.join(`\n\t`);
+    let zigzag = ``;
+    if (ZigZagIndex.length > 0) {
+        zigzag = `,\n\t\t\t\t\t{` + ZigZagIndex.join(", ") + `}`;
+    }
     return `#pragma once
 
 #include "CoreMinimal.h"
@@ -319,9 +326,9 @@ struct ${ModuleAPIName}${GetStructName(className)}
 	${GetStructName(className)}()
 	{
 
-        REG_PB_FIELD({
-                        ${fieldIdxList.join(",\n\t\t\t\t\t\t\t")}
-                    })
+		REG_PB_FIELD({
+						${fieldIdxList.join(",\n\t\t\t\t\t\t\t")}
+					}${zigzag})
 	}
 
 ${genManualAreaCode("$area2", cinfo.manuals)}
