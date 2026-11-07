@@ -397,8 +397,8 @@ function serviceObjectName(serviceClassName: string) {
 
 //----------------- Recieve--------------------------
 function makeReceiveDele(className: string, deles: string[]) {
-    // DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLogin_S_Handler, FLogin_S, Data);
-    deles.push(`DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(${getReceiveHandlerTypeName(className)}, F${className}, Data);\n`);
+    // DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLogin_S_Handler, const FLogin_S&, Data);
+    deles.push(`DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(${getReceiveHandlerTypeName(className)}, const F${className}&, Data);\n`);
 }
 
 function makeReceiveHandler(className: string, handlers: string[]) {
